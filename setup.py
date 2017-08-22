@@ -31,7 +31,11 @@ setup(
     author="Micah Sandusky",
     author_email='micah.sandusky@ars.usda.gov',
     url='https://github.com/micahsandusky5/awsf',
-    packages=find_packages(include=['awsf']),
+    packages=['awsf',
+			  'awsf.convertFiles',
+			  'awsf.interface',
+			  'awsf.framework'
+			  ],
     include_package_data=True,
     install_requires=requirements,
     license="ISC license",

@@ -1,6 +1,7 @@
 import smrf
 from smrf import ipw
 import ConfigParser as cfp
+from awsf import premodel as pm
 import os
 import pandas as pd
 import numpy as np
@@ -43,9 +44,9 @@ def nc2ipw_mea(self):
     rho_var = 'snow_density'
     tp = '%sdew_point.nc'%self.paths
     tp_var = 'dew_point'
-    in_pathp = '%sdata/data/ppt_4b/'%self.path00
+    in_pathp = '%sdata/data/ppt_4b'%self.path00
     self.ppt_desc = '%sdata/data/ppt_desc%s.txt'%(self.path00,self.et.strftime("%Y%m%d"))
-    f = open(ppt_desc,'w')
+    f = open(self.ppt_desc,'w')
 
 
     th_file = nc.Dataset(th, 'r')
@@ -59,17 +60,19 @@ def nc2ipw_mea(self):
     tp_file = nc.Dataset(tp, 'r')
 
     N = th_file.variables[th_var].shape[0]
-    timeStep = np.arange(offset,N)        # timesteps loop through
+    #timeStep = np.arange(0,N)        # timesteps loop through
+    timeStep = np.arange(offset,N+offset)        # timesteps loop through
     pbar = progressbar.ProgressBar(max_value=len(timeStep)).start()
     j = 0
-    for t in timeStep:
+    for idxt,t in enumerate(timeStep):
 
-      trad_step = th_file.variables[th_var][t,:]
-      ta_step = ta_file.variables[ta_var][t,:]
-      ea_step = ea_file.variables[ea_var][t,:]
-      wind_step = wind_file.variables[wind_var][t,:]
-      sn_step = sn_file.variables[sn_var][t,:]
-      mp_step = mp_file.variables[mp_var][t,:]
+      trad_step = th_file.variables[th_var][idxt,:]
+      ta_step = ta_file.variables[ta_var][idxt,:]
+      ea_step = ea_file.variables[ea_var][idxt,:]
+      wind_step = wind_file.variables[wind_var][idxt,:]
+      sn_step = sn_file.variables[sn_var][idxt,:]
+      mp_step = mp_file.variables[mp_var][idxt,:]
+      # tg_step = np.ones_like(mp_step)*(-2.5) # ground temp
 
       in_step = '%s/in.%04i' % (in_path, t)
 
@@ -89,9 +92,9 @@ def nc2ipw_mea(self):
 
       # only output if precip
       if np.sum(mp_step) > 0:
-          ps_step = ps_file.variables[ps_var][t,:]
-          rho_step = rho_file.variables[rho_var][t,:]
-          tp_step = tp_file.variables[tp_var][t,:]
+          ps_step = ps_file.variables[ps_var][idxt,:]
+          rho_step = rho_file.variables[rho_var][idxt,:]
+          tp_step = tp_file.variables[tp_var][idxt,:]
           in_stepp = os.path.join('%s/ppt.4b_%04i' % (in_pathp, t))
           i = smrf.ipw.IPW()
           i.new_band(mp_step)

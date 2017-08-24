@@ -9,3 +9,4 @@ __version__ = '0.1.0'
 from awsf import convertFiles
 from awsf import interface
 from awsf import framework
+from . import premodel

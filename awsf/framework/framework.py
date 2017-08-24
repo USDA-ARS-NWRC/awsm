@@ -98,7 +98,7 @@ class AWSF():
         if 'ppt_desc_file' in self.config['files']:
             self.ppt_desc_file = self.config['files']['ppt_desc_file']
         else:
-            self.ppt_desc = '%sdata/data/ppt_desc%s.txt'%(self.path00,self.et.strftime("%Y%m%d"))
+            self.ppt_desc_file = '%sdata/data/ppt_desc%s.txt'%(self.path00,self.et.strftime("%Y%m%d"))
         self.anyini = self.config['paths']['smrfini']
         self.forecast_flag = 0
         if 'fetime' in self.config['times']:
@@ -106,6 +106,11 @@ class AWSF():
             self.ft = pd.to_datetime(self.config['times']['fetime'])
         if 'prev_mod_file' in self.config['files']:
             self.prev_mod_file = self.config['files']['prev_mod_file']
+
+        if 'threads' in self.config['system']:
+            self.ithreads = self.config['system']['threads']
+        else:
+            self.ithreads = 4
 
         # self._logger.info('Started SMRF --> %s' % datetime.now())
         # self._logger.info('Model start --> %s' % self.start_date)

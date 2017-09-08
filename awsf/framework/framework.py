@@ -148,7 +148,7 @@ class AWSF():
         # modify config and run smrf
         smin.run_isnobal(self)
 
-    def mk_directories(self):
+    def mk_directories_dev(self):
         # rigid directory work
         self._logger.info('AWSF creating directories')
 
@@ -164,7 +164,8 @@ class AWSF():
                 os.makedirs('%sdata/data/ppt_4b/'%self.path00)
                 os.makedirs('%sdata/forecast/'%self.path00)
                 os.makedirs('%sruns/'%self.path00)
-
+                # prompt user for project description
+                y_n = raw_input('Please provide a description of your new project. This will be written to a README')
         self.paths = '%sdata/data/smrfOutputs/'%self.path00
 
     def __enter__(self):

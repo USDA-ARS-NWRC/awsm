@@ -60,6 +60,7 @@ def smrfMEAS(self):
     ###################################################################################################
     print "running smrf (meas)"
     faulthandler.enable()
+    start = datetime.now()
 
     with smrf.framework.SMRF(meas_ini_file) as s:
         try:
@@ -164,14 +165,74 @@ def run_isnobal(self):
       tmstps = tt.days*24 +  tt.seconds//3600 # start index for the input file
 
     print tmstps
-    print "time isnobal -v -P %d -r %s -t 60 -n %s -I %sinit%04d.ipw -p %s -d 0.15 -i %sin -O 24 -e em -s snow > %s/sout%s.txt 2>&1"%(nthreads,offset,tmstps,pathinit,offset,self.ppt_desc_file,pathi,pathr,self.et.strftime("%Y%m%d"))
     if offset>0:
-      run_cmd = "time isnobal -v -P %d -r %s -t 60 -n %s -I %sinit%04d.ipw -p %s -d 0.15 -i %sin -O 24 -e em -s snow > %s/sout%s.txt 2>&1"%(nthreads,offset,tmstps,pathinit,offset,self.ppt_desc_file,pathi,pathr,self.et.strftime("%Y%m%d"))
+        if (offset + tmstps) < 1000:
+            run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %sinit%04d.ipw -p %s -d 0.15 -i %sin -O 24 -e em -s snow > %s/sout%s.txt 2>&1"%(nthreads,offset,pathinit,offset,self.ppt_desc_file,pathi,pathr,self.et.strftime("%Y%m%d"))
+        else:
+            run_cmd = "time isnobal -v -P %d -r %s -t 60 -n %s -I %sinit%04d.ipw -p %s -d 0.15 -i %sin -O 24 -e em -s snow > %s/sout%s.txt 2>&1"%(nthreads,offset,tmstps,pathinit,offset,self.ppt_desc_file,pathi,pathr,self.et.strftime("%Y%m%d"))
     else:
       if tmstps<1000:
           run_cmd = "time isnobal -v -P %d -t 60 -n 1001 -I %sinit%04d.ipw -p %s -d 0.15 -i %sin -O 24 -e em -s snow > %s/sout%s.txt 2>&1"%(nthreads,pathinit,offset,self.ppt_desc_file,pathi,pathr,self.et.strftime("%Y%m%d"))
       else:
           run_cmd = "time isnobal -v -P %d -t 60 -n %s -I %sinit%04d.ipw -p %s -d 0.15 -i %sin -O 24 -e em -s snow > %s/sout%s.txt 2>&1"%(nthreads,tmstps,pathinit,offset,self.ppt_desc_file,pathi,pathr,self.et.strftime("%Y%m%d"))
 
+    print run_cmd
+    print offset
+
     os.chdir(pathro)
     os.system(run_cmd)
+
+
+def restart_crash_image(init_fp_0, crash_fp, thresh):
+
+    nbits = 16
+
+    # find water year hour
+    date = crash_fp.split('.')
+    date = int(date[len(date)-1])
+
+    # new ipw image for initializing restart
+    print "making new init image"
+    i_out = ipw.IPW()
+
+    # read in crash image and old init image
+    i_crash = ipw.IPW(crash_fp)
+    i_old_init = ipw.IPW(crash_fp)
+
+    # fill in elevation and roughness bands
+    i_out.new_band(i_old_init[0].data)
+    i_out.new_band(i_old_init[1].data)
+
+    # pull apart crash image and zero out values at index with depths < thresh
+    z_s = i_crash[0].data
+    rho = i_crash[1].data
+    m_s = i_crash[2].data
+    h20 = i_crash[3].data
+    T_s_0 = i_crash[4].data
+    T_s_l = i_crash[5].data
+    T_s = i_crash[6].data
+    z_s_l = i_crash[7].data
+    h20_sat = i_crash[8].data
+
+    print np.min(rho)
+    print np.min(z_s)
+    idz = z_s < thresh
+    z_s[idz] = -75.0
+    rho[idz] = -75.0
+    m_s[idz] = -75.0
+    h20[idz] = -75.0
+    T_s_0[idz] = -75.0
+    T_s_l[idz] = -75.0
+    T_s[idz] = -75.0
+    z_s_l[idz] = -75.0
+    h20_sat[idz] = -75.0
+
+    # fill in init image
+    i_out.new_band(z_s)
+    i_out.new_band(rho)
+    i_out.new_band(T_s_0)
+    i_out.new_band(T_s_l)
+    i_out.new_band(T_s)
+    i_out.new_band(h20_sat)
+
+    i_out.write('init_restart%04d.ipw'%(date), nbits)

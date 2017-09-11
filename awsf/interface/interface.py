@@ -21,27 +21,33 @@ def smrfMEAS(self):
     # ###################################################################################################
     # ### read in base and write out the specific config file for smrf ##################################
     # ###################################################################################################
-    print "writing the config file for smrf (meas)"
+    print("writing the config file for smrf (meas)")
     meas_ini_file = "%s_%ssmrf.ini"%(self.pathws, self.et.strftime("%Y%m%d"))
 
     cfg0 = cfp.SafeConfigParser()
     cfg0.read(self.anyini)
     topotype = cfg0.get('TOPO', 'type')
-    # if topotype == 'ipw':
-    #     tt = cfg0.get('TOPO','dem')
-    #     cfg0.set('TOPO','dem','%s%s'%(self.pathtp,tt))
-    #     tt = cfg0.get('TOPO','veg_type')
-    #     cfg0.set('TOPO','veg_type','%s%s'%(self.pathtp,tt))
-    #     tt = cfg0.get('TOPO','veg_height')
-    #     cfg0.set('TOPO','veg_height','%s%s'%(self.pathtp,tt))
-    #     tt = cfg0.get('TOPO','veg_k')
-    #     cfg0.set('TOPO','veg_k','%s%s'%(self.pathtp,tt))
-    #     tt = cfg0.get('TOPO','veg_tau')
-    #     cfg0.set('TOPO','veg_tau','%s%s'%(self.pathtp,tt))
-    # elif topotype == 'netcdf':
-    #     tt = cfg0.get('TOPO','filename')
-    #     cfg0.set('TOPO','filename','%s%s'%(self.pathtp,tt))
-    #     print cfg0.get('TOPO', 'filename')
+    if topotype == 'ipw':
+        tt = cfg0.get('TOPO','dem')
+        tt = os.path.basename(tt)
+        cfg0.set('TOPO','dem','%s%s'%(self.pathtp,tt))
+        tt = cfg0.get('TOPO','veg_type')
+        tt = os.path.basename(tt)
+        cfg0.set('TOPO','veg_type','%s%s'%(self.pathtp,tt))
+        tt = cfg0.get('TOPO','veg_height')
+        tt = os.path.basename(tt)
+        cfg0.set('TOPO','veg_height','%s%s'%(self.pathtp,tt))
+        tt = cfg0.get('TOPO','veg_k')
+        tt = os.path.basename(tt)
+        cfg0.set('TOPO','veg_k','%s%s'%(self.pathtp,tt))
+        tt = cfg0.get('TOPO','veg_tau')
+        tt = os.path.basename(tt)
+        cfg0.set('TOPO','veg_tau','%s%s'%(self.pathtp,tt))
+    elif topotype == 'netcdf':
+        tt = cfg0.get('TOPO','filename')
+        tt = os.path.basename(tt)
+        cfg0.set('TOPO','filename','%s%s'%(self.pathtp,tt))
+        print(cfg0.get('TOPO', 'filename') )
     cfg0.set('TiMe','start_date',self.st.strftime('%Y-%m-%d %H:%M'))
     cfg0.set('TiMe','end_date',self.et.strftime('%Y-%m-%d %H:%M'))
     cfg0.set('TiMe','time_zone',self.tmz)
@@ -58,7 +64,7 @@ def smrfMEAS(self):
     ###################################################################################################
     ### run smrf with the config file we just made ####################################################
     ###################################################################################################
-    print "running smrf (meas)"
+    print("running smrf (meas)")
     faulthandler.enable()
 
     with smrf.framework.SMRF(meas_ini_file) as s:
@@ -95,7 +101,7 @@ def run_isnobal(self):
     topotype = cfg0.get('TOPO', 'type')
 
 
-    print "calculating time vars"
+    print("calculating time vars")
     wyh = pd.to_datetime('%s-10-01'%pm.wyb(self.et))
     tt = self.st-wyh
     offset = tt.days*24 +  tt.seconds//3600 # start index for the input file
@@ -110,12 +116,12 @@ def run_isnobal(self):
 
     # create the run directory
     if not os.path.exists(pathro):
-      print "making dirs"
+      print("making dirs")
       os.makedirs(pathro)
       os.makedirs(pathinit)
 
     # making initial conditions file
-    print "making initial conds img"
+    print("making initial conds img")
     i_out = ipw.IPW()
 
     # making dem band
@@ -163,8 +169,8 @@ def run_isnobal(self):
       tt = self.et-self.st
       tmstps = tt.days*24 +  tt.seconds//3600 # start index for the input file
 
-    print tmstps
-    print "time isnobal -v -P %d -r %s -t 60 -n %s -I %sinit%04d.ipw -p %s -d 0.15 -i %sin -O 24 -e em -s snow > %s/sout%s.txt 2>&1"%(nthreads,offset,tmstps,pathinit,offset,self.ppt_desc_file,pathi,pathr,self.et.strftime("%Y%m%d"))
+    print(tmstps)
+    print("time isnobal -v -P %d -r %s -t 60 -n %s -I %sinit%04d.ipw -p %s -d 0.15 -i %sin -O 24 -e em -s snow > %s/sout%s.txt 2>&1"%(nthreads,offset,tmstps,pathinit,offset,self.ppt_desc_file,pathi,pathr,self.et.strftime("%Y%m%d")) )
     if offset>0:
       run_cmd = "time isnobal -v -P %d -r %s -t 60 -n %s -I %sinit%04d.ipw -p %s -d 0.15 -i %sin -O 24 -e em -s snow > %s/sout%s.txt 2>&1"%(nthreads,offset,tmstps,pathinit,offset,self.ppt_desc_file,pathi,pathr,self.et.strftime("%Y%m%d"))
     else:

@@ -12,23 +12,23 @@ import faulthandler
 from PBR_tools import premodel as pm
 import numpy as np
 import progressbar
-from smrf import ipw    
+from smrf import ipw
 import os
 import netCDF4 as nc
 import shutil
-import glob 
+import glob
 import ConfigParser as cfp
 
 def smrf_go_meas(config_file):
-    
+
     #    enter a start date in the format 'yyyy-mm-dd HH:MM:SS', for example: '2017-03-20 06:00:00'
     #    and an end date for the run. directories will be named with the etime timestamp
-    
+
     # parse config file
     # config_file = '/Users/pkormos/src/PBR_tools/config_PBR.txt'
     # config_file = '/Volumes/data/blizzard/SanJoaquin/pkormos_workspace/scripts2017/config_PBR2017.txt'
-    
-    tt = cfp.ConfigParser() 
+
+    tt = cfp.ConfigParser()
     tt.read(config_file)
     cfg = dict(tt._sections)
     path00 = cfg['PATHS']['path00']
@@ -52,13 +52,13 @@ def smrf_go_meas(config_file):
     paths = '%sdata/data/smrfOutputs/'%path00
     pathi = '%sdata/data/input/'%path00
     pathp = '%sdata/data/ppt_4b/'%path00
-    
+
     # ###################################################################################################
     # ### read in base and write out the specific config file for smrf ##################################
     # ###################################################################################################
-    print "writing the config file for smrf (meas)"
+    print("writing the config file for smrf (meas)")
     meas_ini_file = "%ssmrf%s.ini"%(pathws, et.strftime("%Y%m%d"))
-    
+
     cfg0 = cfp.RawConfigParser()
     cfg0.read(anyini)
     tt = cfg0.get('TOPO','dem')
@@ -81,15 +81,15 @@ def smrf_go_meas(config_file):
     cfg0.set('output','out_location',paths)
     cfg0.set('logging','log_file','%sout%s.log'%(paths,et.strftime("%Y%m%d")))
     cfg0.set('system','temp_dir',tmpdir)
-    
+
     with open(meas_ini_file, 'wb') as configfile:
         cfg0.write(configfile)
-    
-                
+
+
     ###################################################################################################
     ### run smrf with the config file we just made ####################################################
     ###################################################################################################
-    print "running smrf (meas)"
+    print("running smrf (meas)")
     faulthandler.enable()
     # 1. initialize
     s = smrf.framework.SMRF(meas_ini_file)
@@ -107,13 +107,13 @@ def smrf_go_meas(config_file):
     ###################################################################################################
     ### make .ipw input files from netCDF files #######################################################
     ###################################################################################################
-    print "making the ipw files from NetCDF files (meas)"
+    print("making the ipw files from NetCDF files (meas)")
     #     execfile('/Volumes/data/snowdrift/BRB/common_data/grid_info.py')
     wyh = pd.to_datetime('%s-10-01'%pm.wyb(et))
     tt = st-wyh
     offset = tt.days*24 +  tt.seconds//3600 # start index for the input file
     nbits = 16
-    
+
     # File paths
     th = '%sthermal.nc'%paths
     th_var = 'thermal'
@@ -153,7 +153,7 @@ def smrf_go_meas(config_file):
 
     N = th_file.variables[th_var].shape[0]
     timeStep = np.arange(offset,N)        # timesteps loop through
-    
+
     if not os.path.exists(in_path):
         os.makedirs(in_path)
         os.makedirs(in_pathp)
@@ -161,30 +161,30 @@ def smrf_go_meas(config_file):
     pbar = progressbar.ProgressBar(max_value=len(timeStep)).start()
     j = 0
     for t in timeStep:
-        
+
         trad_step = th_file.variables[th_var][t,:]
         ta_step = ta_file.variables[ta_var][t,:]
         ea_step = ea_file.variables[ea_var][t,:]
         wind_step = wind_file.variables[wind_var][t,:]
         sn_step = sn_file.variables[sn_var][t,:]
         mp_step = mp_file.variables[mp_var][t,:]
-    
+
         in_step = '%sin.%04i' % (in_path, t)
-        
+
         i = ipw.IPW()
         i.new_band(trad_step)
         i.new_band(ta_step)
         i.new_band(ea_step)
         i.new_band(wind_step)
         i.new_band(tg_step)
-                
+
         # add solar if the sun is up
         if np.sum(sn_step) > 0:
             i.new_band(sn_step)
-            
-        i.add_geo_hdr([u, v], [du, dv], units, csys)        
+
+        i.add_geo_hdr([u, v], [du, dv], units, csys)
         i.write(in_step, nbits)
-        
+
         # only output if precip
         if np.sum(mp_step) > 0:
             ps_step = ps_file.variables[ps_var][t,:]
@@ -197,7 +197,7 @@ def smrf_go_meas(config_file):
             i.new_band(ps_step)
             i.new_band(rho_step)
             i.new_band(tp_step)
-            i.add_geo_hdr([u, v], [du, dv], units, csys)        
+            i.add_geo_hdr([u, v], [du, dv], units, csys)
             i.write(in_stepp, nbits)
             f.write('%i %s\n' % (t, in_step_w))
 
@@ -221,7 +221,7 @@ def smrf_go_wrf(config_file):
     #    should be the same time as e time afrom smrf_go function abover
     #     etime = '2017-03-27 06:00:00'
     #     path00,tmpdir,st,et,ft,tmz,u,v,du,dv,units,csys,nx,ny,ppt_desc_file,prev_mod_file = pm.pbr_parse(config_file)
-    tt = cfp.ConfigParser() 
+    tt = cfp.ConfigParser()
     tt.read(config_file)
     cfg = dict(tt._sections)
     path00 = cfg['PATHS']['path00']
@@ -249,7 +249,7 @@ def smrf_go_wrf(config_file):
     # ###################################################################################################
     # ### write out the wrf config file for smrf ########################################################
     # ###################################################################################################
-    print "making wrf smrf config file."
+    print("making wrf smrf config file.")
     wrf_ini_file = "%sbrb%ssmrf_forecast.ini"%(pathws, et.strftime("%Y%m%d"))
     tt0 = et+timedelta(hours=1)
     tt1 = et+timedelta(days=3)
@@ -277,14 +277,14 @@ def smrf_go_wrf(config_file):
     cfg0.set('system','tmp_dir',tmpdir)
     cfg0.set('system','threading','false')
     cfg0.set('system','max_values',1)
-    
+
     with open(wrf_ini_file, 'wb') as configfile:
         cfg0.write(configfile)
-    
+
     ###################################################################################################
     ### make directories for forecast data ############################################################
     ###################################################################################################
-    print "making directories."
+    print("making directories.")
     # for smrf forecast  data
     if not os.path.exists(pathsf):
         os.makedirs(pathsf)
@@ -294,35 +294,35 @@ def smrf_go_wrf(config_file):
     # for smrf model precip data
     if not os.path.exists(pathpf):
         os.makedirs(pathpf)
-    
+
     ###################################################################################################
     ### run smrf with the forecast config file we just made ###########################################
     ###################################################################################################
-    print "running wrf smrf."
+    print("running wrf smrf.")
     faulthandler.enable()
     s = smrf.framework.SMRF(wrf_ini_file)
-    print "loadTopo"
+    print("loadTopo")
     s.loadTopo()
-    print "init dist"
+    print("init dist")
     s.initializeDistribution()
-    print "init output"
+    print("init output")
     s.initializeOutput()
-    print "load data"
+    print("load data")
     s.loadData()
-    print "distribute data"
+    print("distribute data")
     s.distributeData()
 
     ###################################################################################################
     ### make .ipw input files from netCDF forecast files ##############################################
     ###################################################################################################
-    print "converting netcdf files to input files (ipw)"
+    print("converting netcdf files to input files (ipw)")
     #     execfile('/Volumes/data/snowdrift/BRB/common_data/grid_info.py')
- 
+
     wyh = pd.to_datetime('%s-10-01'%pm.wyb(et))
     tt = tt0-wyh
     offset = tt.days*24 +  tt.seconds//3600 # start index for the input file
     nbits = 16
-    
+
     # File paths
     th = '%s/thermal.nc'%pathsf
     th_var = 'thermal'
@@ -364,30 +364,30 @@ def smrf_go_wrf(config_file):
     pbar = progressbar.ProgressBar(max_value=len(timeStep)).start()
     j = 0
     for t in timeStep:
-        
+
         trad_step = th_file.variables[th_var][t,:]
         ta_step = ta_file.variables[ta_var][t,:]
         ea_step = ea_file.variables[ea_var][t,:]
         wind_step = wind_file.variables[wind_var][t,:]
         sn_step = sn_file.variables[sn_var][t,:]
         mp_step = mp_file.variables[mp_var][t,:]
-    
+
         in_step = '%s/in.%04i' % (in_path, t+offset)
-        
+
         i = ipw.IPW()
         i.new_band(trad_step)
         i.new_band(ta_step)
         i.new_band(ea_step)
         i.new_band(wind_step)
         i.new_band(tg_step)
-                
+
         # add solar if the sun is up
         if np.sum(sn_step) > 0:
             i.new_band(sn_step)
-            
-        i.add_geo_hdr([u, v], [du, dv], units, csys)        
+
+        i.add_geo_hdr([u, v], [du, dv], units, csys)
         i.write(in_step, nbits)
-        
+
         # only output if precip
         if np.sum(mp_step) > 0:
             ps_step = ps_file.variables[ps_var][t,:]
@@ -400,7 +400,7 @@ def smrf_go_wrf(config_file):
             i.new_band(ps_step)
             i.new_band(rho_step)
             i.new_band(tp_step)
-            i.add_geo_hdr([u, v], [du, dv], units, csys)        
+            i.add_geo_hdr([u, v], [du, dv], units, csys)
             i.write(in_stepp, nbits)
             f.write('%i %s\n' % (t+offset, in_step_w))
 
@@ -424,46 +424,46 @@ def smrf_merge(config_file):
     #    this assumes that you cleaned station data up to 6:00, downloaded a 3 day wrf forecast on that morning
     #         etime = '2017-02-15 06:00:00'
 
-    tt = cfp.ConfigParser() 
+    tt = cfp.ConfigParser()
     tt.read(config_file)
     cfg = dict(tt._sections)
     path00 = cfg['PATHS']['path00']
     et = pd.to_datetime(cfg['TIMES']['etime'])
- 
+
     pathi =  '%sdata/data/input/'%path00
     pathif = '%sdata/forecast/input%s/'%(path00,et.strftime("%Y%m%d"))
     pathpf = '%sdata/forecast/ppt_4b%s/'%(path00,et.strftime("%Y%m%d"))
     pathp =  '%sdata/data/ppt_4b/'%path00
-    print "copying wrf data files to data dir"
+    print("copying wrf data files to data dir")
     files = os.listdir(pathif)
     for f in files:
         shutil.copy("%s%s"%(pathif,f), pathi)
-    print "copying wrf precip files to data dir"
+    print("copying wrf precip files to data dir")
     files = os.listdir(pathpf)
     for f in files:
         shutil.copy("%s%s"%(pathpf,f), pathp)
-     
+
     # make the ppt_desc.txt file from meas and forecast
-    print "creating joint ppt_desc file"
+    print("creating joint ppt_desc file")
     ppt_desc_meas = '%sdata/data/ppt_desc%s.txt'%(path00,et.strftime("%Y%m%d"))
     ppt_desc_forecast = '%sdata/forecast/ppt_desc%s.txt'%(path00,et.strftime("%Y%m%d"))
     ppt_desc_comb = '%sdata/data/ppt_desc.txt'%path00
     cmd = "cat %s %s > %s"%(ppt_desc_meas,ppt_desc_forecast,ppt_desc_comb)
     os.system(cmd)
-    
+
 def run_snobal(config_file):
-    
+
     # creates run directory if it doesn't exist, builds the model init file, runs the model, and converts
     # the .ipw model output files to NetCDF format for reports and analysis
     # the config_file would need the following sections and variables defined to use this function
-    #    [TIMES] 
+    #    [TIMES]
     #     stime: enter a start datetime for the run in the format 'yyyy-mm-dd hh:mm:ss', for example: '2017-03-20 06:00:00'
     #     etime: enter an end (end of measured data) datetime for the run in the format 'yyyy-mm-dd hh:mm:ss'
     #     fetime: enter a forecast end datetime for the run in the format 'yyyy-mm-dd hh:mm:ss'
     #    [PATHS]
     #     path00: the base path for scripts, data, and runs
     #    [GRID]
-    #     u:    The coordinates of image line 0 in csys 
+    #     u:    The coordinates of image line 0 in csys
     #     v:    The coordinates of image sample 0 in csys
     #     du:   The distances between adjacent image lines in csys
     #     dv:   The distances between adjacent image samples in csys
@@ -471,24 +471,24 @@ def run_snobal(config_file):
     #     csys: coordinate system 'UTM', See the ipw manual for  mkproj for a list of standard names for coordinate systems.
     #     nx:    number of lines
     #     ny:    number of samples
-    
+
     #     stime = '2017-03-01 00:00:00'
     #     etime = '2017-03-27 06:00:00'
     #     fetime = '2017-03-30 06:00:00'
     #     ppt_desc_file = '%sdata/data/ppt_desc.txt'%path00
     #     prev_mod_file = "%sruns/run20170320/output/snow.4085"%path00
-    print "pulling in data from config file"
-    tt = cfp.ConfigParser() 
+    print("pulling in data from config file")
+    tt = cfp.ConfigParser()
     tt.read(config_file)
     cfg = dict(tt._sections)
     path00 = cfg['PATHS']['path00']
     pathtp = cfg['PATHS']['pathtp']
     st = pd.to_datetime(cfg['TIMES']['stime'])
     et = pd.to_datetime(cfg['TIMES']['etime'])
-    
+
     ft = pd.to_datetime(cfg['TIMES']['fetime'])
     prev_mod_file = cfg['FILES']['prev_mod_file']
-    
+
     ppt_desc_file = cfg['FILES']['ppt_desc_file']
     u  = int(cfg['GRID']['u'])
     v  = int(cfg['GRID']['v'])
@@ -499,13 +499,13 @@ def run_snobal(config_file):
     nx = int(cfg['GRID']['nx'])
     ny = int(cfg['GRID']['ny'])
     anyini = cfg['PATHS']['anyini']
-    
+
     cfg0 = cfp.RawConfigParser()
     cfg0.read(anyini)
     dem0 = cfg0.get('TOPO','dem')
-    
 
-    print "calculating time vars"
+
+    print("calculating time vars")
     wyh = pd.to_datetime('%s-10-01'%pm.wyb(et))
     tt = st-wyh
     offset = tt.days*24 +  tt.seconds//3600 # start index for the input file
@@ -514,16 +514,16 @@ def run_snobal(config_file):
     pathi =    '%sdata/data/input/'%path00
     pathinit = '%sdata/data/init/'%path00
     pathr =    '%sruns/run%s'%(path00,et.strftime("%Y%m%d"))
-    pathro =   '%s/output'%pathr 
-    
-    print "making dirs"
+    pathro =   '%s/output'%pathr
+
+    print("making dirs")
     # create the run directory
     if not os.path.exists(pathro):
         os.makedirs(pathro)
         os.makedirs(pathinit)
-        
+
         # make the initial conditions file (init)
-    print "making initial conds img"
+    print("making initial conds img")
     rl0 = '%sz0.ipw'%pathtp
     i_dem = ipw.IPW('%s%s'%(pathtp,dem0))
     i_rl0 = ipw.IPW(rl0)
@@ -538,7 +538,7 @@ def run_snobal(config_file):
         i_out.new_band(i_in.bands[5].data) # lower layer temp
         i_out.new_band(i_in.bands[6].data) # avgerage snow temp
         i_out.new_band(i_in.bands[8].data) # percent saturation
-        i_out.add_geo_hdr([u, v], [du, dv], units, csys)        
+        i_out.add_geo_hdr([u, v], [du, dv], units, csys)
         i_out.write('%sinit%04d.ipw'%(pathinit,offset), nbits)
     else:
         zs0 = np.zeros((ny,nx))
@@ -550,21 +550,21 @@ def run_snobal(config_file):
         i_out.new_band(zs0) # 0ts active
         i_out.new_band(zs0) # 0ts avg
         i_out.new_band(zs0) # 0liquid
-        i_out.add_geo_hdr([u, v], [du, dv], units, csys)        
+        i_out.add_geo_hdr([u, v], [du, dv], units, csys)
         i_out.write('%sinit%04d.ipw'%(pathinit,offset), nbits)
 
     # develop the command to run the model
-    print "developing command and running"
+    print("developing command and running")
     tt = ft-st                              # get a time delta to get hours from water year start
     # tt = et-st
     tmstps = tt.days*24 +  tt.seconds//3600 # start index for the input file
     run_cmd = "time isnobal -v -P 20 -r %s -t 60 -n %s -I %sinit%04d.ipw -p %s -d 0.15 -i %sin -O 24 -e em -s snow > %s/sout%s.txt 2>&1"%(offset,tmstps,pathinit,offset,ppt_desc_file,pathi,pathr,et.strftime("%Y%m%d"))
 #     run_cmd = "time isnobal -v -P 20 -t 60 -n %s -I %sinit%04d.ipw -p %s -d 0.15 -i %sin -O 24 -e em -s snow > %s/sout%s.txt 2>&1"%(tmstps,pathinit,offset,ppt_desc_file,pathi,pathr,et.strftime("%Y%m%d"))
-    
+
     os.chdir(pathro)
     os.system(run_cmd)
-    
-    print "convert all .ipw output files to netcdf files"
+
+    print("convert all .ipw output files to netcdf files")
     ###################################################################################################
     ### convert all .ipw output files to netcdf files #################################################
     ###################################################################################################
@@ -572,7 +572,7 @@ def run_snobal(config_file):
     # create the x,y vectors
     x = v + dv*np.arange(nx)
     y = u + du*np.arange(ny)
-    
+
     #===============================================================================
     # NetCDF EM image
     #===============================================================================
@@ -586,12 +586,12 @@ def run_snobal(config_file):
     netcdfFile = os.path.join(pathr, 'em.nc')
     dimensions = ('time','y','x')
     em = nc.Dataset(netcdfFile, 'w')
-    
+
     # create the dimensions
     em.createDimension('time',None)
     em.createDimension('y',ny)
     em.createDimension('x',nx)
-    
+
     # create some variables
     em.createVariable('time', 'f', dimensions[0])
     em.createVariable('y', 'f', dimensions[1])
@@ -602,7 +602,7 @@ def run_snobal(config_file):
     setattr(em.variables['time'], 'time_zone', time_zone)
     em.variables['x'][:] = x
     em.variables['y'][:] = y
-    
+
     # em image
     for i,v in enumerate(m['name']):
         em.createVariable(v, 'f', dimensions[:3], chunksizes=(24,10,10))
@@ -612,7 +612,7 @@ def run_snobal(config_file):
     #===============================================================================
     # NetCDF SNOW image
     #===============================================================================
-    
+
     s = {}
     s['name'] = ['thickness','snow_density','specific_mass','liquid_water','temp_surf','temp_lower','temp_snowcover','thickness_lower','water_saturation']
     s['units'] = ['m','kg m-3','kg m-2','kg m-2','C','C','C','m','percent']
@@ -620,7 +620,7 @@ def run_snobal(config_file):
                        'Predicted mass of liquid water in the snowcover','Predicted temperature of the surface layer',
                        'Predicted temperature of the lower layer','Predicted temperature of the snowcover',
                        'Predicted thickness of the lower layer', 'Predicted percentage of liquid water saturation of the snowcover']
-    
+
     netcdfFile = os.path.join(pathr, 'snow.nc')
     dimensions = ('time','y','x')
     snow = nc.Dataset(netcdfFile, 'w')
@@ -629,12 +629,12 @@ def run_snobal(config_file):
     snow.createDimension('time',None)
     snow.createDimension('y',ny)
     snow.createDimension('x',nx)
-    
+
     # create some variables
     snow.createVariable('time', 'f', dimensions[0])
     snow.createVariable('y', 'f', dimensions[1])
     snow.createVariable('x', 'f', dimensions[2])
-    
+
     setattr(snow.variables['time'], 'units', 'hours since %s' % wyh)
     setattr(snow.variables['time'], 'calendar', 'standard')
     setattr(snow.variables['time'], 'time_zone', time_zone)
@@ -643,20 +643,20 @@ def run_snobal(config_file):
 
     # snow image
     for i,v in enumerate(s['name']):
-        
+
         snow.createVariable(v, 'f', dimensions[:3], chunksizes=(6,10,10))
         setattr(snow.variables[v], 'units', s['units'][i])
         setattr(snow.variables[v], 'description', s['description'][i])
-    
+
     #===============================================================================
     # Get all files in the directory, open ipw file, and add to netCDF
     #===============================================================================
-    
+
     # get all the files in the directory
     d = sorted(glob.glob("%s/snow*"%pathro), key=os.path.getmtime)
     pbar = progressbar.ProgressBar(max_value=len(d)).start()
     j = 0
-    
+
     for f in d:
         # get the hr
         head, nm = os.path.split(f)
@@ -664,20 +664,20 @@ def run_snobal(config_file):
         hr = int(hr)
         snow.variables['time'][j] = hr+1
         em.variables['time'][j] = hr+1
-                   
+
         # Read the IPW file
         i = ipw.IPW(f)
-        
+
         # output to the snow netcdf file
         for b,var in enumerate(s['name']):
             snow.variables[var][j,:] = i.bands[b].data
-            
+
         # output to the em netcdf file
         emFile = "%s/%s.%04i" % (head, 'em', hr)
         i = ipw.IPW(emFile)
         for b,var in enumerate(m['name']):
             em.variables[var][j,:] = i.bands[b].data
-    
+
         em.sync()
         snow.sync()
         j += 1
@@ -685,5 +685,3 @@ def run_snobal(config_file):
     pbar.finish()
     snow.close()
     em.close()
-    
-    

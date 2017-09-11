@@ -16,7 +16,7 @@ def nc2ipw_mea(self):
     '''
     might split this function into one for precip and one for other forcings later
     '''
-    print "making the ipw files from NetCDF files (meas)"
+    print("making the ipw files from NetCDF files (meas)")
 
     wyh = pd.to_datetime('%s-10-01'%pm.wyb(self.et))
     tt = self.st-wyh

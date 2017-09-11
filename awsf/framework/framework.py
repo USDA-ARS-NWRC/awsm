@@ -83,9 +83,11 @@ class AWSF():
         self.pathtp = self.config['paths']['pathtp']
         self.tmpdir = self.config['paths']['tmpdir']
         self.anyini = self.config['paths']['smrfini']
+
         self.st = pd.to_datetime(self.config['times']['stime'])
         self.et = pd.to_datetime(self.config['times']['etime'])
         self.tmz = self.config['times']['time_zone']
+
         self.u  = int(self.config['grid']['u'])
         self.v  = int(self.config['grid']['v'])
         self.du  = int(self.config['grid']['du'])
@@ -99,6 +101,7 @@ class AWSF():
             self.ppt_desc_file = self.config['files']['ppt_desc_file']
         else:
             self.ppt_desc_file = '%sdata/data/ppt_desc%s.txt'%(self.path00,self.et.strftime("%Y%m%d"))
+
         self.anyini = self.config['paths']['smrfini']
         self.forecast_flag = 0
         if 'fetime' in self.config['times']:

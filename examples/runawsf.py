@@ -5,9 +5,9 @@
 import awsf
 from datetime import datetime
 import sys
-import faulthandler
+#import faulthandler
 
-faulthandler.enable()
+#faulthandler.enable()
 
 start = datetime.now()
 
@@ -33,10 +33,10 @@ with awsf.framework.framework.AWSF(configFile) as s:
     s.mk_directories()
 
     # 2. distribute data by running smrf
-    # s.runSmrf()
+    s.runSmrf()
 
     # 3. convert smrf output to ipw for iSnobal
-    # s.nc2ipw()
+    #s.nc2ipw()
 
     # 4. run iSnobal
     # s.run_isnobal()

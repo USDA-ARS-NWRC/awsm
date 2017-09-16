@@ -1,15 +1,17 @@
 import smrf
 from smrf import ipw
+from smrf.utils import io
 import ConfigParser as cfp
 from awsf import premodel as pm
 import os
 import pandas as pd
 import numpy as np
 import netCDF4 as nc
-import faulthandler
+#import faulthandler
 import progressbar
 from datetime import datetime
 import sys
+from smrf.utils import io
 
 def smrfMEAS(self):
     '''
@@ -24,51 +26,65 @@ def smrfMEAS(self):
     print("writing the config file for smrf (meas)")
     meas_ini_file = "%s_%ssmrf.ini"%(self.pathws, self.et.strftime("%Y%m%d"))
 
-    cfg0 = cfp.SafeConfigParser()
-    cfg0.read(self.anyini)
-    topotype = cfg0.get('TOPO', 'type')
+    # use ini checking functionality to write out smrf input
+
+    if os.path.isfile(self.anyini):
+        cfg0 = io.read_config(self.anyini)
+        config = io.get_master_config()
+        cfg0 = io.add_defaults(cfg0,config)
+        warnings, errors = io.check_config_file(cfg0,config)
+        io.print_config_report(warnings,errors)
+    else:
+        raise IOError('File does not exist.')
+
+    # set new parameters
+    topotype = cfg0['topo']['type']
     if topotype == 'ipw':
-        tt = cfg0.get('TOPO','dem')
+        tt = cfg0['topo']['dem']
         tt = os.path.basename(tt)
-        cfg0.set('TOPO','dem','%s%s'%(self.pathtp,tt))
-        tt = cfg0.get('TOPO','veg_type')
+        cfg0['topo']['dem'] = (self.pathtp+tt)
+        tt = cfg0['topo']['veg_type']
         tt = os.path.basename(tt)
-        cfg0.set('TOPO','veg_type','%s%s'%(self.pathtp,tt))
-        tt = cfg0.get('TOPO','veg_height')
+        cfg0['topo']['veg_type'] = (self.pathtp+tt)
+        tt = cfg0['topo']['veg_height']
         tt = os.path.basename(tt)
-        cfg0.set('TOPO','veg_height','%s%s'%(self.pathtp,tt))
-        tt = cfg0.get('TOPO','veg_k')
+        cfg0['topo']['veg_height'] = (self.pathtp+tt)
+        tt = cfg0['topo']['veg_k']
         tt = os.path.basename(tt)
-        cfg0.set('TOPO','veg_k','%s%s'%(self.pathtp,tt))
-        tt = cfg0.get('TOPO','veg_tau')
+        cfg0['topo']['veg_k'] = (self.pathtp+tt)
+        tt = cfg0['topo']['veg_tau']
         tt = os.path.basename(tt)
-        cfg0.set('TOPO','veg_tau','%s%s'%(self.pathtp,tt))
+        cfg0['topo']['veg_tau'] = (self.pathtp+tt)
     elif topotype == 'netcdf':
-        tt = cfg0.get('TOPO','filename')
+        tt = cfg0['topo']['filename']
         tt = os.path.basename(tt)
-        cfg0.set('TOPO','filename','%s%s'%(self.pathtp,tt))
-        print(cfg0.get('TOPO', 'filename') )
-    cfg0.set('TiMe','start_date',self.st.strftime('%Y-%m-%d %H:%M'))
-    cfg0.set('TiMe','end_date',self.et.strftime('%Y-%m-%d %H:%M'))
-    cfg0.set('TiMe','time_zone',self.tmz)
+        cfg0['topo']['filename'] = (self.pathtp+tt)
+        print(cfg0['topo']['filename'])
+        self._logger.info('DEM file: --> %s'.format(cfg0['topo']['filename']) )
+    cfg0['time']['start_date'] = self.st.strftime('%Y-%m-%d %H:%M')
+    cfg0['time']['end_date'] = self.et.strftime('%Y-%m-%d %H:%M')
+    cfg0['time']['time_zone'] = self.tmz
     # cfg0.set('wind','maxus_netcdf','%smaxus.nc'%self.pathtp)
     # cfg0.set('output','out_location',self.paths)
     # if cfg0.has_option('logging','log_file'):
     #     cfg0.set('logging','log_file','%s/out%s.log'%(self.paths,self.et.strftime("%Y%m%d")))
-    # cfg0.set('system','tmp_dir',self.tmpdir)
+    cfg0['system']['temp_dir'] = self.tmpdir
 
-    with open(meas_ini_file, 'wb') as configfile:
-      cfg0.write(configfile)
+    # write new ini
+    print("Writing complete config file showing all defaults of values that were not provided...")
+    print('{0}'.format(meas_ini_file))
+    io.generate_config(cfg0, meas_ini_file, inicheck=True)
 
+    ####
 
     ###################################################################################################
     ### run smrf with the config file we just made ####################################################
     ###################################################################################################
     print("running smrf (meas)")
-    faulthandler.enable()
+    #faulthandler.enable()
 
     with smrf.framework.SMRF(meas_ini_file) as s:
-        try:
+        #try:
             # 2. load topo data
             s.loadTopo()
 
@@ -90,7 +106,7 @@ def smrfMEAS(self):
 
             s._logger.info(datetime.now() - start)
 
-        except Exception as e:
+        #except Exception as e:
             #print 'Error: %s' % e
             s._logger.error(e)
 
@@ -98,7 +114,7 @@ def run_isnobal(self):
 
     cfg0 = cfp.RawConfigParser()        # initiate config parser
     cfg0.read(self.anyini)              # read in config file
-    topotype = cfg0.get('TOPO', 'type')
+    topotype = cfg0.get('topo', 'type')
 
 
     print("calculating time vars")
@@ -126,11 +142,11 @@ def run_isnobal(self):
 
     # making dem band
     if topotype == 'ipw':
-        dem0 = cfg0.get('TOPO','dem')  # pull in location of the dem
+        dem0 = cfg0.get('topo','dem')  # pull in location of the dem
         i_dem = ipw.IPW('%s%s'%(self.pathtp,dem0))
         i_out.new_band(i_dem.bands[0].data)
     elif topotype == 'netcdf':
-        dem0 = cfg0.get('TOPO', 'filename')
+        dem0 = cfg0.get('topo', 'filename')
         dem_file = nc.Dataset(dem0, 'r')
         i_dem = dem_file['dem'][:]
         i_out.new_band(i_dem)

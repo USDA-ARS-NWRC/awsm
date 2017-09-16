@@ -6,7 +6,7 @@ import os
 import pandas as pd
 import numpy as np
 import netCDF4 as nc
-import faulthandler
+#import faulthandler
 import progressbar
 
 def nc2ipw_mea(self):

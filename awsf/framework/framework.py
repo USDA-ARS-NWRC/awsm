@@ -81,7 +81,10 @@ class AWSF():
         self.path00 = self.config['paths']['path00']
         self.pathws = self.config['paths']['pathws']
         self.pathtp = self.config['paths']['pathtp']
-        self.tmpdir = self.config['paths']['tmpdir']
+        self.tmpdir = os.path.abspath(self.config['paths']['tmpdir'])
+
+        self._logger.info('tmpdir: {}'.format(self.tmpdir))
+
         self.anyini = self.config['paths']['smrfini']
 
         self.st = pd.to_datetime(self.config['times']['stime'])

@@ -163,7 +163,7 @@ class AWSF():
         # modify config and run smrf
         smin.run_isnobal(self)
 
-    def mk_directories(self):
+    def mk_directories_dev(self):
         # rigid directory work
         self._logger.info('AWSF creating directories')
         # make basin path

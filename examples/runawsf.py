@@ -33,7 +33,7 @@ with awsf.framework.framework.AWSF(configFile) as s:
     s.mk_directories()
 
     # 2. distribute data by running smrf
-    s.runSmrf()
+    # s.runSmrf()
 
     # 3. convert smrf output to ipw for iSnobal
     #s.nc2ipw()

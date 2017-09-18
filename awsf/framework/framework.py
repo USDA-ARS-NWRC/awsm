@@ -78,14 +78,23 @@ class AWSF():
 
         self._logger = logging.getLogger(__name__)
 
-        self.path00 = self.config['paths']['path00']
-        self.pathws = self.config['paths']['pathws']
-        self.pathtp = self.config['paths']['pathtp']
-        self.tmpdir = os.path.abspath(self.config['paths']['tmpdir'])
+        self.path_dr = self.config['paths']['path_dr']
+        self.basin = self.config['paths']['basin']
+        if 'wy' in self.config['paths']:
+            self.wy = self.config['paths']['wy']
+        self.isops = self.config['paths']['isops']
+        self.basin = self.config['paths']['basin']
+        if 'proj' in self.config['paths']:
+            self.proj = self.config['paths']['proj']
+        self.isops = self.config['paths']['isops']
+        self.desc = self.config['paths']['desc']
 
-        self._logger.info('tmpdir: {}'.format(self.tmpdir))
+        if 'pathws' in self.config['paths']:
+            self.pathws = self.config['paths']['pathws']
+        if 'pathtp' in self.config['paths']:
+            self.pathtp = self.config['paths']['pathtp']
 
-        self.anyini = self.config['paths']['smrfini']
+        #self.anyini = self.config['paths']['smrfini']
 
         self.st = pd.to_datetime(self.config['times']['stime'])
         self.et = pd.to_datetime(self.config['times']['etime'])
@@ -105,7 +114,7 @@ class AWSF():
         else:
             self.ppt_desc_file = '%sdata/data/ppt_desc%s.txt'%(self.path00,self.et.strftime("%Y%m%d"))
 
-        self.anyini = self.config['paths']['smrfini']
+        #self.anyini = self.config['paths']['smrfini']
         self.forecast_flag = 0
         if 'fetime' in self.config['times']:
             self.forecast_flag = 1
@@ -157,25 +166,68 @@ class AWSF():
     def mk_directories(self):
         # rigid directory work
         self._logger.info('AWSF creating directories')
+        # make basin path
+        self.path_ba = os.path.join(self.path_dr,self.basin)
 
-        if not os.path.exists(self.path00):  # if the working path specified in the config file does not exist
-            y_n = 'a'                        # set a funny value to y_n
-            while y_n not in ['y','n']:      # while it is not y or n (for yes or no)
-                y_n = raw_input('Directory %s does not exist. Create base directory and all subdirectories? (y n): '%self.path00)
-            if y_n == 'n':
-                print('Please fix the base directory (path00) in your config file.')
-            elif y_n =='y':
-                os.makedirs('%sdata/data/smrfOutputs/'%self.path00)
-                os.makedirs('%sdata/data/input/'%self.path00)
-                os.makedirs('%sdata/data/ppt_4b/'%self.path00)
-                os.makedirs('%sdata/forecast/'%self.path00)
-                os.makedirs('%sruns/'%self.path00)
+        # check if ops or dev
+        if self.isops:
+            self.path_od = os.path.join(self.path_ba,'ops')
+            # check if specified water year
+            if len(str(self.wy)) > 1:
+                self.path_wy = os.path.join(self.path_od,str(self.wy))
+            else:
+                self.path_wy = self.path_od
 
-        self.paths = '%sdata/data/smrfOutputs/'%self.path00
+        else:
+            self.path_od = os.path.join(self.path_ba,'devel')
+            self.path_proj = os.path.join(self.path_od, self.proj)
+
+            if len(str(wy)) > 1:
+                self.path_wy = os.path.join(self.path_proj,str(self.wy))
+            else:
+                self.path_wy = self.path_proj
+
+        if os.path.exists(self.path_dr):
+            if not os.path.exists(self.path_wy):  # if the working path specified in the config file does not exist
+                y_n = 'a'                        # set a funny value to y_n
+                while y_n not in ['y','n']:      # while it is not y or n (for yes or no)
+                    y_n = raw_input('Directory %s does not exist. Create base directory and all subdirectories? (y n): '%self.path_wy)
+                if y_n == 'n':
+                    print('Please fix the base directory (path_wy) in your config file.')
+                elif y_n =='y':
+                    os.makedirs(os.path.join(self.path_wy, 'data/smrfOutputs/'))
+                    os.makedirs(os.path.join(self.path_wy, 'data/input/'))
+                    os.makedirs(os.path.join(self.path_wy, 'data/ppt_4b/'))
+                    os.makedirs(os.path.join(self.path_wy, 'data/forecast/'))
+                    os.makedirs(os.path.join(self.path_wy, 'runs/'))
+
+                # look for description or prompt for one
+                if len(self.desc) > 1:
+                    pass
+                else:
+                    self.desc = raw_input('\nNo description for project. Enter one now:\n')
+                # find where to write file
+                if self.isops:
+                    fp_desc = os.path.join(self.path_od, 'projectDescription.txt')
+                else:
+                    fp_desc = os.path.join(self.path_proj, 'projectDescription.txt')
+
+                if not os.path.isfile(fp_desc):
+                    f = open(fp_desc, 'w')
+                    f.write(self.desc)
+                    f.close()
+                else:
+                    self._logger.warning('Description file aleardy exists')
+
+
+        else:
+            self._logger.error('Base directory did not exit, not safe to conitnue')
+
+        self.paths = os.path.join(self.path_wy,'data/data/smrfOutputs')
+
 
     def __enter__(self):
         return self
-
 
     def __exit__(self, exc_type, exc_value, traceback):
         """

@@ -129,15 +129,15 @@ def run_isnobal(self):
 
 
     print("calculating time vars")
-    wyh = pd.to_datetime('%s-10-01'%pm.wyb(self.et))
-    tt = self.st-wyh
+    wyh = pd.to_datetime('%s-10-01'%pm.wyb(self.end_date))
+    tt = self.start_date-wyh
     offset = tt.days*24 +  tt.seconds//3600 # start index for the input file
     nbits = 16
 
-    pathi =    '%sdata/data/input/'%self.path00
-    pathinit = '%sdata/data/init/'%self.path00
-    pathr =    '%sruns/run%s'%(self.path00,self.et.strftime("%Y%m%d"))
-    pathro =   '%s/output'%pathr
+    pathi =    os.path.join(self.path_wy, 'data/data/input/')
+    pathinit = os.path.join(self.path_wy, 'data/data/init/')
+    pathr =    os.path.join(self.path_wy, 'runs/run{}'.format(self.et.strftime("%Y%m%d")))
+    pathro =   os.path.join(self.pathr, 'output/')
     print(pathr)
     print(pathro)
 

@@ -33,7 +33,6 @@ class AWSF():
         """
         Initialize the model, read config file, start and end date, and logging
         """
-        print('initializing AWSF')
         # read the config file and store
         if not os.path.isfile(configFile):
             raise Exception('Configuration file does not exist --> {}'
@@ -44,14 +43,15 @@ class AWSF():
 #         self.config = f.as_dict()
         try:
             self.config = io.read_config(configFile)
+            self.configFile = configFile
         except UnicodeDecodeError:
             raise UnicodeDecodeError('''The configuration file is not encoded in
                                     UTF-8, please change and retry''')
 
         # start logging
 
-        if 'log_level' in self.config['logging']:
-            loglevel = self.config['logging']['log_level'].upper()
+        if 'log_level' in self.config['awsf logging']:
+            loglevel = self.config['awsf logging']['log_level'].upper()
         else:
             loglevel = 'INFO'
 
@@ -61,8 +61,8 @@ class AWSF():
 
         # setup the logging
         logfile = None
-        if 'log_file' in self.config['logging']:
-            logfile = self.config['logging']['log_file']
+        if 'log_file' in self.config['awsf logging']:
+            logfile = self.config['awsf logging']['log_file']
 
         fmt = '%(levelname)s:%(name)s:%(message)s'
         if logfile is not None:
@@ -87,7 +87,10 @@ class AWSF():
         if 'proj' in self.config['paths']:
             self.proj = self.config['paths']['proj']
         self.isops = self.config['paths']['isops']
-        self.desc = self.config['paths']['desc']
+        if 'desc' in self.config['paths']:
+            self.desc = self.config['paths']['desc']
+        else:
+            self.desc = ''
 
         if 'pathws' in self.config['paths']:
             self.pathws = self.config['paths']['pathws']
@@ -96,9 +99,9 @@ class AWSF():
 
         #self.anyini = self.config['paths']['smrfini']
 
-        self.st = pd.to_datetime(self.config['times']['stime'])
-        self.et = pd.to_datetime(self.config['times']['etime'])
-        self.tmz = self.config['times']['time_zone']
+        self.start_date = pd.to_datetime(self.config['time']['start_date'])
+        self.end_date = pd.to_datetime(self.config['time']['end_date'])
+        self.tmz = self.config['time']['time_zone']
 
         self.u  = int(self.config['grid']['u'])
         self.v  = int(self.config['grid']['v'])
@@ -116,16 +119,21 @@ class AWSF():
 
         #self.anyini = self.config['paths']['smrfini']
         self.forecast_flag = 0
-        if 'fetime' in self.config['times']:
-            self.forecast_flag = 1
-            self.ft = pd.to_datetime(self.config['times']['fetime'])
+        # if 'fetime' in self.config['times']:
+        #     self.forecast_flag = 1
+        #     self.ft = pd.to_datetime(self.config['times']['fetime'])
         if 'prev_mod_file' in self.config['files']:
             self.prev_mod_file = self.config['files']['prev_mod_file']
 
-        if 'threads' in self.config['system']:
-            self.ithreads = self.config['system']['threads']
+        if 'ithreads' in self.config['isystem']:
+            self.ithreads = self.config['isystem']['ithreads']
         else:
             self.ithreads = 4
+
+        # list of sections releated to AWSF
+        self.sec_awsf = ['paths', 'grid', 'files', 'awsf logging', 'isystem']
+        # name of smrf file to write out
+        self.smrfini = self.config['paths']['smrfini']
 
         # self._logger.info('Started SMRF --> %s' % datetime.now())
         # self._logger.info('Model start --> %s' % self.start_date)
@@ -163,7 +171,7 @@ class AWSF():
         # modify config and run smrf
         smin.run_isnobal(self)
 
-    def mk_directories_dev(self):
+    def mk_directories(self):
         # rigid directory work
         self._logger.info('AWSF creating directories')
         # make basin path
@@ -223,7 +231,7 @@ class AWSF():
         else:
             self._logger.error('Base directory did not exit, not safe to conitnue')
 
-        self.paths = os.path.join(self.path_wy,'data/data/smrfOutputs')
+        self.paths = os.path.join(self.path_wy,'data/smrfOutputs')
 
 
     def __enter__(self):

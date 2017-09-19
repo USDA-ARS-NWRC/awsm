@@ -18,34 +18,34 @@ def nc2ipw_mea(self):
     '''
     print("making the ipw files from NetCDF files (meas)")
 
-    wyh = pd.to_datetime('%s-10-01'%pm.wyb(self.et))
-    tt = self.st-wyh
+    wyh = pd.to_datetime('%s-10-01'%pm.wyb(self.end_date))
+    tt = self.start_date-wyh
     offset = tt.days*24 +  tt.seconds//3600 # start index for the input file
     nbits = 16
 
     # File paths
-    th = '%sthermal.nc'%self.paths
+    th = os.path.join(self.paths,'thermal.nc')
     th_var = 'thermal'
-    ta = '%sair_temp.nc'%self.paths
+    ta = os.path.join(self.paths,'air_temp.nc')
     ta_var = 'air_temp'
-    ea = '%svapor_pressure.nc'%self.paths
+    ea = os.path.join(self.paths,'vapor_pressure.nc')
     ea_var = 'vapor_pressure'
-    wind = '%swind_speed.nc'%self.paths
+    wind = os.path.join(self.paths,'wind_speed.nc')
     wind_var = 'wind_speed'
-    tg_step = -2.5*np.ones((self.ny,self.nx))
-    sn = '%snet_solar.nc'%self.paths
+    #tg_step = -2.5*np.ones((self.ny,self.nx))
+    sn = os.path.join(self.paths,'net_solar.nc')
     sn_var = 'net_solar'
-    in_path = '%sdata/data/input/'%self.path00
-    mp = '%sprecip.nc'%self.paths
+    in_path = os.path.join(self.path_wy,'data/input/')
+    mp = os.path.join(self.paths,'precip.nc')
     mp_var = 'precip'
-    ps = '%spercent_snow.nc'%self.paths
+    ps = os.path.join(self.paths,'percent_snow.nc')
     ps_var = 'percent_snow'
-    rho = '%ssnow_density.nc'%self.paths
+    rho = os.path.join(self.paths,'snow_density.nc')
     rho_var = 'snow_density'
-    tp = '%sdew_point.nc'%self.paths
+    tp = os.path.join(self.paths,'dew_point.nc')
     tp_var = 'dew_point'
-    in_pathp = '%sdata/data/ppt_4b'%self.path00
-    self.ppt_desc = '%sdata/data/ppt_desc%s.txt'%(self.path00,self.et.strftime("%Y%m%d"))
+    in_pathp = os.path.join(self.path_wy,'data/ppt_4b')
+    self.ppt_desc = os.path.join(self.path_wy, 'data/ppt_desc{}.txt'.format(self.end_date.strftime("%Y%m%d")))
     f = open(self.ppt_desc,'w')
 
 
@@ -72,9 +72,9 @@ def nc2ipw_mea(self):
       wind_step = wind_file.variables[wind_var][idxt,:]
       sn_step = sn_file.variables[sn_var][idxt,:]
       mp_step = mp_file.variables[mp_var][idxt,:]
-      # tg_step = np.ones_like(mp_step)*(-2.5) # ground temp
+      tg_step = np.ones_like(mp_step)*(-2.5) # ground temp
 
-      in_step = '%s/in.%04i' % (in_path, t)
+      in_step = os.path.join(in_path,'in.%04i'%(t) )
 
       i = smrf.ipw.IPW()
       i.new_band(trad_step)
@@ -95,7 +95,7 @@ def nc2ipw_mea(self):
           ps_step = ps_file.variables[ps_var][idxt,:]
           rho_step = rho_file.variables[rho_var][idxt,:]
           tp_step = tp_file.variables[tp_var][idxt,:]
-          in_stepp = os.path.join('%s/ppt.4b_%04i' % (in_pathp, t))
+          in_stepp = os.path.join(in_pathp, 'ppt.4b_%04i'%(t) )
           i = smrf.ipw.IPW()
           i.new_band(mp_step)
           i.new_band(ps_step)

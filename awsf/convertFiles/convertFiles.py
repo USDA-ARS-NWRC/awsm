@@ -45,7 +45,7 @@ def nc2ipw_mea(self):
     tp = os.path.join(self.paths,'dew_point.nc')
     tp_var = 'dew_point'
     in_pathp = os.path.join(self.path_wy,'data/ppt_4b')
-    self.ppt_desc = os.path.join(self.path_wy, 'data/ppt_desc{}.txt'.format(self.end_date.strftime("%Y%m%d")))
+    #self.ppt_desc = os.path.join(self.path_wy, 'data/ppt_desc{}.txt'.format(self.end_date.strftime("%Y%m%d")))
     f = open(self.ppt_desc,'w')
 
 

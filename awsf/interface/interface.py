@@ -95,7 +95,7 @@ def smrfMEAS(self):
 
     # with smrf.framework.SMRF(meas_ini_file) as s:
     with smrf.framework.SMRF(fp_smrfini) as s:
-        try:
+        #try:
             # 2. load topo data
             s.loadTopo()
 
@@ -117,16 +117,11 @@ def smrfMEAS(self):
 
             s._logger.info(datetime.now() - start)
 
-        except Exception as e:
-            print 'Error: %s' % e
-            s._logger.error(e)
+        # except Exception as e:
+        #     print 'Error: %s' % e
+        #     s._logger.error(e)
 
 def run_isnobal(self):
-
-    cfg0 = cfp.RawConfigParser()        # initiate config parser
-    cfg0.read(self.anyini)              # read in config file
-    topotype = cfg0.get('topo', 'type')
-
 
     print("calculating time vars")
     wyh = pd.to_datetime('%s-10-01'%pm.wyb(self.end_date))
@@ -134,10 +129,10 @@ def run_isnobal(self):
     offset = tt.days*24 +  tt.seconds//3600 # start index for the input file
     nbits = 16
 
-    pathi =    os.path.join(self.path_wy, 'data/data/input/')
-    pathinit = os.path.join(self.path_wy, 'data/data/init/')
-    pathr =    os.path.join(self.path_wy, 'runs/run{}'.format(self.et.strftime("%Y%m%d")))
-    pathro =   os.path.join(self.pathr, 'output/')
+    pathi =    os.path.join(self.path_wy, 'data/input/')
+    pathinit = os.path.join(self.path_wy, 'data/init/')
+    pathr =    os.path.join(self.path_wy, 'runs/run{}'.format(self.end_date.strftime("%Y%m%d")))
+    pathro =   os.path.join(pathr, 'output/')
     print(pathr)
     print(pathro)
 
@@ -152,20 +147,19 @@ def run_isnobal(self):
     i_out = ipw.IPW()
 
     # making dem band
-    if topotype == 'ipw':
-        dem0 = cfg0.get('topo','dem')  # pull in location of the dem
-        i_dem = ipw.IPW('%s%s'%(self.pathtp,dem0))
+    if self.topotype == 'ipw':
+        i_dem = ipw.IPW(self.fp_dem)
         i_out.new_band(i_dem.bands[0].data)
-    elif topotype == 'netcdf':
-        dem0 = cfg0.get('topo', 'filename')
-        dem_file = nc.Dataset(dem0, 'r')
+    elif self.topotype == 'netcdf':
+        dem_file = nc.Dataset(self.fp_dem, 'r')
         i_dem = dem_file['dem'][:]
         i_out.new_band(i_dem)
 
     if offset > 0:
       i_in = ipw.IPW(self.prev_mod_file)
       #             i_out.new_band(i_rl0.bands[0].data)
-      i_out.new_band(0.005*np.ones((self.ny,self.nx)))
+    #   i_out.new_band(0.005*np.ones((self.ny,self.nx)))
+      i_out.new_band(0.005*np.ones_like(i_dem))
       i_out.new_band(i_in.bands[0].data) # snow depth
       i_out.new_band(i_in.bands[1].data) # snow density
       i_out.new_band(i_in.bands[4].data) # active layer temp
@@ -190,26 +184,27 @@ def run_isnobal(self):
     print("developing command and running")
     nthreads = int(self.ithreads)
     if self.forecast_flag == 1:
-      tt = self.ft-self.st                              # get a time delta to get hours from water year start
+      tt = self.ft-self.start_date                              # get a time delta to get hours from water year start
       tmstps = tt.days*24 +  tt.seconds//3600 # start index for the input file
     else:
-      tt = self.et-self.st
+      tt = self.end_date-self.start_date
       tmstps = tt.days*24 +  tt.seconds//3600 # start index for the input file
 
-    print tmstps
+    # print self.ppt_desc
+    # print tmstps
     if offset>0:
         if (offset + tmstps) < 1000:
-            run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %sinit%04d.ipw -p %s -d 0.15 -i %sin -O 24 -e em -s snow > %s/sout%s.txt 2>&1"%(nthreads,offset,pathinit,offset,self.ppt_desc_file,pathi,pathr,self.et.strftime("%Y%m%d"))
+            run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %sinit%04d.ipw -p %s -d 0.15 -i %sin -O 24 -e em -s snow > %s/sout%s.txt 2>&1"%(nthreads,offset,pathinit,offset,self.ppt_desc,pathi,pathr,self.end_date.strftime("%Y%m%d"))
         else:
-            run_cmd = "time isnobal -v -P %d -r %s -t 60 -n %s -I %sinit%04d.ipw -p %s -d 0.15 -i %sin -O 24 -e em -s snow > %s/sout%s.txt 2>&1"%(nthreads,offset,tmstps,pathinit,offset,self.ppt_desc_file,pathi,pathr,self.et.strftime("%Y%m%d"))
+            run_cmd = "time isnobal -v -P %d -r %s -t 60 -n %s -I %sinit%04d.ipw -p %s -d 0.15 -i %sin -O 24 -e em -s snow > %s/sout%s.txt 2>&1"%(nthreads,offset,tmstps,pathinit,offset,self.ppt_desc,pathi,pathr,self.end_date.strftime("%Y%m%d"))
     else:
       if tmstps<1000:
-          run_cmd = "time isnobal -v -P %d -t 60 -n 1001 -I %sinit%04d.ipw -p %s -d 0.15 -i %sin -O 24 -e em -s snow > %s/sout%s.txt 2>&1"%(nthreads,pathinit,offset,self.ppt_desc_file,pathi,pathr,self.et.strftime("%Y%m%d"))
+          run_cmd = "time isnobal -v -P %d -t 60 -n 1001 -I %sinit%04d.ipw -p %s -d 0.15 -i %sin -O 24 -e em -s snow > %s/sout%s.txt 2>&1"%(nthreads,pathinit,offset,self.ppt_desc,pathi,pathr,self.end_date.strftime("%Y%m%d"))
       else:
-          run_cmd = "time isnobal -v -P %d -t 60 -n %s -I %sinit%04d.ipw -p %s -d 0.15 -i %sin -O 24 -e em -s snow > %s/sout%s.txt 2>&1"%(nthreads,tmstps,pathinit,offset,self.ppt_desc_file,pathi,pathr,self.et.strftime("%Y%m%d"))
+          run_cmd = "time isnobal -v -P %d -t 60 -n %s -I %sinit%04d.ipw -p %s -d 0.15 -i %sin -O 24 -e em -s snow > %s/sout%s.txt 2>&1"%(nthreads,tmstps,pathinit,offset,self.ppt_desc,pathi,pathr,self.end_date.strftime("%Y%m%d"))
 
-    print run_cmd
-    print offset
+    # print run_cmd
+    # print offset
 
     os.chdir(pathro)
     os.system(run_cmd)

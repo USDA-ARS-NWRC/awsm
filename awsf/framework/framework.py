@@ -112,10 +112,18 @@ class AWSF():
         self.nx = int(self.config['grid']['nx'])
         self.ny = int(self.config['grid']['ny'])
 
+        if self.config['topo']['type'] == 'ipw':
+            self.fp_dem = self.config['topo']['dem']  # pull in location of the dem
+        elif self.config['topo']['type'] == 'netcdf':
+            self.fp_dem = self.config['topo']['filename']
+
+        self.topotype = self.config['topo']['type']
+
         if 'ppt_desc_file' in self.config['files']:
-            self.ppt_desc_file = self.config['files']['ppt_desc_file']
+            self.ppt_desc = self.config['files']['ppt_desc_file']
         else:
-            self.ppt_desc_file = '%sdata/data/ppt_desc%s.txt'%(self.path00,self.et.strftime("%Y%m%d"))
+            # self.ppt_desc = '%sdata/ppt_desc%s.txt'%(self.path_wy,self.et.strftime("%Y%m%d"))
+            self.ppt_desc = ''
 
         #self.anyini = self.config['paths']['smrfini']
         self.forecast_flag = 0
@@ -205,6 +213,7 @@ class AWSF():
                 elif y_n =='y':
                     os.makedirs(os.path.join(self.path_wy, 'data/smrfOutputs/'))
                     os.makedirs(os.path.join(self.path_wy, 'data/input/'))
+                    os.makedirs(os.path.join(self.path_wy, 'data/init/'))
                     os.makedirs(os.path.join(self.path_wy, 'data/ppt_4b/'))
                     os.makedirs(os.path.join(self.path_wy, 'data/forecast/'))
                     os.makedirs(os.path.join(self.path_wy, 'runs/'))
@@ -232,7 +241,7 @@ class AWSF():
             self._logger.error('Base directory did not exit, not safe to conitnue')
 
         self.paths = os.path.join(self.path_wy,'data/smrfOutputs')
-
+        self.ppt_desc = os.path.join(self.path_wy, 'data/ppt_desc{}.txt'.format(self.end_date.strftime("%Y%m%d")))
 
     def __enter__(self):
         return self

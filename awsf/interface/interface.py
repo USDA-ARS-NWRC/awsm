@@ -81,6 +81,8 @@ def smrfMEAS(self):
     for key in smrf_cfg:
         if key in self.sec_awsf:
             del smrf_cfg[key]
+    # set ouput location in smrf config
+    smrf_cfg['output']['out_location'] = os.path.join(self.path_wy,'data/smrfOutputs/')
     fp_smrfini = os.path.join(os.path.dirname(self.configFile), self.smrfini)
 
     print("writing the config file for smrf (meas)")

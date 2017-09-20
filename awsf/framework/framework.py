@@ -213,7 +213,7 @@ class AWSF():
                 elif y_n =='y':
                     os.makedirs(os.path.join(self.path_wy, 'data/smrfOutputs/'))
                     os.makedirs(os.path.join(self.path_wy, 'data/input/'))
-                    os.makedirs(os.path.join(self.path_wy, 'data/init/'))
+                    #os.makedirs(os.path.join(self.path_wy, 'data/init/'))
                     os.makedirs(os.path.join(self.path_wy, 'data/ppt_4b/'))
                     os.makedirs(os.path.join(self.path_wy, 'data/forecast/'))
                     os.makedirs(os.path.join(self.path_wy, 'runs/'))

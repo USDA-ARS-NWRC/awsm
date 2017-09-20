@@ -140,9 +140,10 @@ def run_isnobal(self):
 
     # create the run directory
     if not os.path.exists(pathro):
-      print("making dirs")
-      os.makedirs(pathro)
-      os.makedirs(pathinit)
+        print("making dirs")
+        os.makedirs(pathro)
+    if not os.path.exists(pathinit):
+        os.makedirs(pathinit)
 
     # making initial conditions file
     print("making initial conds img")

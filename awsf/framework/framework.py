@@ -238,7 +238,7 @@ class AWSF():
 
 
         else:
-            self._logger.error('Base directory did not exit, not safe to conitnue')
+            self._logger.error('Base directory did not exist, not safe to conitnue')
 
         self.paths = os.path.join(self.path_wy,'data/smrfOutputs')
         self.ppt_desc = os.path.join(self.path_wy, 'data/ppt_desc{}.txt'.format(self.end_date.strftime("%Y%m%d")))

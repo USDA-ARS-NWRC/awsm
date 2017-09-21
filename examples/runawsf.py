@@ -16,7 +16,7 @@ start = datetime.now()
 # initialize the model
 # run the model
 
-configFile = '../test_data/AWSF_test_config_server.ini'
+configFile = '../test_data/AWSF_test_config.ini'
 if len(sys.argv) > 1:
     configFile = sys.argv[1]
 

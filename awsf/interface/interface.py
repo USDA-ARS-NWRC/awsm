@@ -75,7 +75,6 @@ def smrfMEAS(self):
 
     ####
     # Write out config file to run smrf
-    self.sec_awsf
     # make copy and delete only awsf sections
     smrf_cfg = self.config.copy()
     for key in smrf_cfg:
@@ -128,6 +127,7 @@ def run_isnobal(self):
     print("calculating time vars")
     wyh = pd.to_datetime('%s-10-01'%pm.wyb(self.end_date))
     tt = self.start_date-wyh
+    print tt
     offset = tt.days*24 +  tt.seconds//3600 # start index for the input file
     nbits = 16
 
@@ -143,7 +143,9 @@ def run_isnobal(self):
         print("making dirs")
         os.makedirs(pathro)
     if not os.path.exists(pathinit):
+        print("making dirs2")
         os.makedirs(pathinit)
+    print("done making dirs")
 
     # making initial conditions file
     print("making initial conds img")
@@ -194,10 +196,16 @@ def run_isnobal(self):
       tmstps = tt.days*24 +  tt.seconds//3600 # start index for the input file
 
     # print self.ppt_desc
-    # print tmstps
+    print tmstps
+    print offset
+    print pathi
+    cwd = os.getcwd()
+    fp_output = os.path.join(pathr,'sout{}.txt'.format(self.end_date.strftime("%Y%m%d")))
     if offset>0:
         if (offset + tmstps) < 1000:
-            run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %sinit%04d.ipw -p %s -d 0.15 -i %sin -O 24 -e em -s snow > %s/sout%s.txt 2>&1"%(nthreads,offset,pathinit,offset,self.ppt_desc,pathi,pathr,self.end_date.strftime("%Y%m%d"))
+            run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %sinit%04d.ipw -p %s -d 0.15 -i %sin -O 24 -e em -s snow > %s 2>&1"%(nthreads,offset,pathinit,offset,self.ppt_desc,pathi,fp_output)
+            print run_cmd
+            # run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %sinit%04d.ipw -p %s -d 0.15 -i %sin -O 24 -e em -s snow > %s/sout%s.txt 2>&1"%(nthreads,offset,pathinit,offset,self.ppt_desc,pathi,pathr,self.end_date.strftime("%Y%m%d"))
         else:
             run_cmd = "time isnobal -v -P %d -r %s -t 60 -n %s -I %sinit%04d.ipw -p %s -d 0.15 -i %sin -O 24 -e em -s snow > %s/sout%s.txt 2>&1"%(nthreads,offset,tmstps,pathinit,offset,self.ppt_desc,pathi,pathr,self.end_date.strftime("%Y%m%d"))
     else:

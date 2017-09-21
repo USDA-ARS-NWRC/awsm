@@ -233,11 +233,6 @@ class AWSF():
             else:
                 self._logger.warning('This has the potential to overwrite results in {}!!!'.format(self.pathd))
 
-            # look for description or prompt for one
-            if len(self.desc) > 1:
-                pass
-            else:
-                self.desc = raw_input('\nNo description for project. Enter one now:\n')
             # find where to write file
             if self.isops:
                 fp_desc = os.path.join(self.path_od, 'projectDescription.txt')
@@ -245,16 +240,21 @@ class AWSF():
                 fp_desc = os.path.join(self.path_proj, 'projectDescription.txt')
 
             if not os.path.isfile(fp_desc):
+                # look for description or prompt for one
+                if len(self.desc) > 1:
+                    pass
+                else:
+                    self.desc = raw_input('\nNo description for project. Enter one now:\n')
                 f = open(fp_desc, 'w')
                 f.write(self.desc)
                 f.close()
             else:
-                self._logger.warning('Description file aleardy exists')
+                self._logger.info('Description file aleardy exists')
 
             # assign path names for isnobal
             self.pathi =    os.path.join(self.pathd, 'input/')
             self.pathinit = os.path.join(self.pathd, 'init/')
-            self.pathr =    os.path.join(self.path_wy, 'runs/run{}'.format(self.start_date.strftime("%Y%m%d"), self.end_date.strftime("%Y%m%d")))
+            self.pathr =    os.path.join(self.path_wy, 'runs/run{}_{}'.format(self.start_date.strftime("%Y%m%d"), self.end_date.strftime("%Y%m%d")))
             self.pathro =   os.path.join(self.pathr, 'output/')
 
         else:

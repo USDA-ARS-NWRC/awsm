@@ -127,7 +127,6 @@ def run_isnobal(self):
     print("calculating time vars")
     wyh = pd.to_datetime('%s-10-01'%pm.wyb(self.end_date))
     tt = self.start_date-wyh
-    print tt
     offset = tt.days*24 +  tt.seconds//3600 # start index for the input file
     nbits = 16
 
@@ -135,8 +134,6 @@ def run_isnobal(self):
     pathinit = os.path.join(self.path_wy, 'data/init/')
     pathr =    os.path.join(self.path_wy, 'runs/run{}'.format(self.end_date.strftime("%Y%m%d")))
     pathro =   os.path.join(pathr, 'output/')
-    print(pathr)
-    print(pathro)
 
     # create the run directory
     if not os.path.exists(pathro):
@@ -195,27 +192,38 @@ def run_isnobal(self):
       tt = self.end_date-self.start_date
       tmstps = tt.days*24 +  tt.seconds//3600 # start index for the input file
 
-    # print self.ppt_desc
-    print tmstps
-    print offset
-    print pathi
+    # make paths absolute if they are not
     cwd = os.getcwd()
-    fp_output = os.path.join(pathr,'sout{}.txt'.format(self.end_date.strftime("%Y%m%d")))
+    if os.path.isabs(pathr):
+        fp_output = os.path.join(pathr,'sout{}.txt'.format(self.end_date.strftime("%Y%m%d")))
+    else:
+        fp_output = os.path.join(cwd, pathr,'sout{}.txt'.format(self.end_date.strftime("%Y%m%d")))
+    if os.path.isabs(self.ppt_desc):
+        fp_ppt_desc = self.ppt_desc
+    else:
+        fp_ppt_desc =  os.path.join(cwd, self.ppt_desc)
+    if os.path.isabs(pathi):
+        pass
+    else:
+        pathi = os.path.join(cwd,pathi)
+    if os.path.isabs(pathinit):
+        pass
+    else:
+        pathinit = os.path.join(cwd,pathinit)
+
+    # run iSnobal
     if offset>0:
         if (offset + tmstps) < 1000:
-            run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %sinit%04d.ipw -p %s -d 0.15 -i %sin -O 24 -e em -s snow > %s 2>&1"%(nthreads,offset,pathinit,offset,self.ppt_desc,pathi,fp_output)
+            run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %sinit%04d.ipw -p %s -d 0.15 -i %sin -O 24 -e em -s snow > %s 2>&1"%(nthreads,offset,pathinit,offset,fp_ppt_desc,pathi,fp_output)
             print run_cmd
             # run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %sinit%04d.ipw -p %s -d 0.15 -i %sin -O 24 -e em -s snow > %s/sout%s.txt 2>&1"%(nthreads,offset,pathinit,offset,self.ppt_desc,pathi,pathr,self.end_date.strftime("%Y%m%d"))
         else:
-            run_cmd = "time isnobal -v -P %d -r %s -t 60 -n %s -I %sinit%04d.ipw -p %s -d 0.15 -i %sin -O 24 -e em -s snow > %s/sout%s.txt 2>&1"%(nthreads,offset,tmstps,pathinit,offset,self.ppt_desc,pathi,pathr,self.end_date.strftime("%Y%m%d"))
+            run_cmd = "time isnobal -v -P %d -r %s -t 60 -n %s -I %sinit%04d.ipw -p %s -d 0.15 -i %sin -O 24 -e em -s snow > %s 2>&1"%(nthreads,offset,tmstps,pathinit,offset,fp_ppt_desc,pathi,fp_output)
     else:
       if tmstps<1000:
-          run_cmd = "time isnobal -v -P %d -t 60 -n 1001 -I %sinit%04d.ipw -p %s -d 0.15 -i %sin -O 24 -e em -s snow > %s/sout%s.txt 2>&1"%(nthreads,pathinit,offset,self.ppt_desc,pathi,pathr,self.end_date.strftime("%Y%m%d"))
+          run_cmd = "time isnobal -v -P %d -t 60 -n 1001 -I %sinit%04d.ipw -p %s -d 0.15 -i %sin -O 24 -e em -s snow > %s 2>&1"%(nthreads,pathinit,offset,fp_ppt_desc,pathi,fp_output)
       else:
-          run_cmd = "time isnobal -v -P %d -t 60 -n %s -I %sinit%04d.ipw -p %s -d 0.15 -i %sin -O 24 -e em -s snow > %s/sout%s.txt 2>&1"%(nthreads,tmstps,pathinit,offset,self.ppt_desc,pathi,pathr,self.end_date.strftime("%Y%m%d"))
-
-    # print run_cmd
-    # print offset
+          run_cmd = "time isnobal -v -P %d -t 60 -n %s -I %sinit%04d.ipw -p %s -d 0.15 -i %sin -O 24 -e em -s snow > %s 2>&1"%(nthreads,tmstps,pathinit,offset,fp_ppt_desc,pathi,fp_output)
 
     os.chdir(pathro)
     os.system(run_cmd)

@@ -38,9 +38,6 @@ class AWSF():
             raise Exception('Configuration file does not exist --> {}'
                             .format(configFile))
 
-#         f = MyParser()
-#         f.read(configFile)
-#         self.config = f.as_dict()
         try:
             self.config = io.read_config(configFile)
             self.configFile = configFile
@@ -49,7 +46,6 @@ class AWSF():
                                     UTF-8, please change and retry''')
 
         # start logging
-
         if 'log_level' in self.config['awsf logging']:
             loglevel = self.config['awsf logging']['log_level'].upper()
         else:
@@ -97,12 +93,11 @@ class AWSF():
         if 'pathtp' in self.config['paths']:
             self.pathtp = self.config['paths']['pathtp']
 
-        #self.anyini = self.config['paths']['smrfini']
-
         self.start_date = pd.to_datetime(self.config['time']['start_date'])
         self.end_date = pd.to_datetime(self.config['time']['end_date'])
         self.tmz = self.config['time']['time_zone']
 
+        # grid data for iSnobal
         self.u  = int(self.config['grid']['u'])
         self.v  = int(self.config['grid']['v'])
         self.du  = int(self.config['grid']['du'])
@@ -142,12 +137,6 @@ class AWSF():
         self.sec_awsf = ['paths', 'grid', 'files', 'awsf logging', 'isystem']
         # name of smrf file to write out
         self.smrfini = self.config['paths']['smrfini']
-
-        # self._logger.info('Started SMRF --> %s' % datetime.now())
-        # self._logger.info('Model start --> %s' % self.start_date)
-        # self._logger.info('Model end --> %s' % self.end_date)
-        # self._logger.info('Number of time steps --> %i' % self.time_steps)
-
 
     def runSmrf(self):
         """

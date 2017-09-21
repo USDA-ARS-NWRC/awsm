@@ -96,7 +96,7 @@ def nc2ipw_mea(self):
           ps_step = ps_file.variables[ps_var][idxt,:]
           rho_step = rho_file.variables[rho_var][idxt,:]
           tp_step = tp_file.variables[tp_var][idxt,:]
-          in_stepp = os.path.join(in_pathp, 'ppt.4b_%04i'%(t) )
+          in_stepp = os.path.join(os.path.abspath(in_pathp), 'ppt.4b_%04i'%(t) )
           i = smrf.ipw.IPW()
           i.new_band(mp_step)
           i.new_band(ps_step)

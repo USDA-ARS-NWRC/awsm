@@ -161,7 +161,7 @@ def run_isnobal(self):
       i_out.new_band(i_in.bands[6].data) # avgerage snow temp
       i_out.new_band(i_in.bands[8].data) # percent saturation
       i_out.add_geo_hdr([self.u, self.v], [self.du, self.dv], self.units, self.csys)
-      i_out.write('%sinit%04d.ipw'%(self.pathinit,offset), nbits)
+      i_out.write(os.path.join(self.pathinit,'init%04d.ipw'%(offset)), nbits)
     else:
       zs0 = np.zeros((self.ny,self.nx))
       i_out.new_band(0.005*np.ones((self.ny,self.nx)))
@@ -172,7 +172,8 @@ def run_isnobal(self):
       i_out.new_band(zs0) # 0ts avg
       i_out.new_band(zs0) # 0liquid
       i_out.add_geo_hdr([self.u, self.v], [self.du, self.dv], self.units, self.csys)
-      i_out.write('%sinit%04d.ipw'%(self.pathinit,offset), nbits)
+      #i_out.write('%sinit%04d.ipw'%(self.pathinit,offset), nbits)
+      i_out.write(os.path.join(self.pathinit,'init%04d.ipw'%(offset)), nbits)
 
     # develop the command to run the model
     print("developing command and running")
@@ -189,32 +190,35 @@ def run_isnobal(self):
     if os.path.isabs(self.pathr):
         self.fp_output = os.path.join(self.pathr,'sout{}.txt'.format(self.end_date.strftime("%Y%m%d")))
     else:
-        self.fp_output = os.path.join(cwd, self.pathr,'sout{}.txt'.format(self.end_date.strftime("%Y%m%d")))
+        self.fp_output = os.path.join(os.path.abspath(self.pathr),'sout{}.txt'.format(self.end_date.strftime("%Y%m%d")))
     if os.path.isabs(self.ppt_desc):
         self.fp_ppt_desc = self.ppt_desc
     else:
-        self.fp_ppt_desc =  os.path.join(cwd, self.ppt_desc)
+        #self.fp_ppt_desc =  os.path.join(cwd, self.ppt_desc)
+        self.fp_ppt_desc =  os.path.abspath(self.ppt_desc)
     if os.path.isabs(self.pathi):
         pass
     else:
-        self.pathi = os.path.join(cwd,self.pathi)
+        #self.pathi = os.path.join(cwd,self.pathi)
+        self.pathi = os.path.abspath(self.pathi)
     if os.path.isabs(self.pathinit):
         pass
     else:
-        self.pathinit = os.path.join(cwd,self.pathinit)
+        #self.pathinit = os.path.join(cwd,self.pathinit)
+        self.pathinit = os.path.abspath(self.pathinit)
 
     # run iSnobal
     if offset>0:
         if (offset + tmstps) < 1000:
-            run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %sinit%04d.ipw -p %s -d 0.15 -i %sin -O 24 -e em -s snow > %s 2>&1"%(nthreads,offset,self.pathinit,offset,self.fp_ppt_desc,self.pathi,self.fp_output)
+            run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %s/init%04d.ipw -p %s -d 0.15 -i %s/in -O 24 -e em -s snow > %s 2>&1"%(nthreads,offset,self.pathinit,offset,self.fp_ppt_desc,self.pathi,self.fp_output)
             # run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %sinit%04d.ipw -p %s -d 0.15 -i %sin -O 24 -e em -s snow > %s/sout%s.txt 2>&1"%(nthreads,offset,pathinit,offset,self.ppt_desc,pathi,pathr,self.end_date.strftime("%Y%m%d"))
         else:
-            run_cmd = "time isnobal -v -P %d -r %s -t 60 -n %s -I %sinit%04d.ipw -p %s -d 0.15 -i %sin -O 24 -e em -s snow > %s 2>&1"%(nthreads,offset,tmstps,self.pathinit,offset,self.fp_ppt_desc,self.pathi,self.fp_output)
+            run_cmd = "time isnobal -v -P %d -r %s -t 60 -n %s -I %s/init%04d.ipw -p %s -d 0.15 -i %s/in -O 24 -e em -s snow > %s 2>&1"%(nthreads,offset,tmstps,self.pathinit,offset,self.fp_ppt_desc,self.pathi,self.fp_output)
     else:
       if tmstps<1000:
-          run_cmd = "time isnobal -v -P %d -t 60 -n 1001 -I %sinit%04d.ipw -p %s -d 0.15 -i %sin -O 24 -e em -s snow > %s 2>&1"%(nthreads,self.pathinit,offset,self.fp_ppt_desc,self.pathi,self.fp_output)
+          run_cmd = "time isnobal -v -P %d -t 60 -n 1001 -I %s/init%04d.ipw -p %s -d 0.15 -i %s/in -O 24 -e em -s snow > %s 2>&1"%(nthreads,self.pathinit,offset,self.fp_ppt_desc,self.pathi,self.fp_output)
       else:
-          run_cmd = "time isnobal -v -P %d -t 60 -n %s -I %sinit%04d.ipw -p %s -d 0.15 -i %sin -O 24 -e em -s snow > %s 2>&1"%(nthreads,tmstps,self.pathinit,offset,self.fp_ppt_desc,self.pathi,self.fp_output)
+          run_cmd = "time isnobal -v -P %d -t 60 -n %s -I %s/init%04d.ipw -p %s -d 0.15 -i %s/in -O 24 -e em -s snow > %s 2>&1"%(nthreads,tmstps,self.pathinit,offset,self.fp_ppt_desc,self.pathi,self.fp_output)
 
     # change directories, run, and move back
     print run_cmd

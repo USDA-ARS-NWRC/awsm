@@ -38,7 +38,7 @@ with awsf.framework.framework.AWSF(configFile) as s:
         s.runSmrf()
 
     # 3. convert smrf output to ipw for iSnobal
-    tmp_in = raw_input('Convert to ipw? (y/n):')
+    tmp_in = raw_input('Convert smrf output to ipw? (y/n):')
     if tmp_in.lower() == 'y':
         s.nc2ipw()
 
@@ -48,4 +48,6 @@ with awsf.framework.framework.AWSF(configFile) as s:
         s.run_isnobal()
 
     # 5. convert ipw back to netcdf for processing
-    # s.ipw2nc()
+    tmp_in = raw_input('Convert ipw ouput to netcdf? (y/n):')
+    if tmp_in.lower() == 'y':
+        s.ipw2nc()

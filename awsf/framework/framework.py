@@ -96,6 +96,7 @@ class AWSF():
         self.start_date = pd.to_datetime(self.config['time']['start_date'])
         self.end_date = pd.to_datetime(self.config['time']['end_date'])
         self.tmz = self.config['time']['time_zone']
+        # self.wyh = pd.to_datetime('%s-10-01'%pm.wyb(self.end_date))
 
         # grid data for iSnobal
         self.u  = int(self.config['grid']['u'])
@@ -106,6 +107,7 @@ class AWSF():
         self.csys = self.config['grid']['csys']
         self.nx = int(self.config['grid']['nx'])
         self.ny = int(self.config['grid']['ny'])
+        self.nbits = int(self.config['grid']['nbits'])
 
         if self.config['topo']['type'] == 'ipw':
             self.fp_dem = self.config['topo']['dem']  # pull in location of the dem
@@ -140,9 +142,7 @@ class AWSF():
 
     def runSmrf(self):
         """
-        This initializes the distirbution classes based on the configFile
-        sections for each variable.
-        :func:`~smrf.framework.model_framework.SMRF.initializeDistribution`
+        Run smrf
         """
 
         # modify config and run smrf
@@ -150,25 +150,30 @@ class AWSF():
 
     def nc2ipw(self):
         """
-        This initializes the distirbution classes based on the configFile
-        sections for each variable.
-        :func:`~smrf.framework.model_framework.SMRF.initializeDistribution`
+        Convert ipw smrf output to isnobal inputs
         """
 
         cvf.nc2ipw_mea(self)
 
+    def ipw2nc(self):
+        """
+        convert ipw output to netcdf files
+        """
+
+        cvf.ipw2nc_mea(self)
+
     def run_isnobal(self):
         """
-        This initializes the distirbution classes based on the configFile
-        sections for each variable.
-        :func:`~smrf.framework.model_framework.SMRF.initializeDistribution`
-
+        Run isnobal
         """
 
         # modify config and run smrf
         smin.run_isnobal(self)
 
     def mk_directories(self):
+        """
+        Create all needed directories starting from the working drive
+        """
         # rigid directory work
         self._logger.info('AWSF creating directories')
         # make basin path
@@ -187,10 +192,13 @@ class AWSF():
             self.path_od = os.path.join(self.path_ba,'devel')
             self.path_proj = os.path.join(self.path_od, self.proj)
 
-            if len(str(wy)) > 1:
+            if len(str(self.wy)) > 1:
                 self.path_wy = os.path.join(self.path_proj,str(self.wy))
             else:
                 self.path_wy = self.path_proj
+
+        # specific data folder conatining
+        self.pathd = os.path.join(self.path_wy, 'data/data{}_{}'.format(self.start_date.strftime("%Y%m%d"), self.end_date.strftime("%Y%m%d")))
 
         if os.path.exists(self.path_dr):
             if not os.path.exists(self.path_wy):  # if the working path specified in the config file does not exist
@@ -200,37 +208,60 @@ class AWSF():
                 if y_n == 'n':
                     print('Please fix the base directory (path_wy) in your config file.')
                 elif y_n =='y':
-                    os.makedirs(os.path.join(self.path_wy, 'data/smrfOutputs/'))
-                    os.makedirs(os.path.join(self.path_wy, 'data/input/'))
-                    os.makedirs(os.path.join(self.path_wy, 'data/init/'))
-                    os.makedirs(os.path.join(self.path_wy, 'data/ppt_4b/'))
-                    os.makedirs(os.path.join(self.path_wy, 'data/forecast/'))
+                    os.makedirs(os.path.join(self.pathd, 'smrfOutputs/'))
+                    os.makedirs(os.path.join(self.pathd, 'input/'))
+                    os.makedirs(os.path.join(self.pathd, 'init/'))
+                    os.makedirs(os.path.join(self.pathd, 'ppt_4b/'))
+                    os.makedirs(os.path.join(self.pathd, 'forecast/'))
                     os.makedirs(os.path.join(self.path_wy, 'runs/'))
 
-                # look for description or prompt for one
-                if len(self.desc) > 1:
-                    pass
-                else:
-                    self.desc = raw_input('\nNo description for project. Enter one now:\n')
-                # find where to write file
-                if self.isops:
-                    fp_desc = os.path.join(self.path_od, 'projectDescription.txt')
-                else:
-                    fp_desc = os.path.join(self.path_proj, 'projectDescription.txt')
+            elif not os.path.exists(self.pathd):  # if the working path specified in the config file does not exist
+                y_n = 'a'                        # set a funny value to y_n
+                while y_n not in ['y','n']:      # while it is not y or n (for yes or no)
+                    y_n = raw_input('Directory %s does not exist. Create base directory and all subdirectories? (y n): '%self.pathd)
+                if y_n == 'n':
+                    print('Please fix the base directory (path_wy) in your config file.')
+                elif y_n =='y':
+                    os.makedirs(os.path.join(self.pathd, 'smrfOutputs/'))
+                    os.makedirs(os.path.join(self.pathd, 'input/'))
+                    os.makedirs(os.path.join(self.pathd, 'init/'))
+                    os.makedirs(os.path.join(self.pathd, 'ppt_4b/'))
+                    os.makedirs(os.path.join(self.pathd, 'forecast/'))
 
-                if not os.path.isfile(fp_desc):
-                    f = open(fp_desc, 'w')
-                    f.write(self.desc)
-                    f.close()
-                else:
-                    self._logger.warning('Description file aleardy exists')
+                if not os.path.exists(os.path.join(self.path_wy, 'runs/')):
+                    os.makedirs(os.path.join(self.path_wy, 'runs/'))
+            else:
+                self._logger.warning('This has the potential to overwrite results in {}!!!'.format(self.pathd))
 
+            # look for description or prompt for one
+            if len(self.desc) > 1:
+                pass
+            else:
+                self.desc = raw_input('\nNo description for project. Enter one now:\n')
+            # find where to write file
+            if self.isops:
+                fp_desc = os.path.join(self.path_od, 'projectDescription.txt')
+            else:
+                fp_desc = os.path.join(self.path_proj, 'projectDescription.txt')
+
+            if not os.path.isfile(fp_desc):
+                f = open(fp_desc, 'w')
+                f.write(self.desc)
+                f.close()
+            else:
+                self._logger.warning('Description file aleardy exists')
+
+            # assign path names for isnobal
+            self.pathi =    os.path.join(self.pathd, 'input/')
+            self.pathinit = os.path.join(self.pathd, 'init/')
+            self.pathr =    os.path.join(self.path_wy, 'runs/run{}'.format(self.start_date.strftime("%Y%m%d"), self.end_date.strftime("%Y%m%d")))
+            self.pathro =   os.path.join(self.pathr, 'output/')
 
         else:
             self._logger.error('Base directory did not exist, not safe to conitnue')
 
-        self.paths = os.path.join(self.path_wy,'data/smrfOutputs')
-        self.ppt_desc = os.path.join(self.path_wy, 'data/ppt_desc{}.txt'.format(self.end_date.strftime("%Y%m%d")))
+        self.paths = os.path.join(self.pathd,'smrfOutputs')
+        self.ppt_desc = os.path.join(self.pathd, 'ppt_desc{}.txt'.format(self.end_date.strftime("%Y%m%d")))
 
     def __enter__(self):
         return self

@@ -81,16 +81,16 @@ def smrfMEAS(self):
         if key in self.sec_awsf:
             del smrf_cfg[key]
     # set ouput location in smrf config
-    smrf_cfg['output']['out_location'] = os.path.join(self.path_wy,'data/smrfOutputs/')
+    smrf_cfg['output']['out_location'] = os.path.join(self.pathd,'smrfOutputs/')
     fp_smrfini = os.path.join(os.path.dirname(self.configFile), self.smrfini)
 
-    print("writing the config file for smrf (meas)")
+    print("writing the config file for smrf (meas)\n")
     io.generate_config(smrf_cfg, fp_smrfini, inicheck=False)
 
     ###################################################################################################
     ### run smrf with the config file we just made ####################################################
     ###################################################################################################
-    print "running smrf (meas)"
+    print("running smrf (meas)\n")
     faulthandler.enable()
     start = datetime.now()
 
@@ -128,21 +128,13 @@ def run_isnobal(self):
     wyh = pd.to_datetime('%s-10-01'%pm.wyb(self.end_date))
     tt = self.start_date-wyh
     offset = tt.days*24 +  tt.seconds//3600 # start index for the input file
-    nbits = 16
-
-    pathi =    os.path.join(self.path_wy, 'data/input/')
-    pathinit = os.path.join(self.path_wy, 'data/init/')
-    pathr =    os.path.join(self.path_wy, 'runs/run{}'.format(self.end_date.strftime("%Y%m%d")))
-    pathro =   os.path.join(pathr, 'output/')
+    nbits = self.nbits
 
     # create the run directory
-    if not os.path.exists(pathro):
-        print("making dirs")
-        os.makedirs(pathro)
-    if not os.path.exists(pathinit):
-        print("making dirs2")
-        os.makedirs(pathinit)
-    print("done making dirs")
+    if not os.path.exists(self.pathro):
+        os.makedirs(self.pathro)
+    if not os.path.exists(self.pathinit):
+        os.makedirs(self.pathinit)
 
     # making initial conditions file
     print("making initial conds img")
@@ -169,7 +161,7 @@ def run_isnobal(self):
       i_out.new_band(i_in.bands[6].data) # avgerage snow temp
       i_out.new_band(i_in.bands[8].data) # percent saturation
       i_out.add_geo_hdr([self.u, self.v], [self.du, self.dv], self.units, self.csys)
-      i_out.write('%sinit%04d.ipw'%(pathinit,offset), nbits)
+      i_out.write('%sinit%04d.ipw'%(self.pathinit,offset), nbits)
     else:
       zs0 = np.zeros((self.ny,self.nx))
       i_out.new_band(0.005*np.ones((self.ny,self.nx)))
@@ -180,7 +172,7 @@ def run_isnobal(self):
       i_out.new_band(zs0) # 0ts avg
       i_out.new_band(zs0) # 0liquid
       i_out.add_geo_hdr([self.u, self.v], [self.du, self.dv], self.units, self.csys)
-      i_out.write('%sinit%04d.ipw'%(pathinit,offset), nbits)
+      i_out.write('%sinit%04d.ipw'%(self.pathinit,offset), nbits)
 
     # develop the command to run the model
     print("developing command and running")
@@ -194,39 +186,41 @@ def run_isnobal(self):
 
     # make paths absolute if they are not
     cwd = os.getcwd()
-    if os.path.isabs(pathr):
-        fp_output = os.path.join(pathr,'sout{}.txt'.format(self.end_date.strftime("%Y%m%d")))
+    if os.path.isabs(self.pathr):
+        self.fp_output = os.path.join(self.pathr,'sout{}.txt'.format(self.end_date.strftime("%Y%m%d")))
     else:
-        fp_output = os.path.join(cwd, pathr,'sout{}.txt'.format(self.end_date.strftime("%Y%m%d")))
+        self.fp_output = os.path.join(cwd, self.pathr,'sout{}.txt'.format(self.end_date.strftime("%Y%m%d")))
     if os.path.isabs(self.ppt_desc):
-        fp_ppt_desc = self.ppt_desc
+        self.fp_ppt_desc = self.ppt_desc
     else:
-        fp_ppt_desc =  os.path.join(cwd, self.ppt_desc)
-    if os.path.isabs(pathi):
+        self.fp_ppt_desc =  os.path.join(cwd, self.ppt_desc)
+    if os.path.isabs(self.pathi):
         pass
     else:
-        pathi = os.path.join(cwd,pathi)
-    if os.path.isabs(pathinit):
+        self.pathi = os.path.join(cwd,self.pathi)
+    if os.path.isabs(self.pathinit):
         pass
     else:
-        pathinit = os.path.join(cwd,pathinit)
+        self.pathinit = os.path.join(cwd,self.pathinit)
 
     # run iSnobal
     if offset>0:
         if (offset + tmstps) < 1000:
-            run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %sinit%04d.ipw -p %s -d 0.15 -i %sin -O 24 -e em -s snow > %s 2>&1"%(nthreads,offset,pathinit,offset,fp_ppt_desc,pathi,fp_output)
-            print run_cmd
+            run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %sinit%04d.ipw -p %s -d 0.15 -i %sin -O 24 -e em -s snow > %s 2>&1"%(nthreads,offset,self.pathinit,offset,self.fp_ppt_desc,self.pathi,self.fp_output)
             # run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %sinit%04d.ipw -p %s -d 0.15 -i %sin -O 24 -e em -s snow > %s/sout%s.txt 2>&1"%(nthreads,offset,pathinit,offset,self.ppt_desc,pathi,pathr,self.end_date.strftime("%Y%m%d"))
         else:
-            run_cmd = "time isnobal -v -P %d -r %s -t 60 -n %s -I %sinit%04d.ipw -p %s -d 0.15 -i %sin -O 24 -e em -s snow > %s 2>&1"%(nthreads,offset,tmstps,pathinit,offset,fp_ppt_desc,pathi,fp_output)
+            run_cmd = "time isnobal -v -P %d -r %s -t 60 -n %s -I %sinit%04d.ipw -p %s -d 0.15 -i %sin -O 24 -e em -s snow > %s 2>&1"%(nthreads,offset,tmstps,self.pathinit,offset,self.fp_ppt_desc,self.pathi,self.fp_output)
     else:
       if tmstps<1000:
-          run_cmd = "time isnobal -v -P %d -t 60 -n 1001 -I %sinit%04d.ipw -p %s -d 0.15 -i %sin -O 24 -e em -s snow > %s 2>&1"%(nthreads,pathinit,offset,fp_ppt_desc,pathi,fp_output)
+          run_cmd = "time isnobal -v -P %d -t 60 -n 1001 -I %sinit%04d.ipw -p %s -d 0.15 -i %sin -O 24 -e em -s snow > %s 2>&1"%(nthreads,self.pathinit,offset,self.fp_ppt_desc,self.pathi,self.fp_output)
       else:
-          run_cmd = "time isnobal -v -P %d -t 60 -n %s -I %sinit%04d.ipw -p %s -d 0.15 -i %sin -O 24 -e em -s snow > %s 2>&1"%(nthreads,tmstps,pathinit,offset,fp_ppt_desc,pathi,fp_output)
+          run_cmd = "time isnobal -v -P %d -t 60 -n %s -I %sinit%04d.ipw -p %s -d 0.15 -i %sin -O 24 -e em -s snow > %s 2>&1"%(nthreads,tmstps,self.pathinit,offset,self.fp_ppt_desc,self.pathi,self.fp_output)
 
-    os.chdir(pathro)
+    # change directories, run, and move back
+    print run_cmd
+    os.chdir(self.pathro)
     os.system(run_cmd)
+    os.chdir(cwd)
 
 
 def restart_crash_image(init_fp_0, crash_fp, thresh):
@@ -238,7 +232,7 @@ def restart_crash_image(init_fp_0, crash_fp, thresh):
     date = int(date[len(date)-1])
 
     # new ipw image for initializing restart
-    print "making new init image"
+    print("making new init image")
     i_out = ipw.IPW()
 
     # read in crash image and old init image

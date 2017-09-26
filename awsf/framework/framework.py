@@ -135,8 +135,15 @@ class AWSF():
         else:
             self.ithreads = 4
 
+        if 'isnobal crash' in self.config:
+            if 'restart_crash' in self.config['isnobal crash']:
+                if self.config['isnobal crash']['restart_crash'] == True:
+                    self.new_init = self.config['isnobal crash']['new_init']
+                    self.depth_thresh = self.config['isnobal crash']['depth_thresh']
+                    self.restart_hr = int(self.config['isnobal crash']['wyh_restart_output'])
+
         # list of sections releated to AWSF
-        self.sec_awsf = ['paths', 'grid', 'files', 'awsf logging', 'isystem']
+        self.sec_awsf = ['paths', 'grid', 'files', 'awsf logging', 'isystem', 'isnobal restart']
         # name of smrf file to write out
         self.smrfini = self.config['paths']['smrfini']
 

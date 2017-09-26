@@ -33,21 +33,21 @@ with awsf.framework.framework.AWSF(configFile) as s:
     s.mk_directories()
 
     # 2. distribute data by running smrf
-    tmp_in = raw_input('Do you want to run smrf? (y/n):')
+    tmp_in = raw_input('Do you want to run smrf? (y/n):  ')
     if tmp_in.lower() == 'y':
         s.runSmrf()
 
     # 3. convert smrf output to ipw for iSnobal
-    tmp_in = raw_input('Convert smrf output to ipw? (y/n):')
+    tmp_in = raw_input('Convert smrf output to ipw? (y/n):  ')
     if tmp_in.lower() == 'y':
         s.nc2ipw()
 
     # 4. run iSnobal
-    tmp_in = raw_input('Run iSnobal? (y/n):')
+    tmp_in = raw_input('Run iSnobal? (y/n):  ')
     if tmp_in.lower() == 'y':
         s.run_isnobal()
 
     # 5. convert ipw back to netcdf for processing
-    tmp_in = raw_input('Convert ipw ouput to netcdf? (y/n):')
+    tmp_in = raw_input('Convert ipw ouput to netcdf? (y/n):  ')
     if tmp_in.lower() == 'y':
         s.ipw2nc()

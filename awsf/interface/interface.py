@@ -1,6 +1,7 @@
 import smrf
 from smrf import ipw
 from smrf.utils import io
+from smrf.utils import water_day
 import ConfigParser as cfp
 from awsf import premodel as pm
 import os
@@ -21,59 +22,7 @@ def smrfMEAS(self):
     # ###################################################################################################
     # ### read in base and write out the specific config file for smrf ##################################
     # ###################################################################################################
-    # print("writing the config file for smrf (meas)")
-    # meas_ini_file = "%s_%ssmrf.ini"%(self.pathws, self.et.strftime("%Y%m%d"))
-    #
-    # # use ini checking functionality to write out smrf input
-    #
-    # if os.path.isfile(self.anyini):
-    #     cfg0 = io.read_config(self.anyini)
-    #     config = io.get_master_config()
-    #     cfg0 = io.add_defaults(cfg0,config)
-    #     warnings, errors = io.check_config_file(cfg0,config)
-    #     io.print_config_report(warnings,errors)
-    # else:
-    #     raise IOError('File does not exist.')
-    #
-    # # set new parameters
-    # topotype = cfg0['topo']['type']
-    # if topotype == 'ipw':
-    #     tt = cfg0['topo']['dem']
-    #     tt = os.path.basename(tt)
-    #     cfg0['topo']['dem'] = (self.pathtp+tt)
-    #     tt = cfg0['topo']['veg_type']
-    #     tt = os.path.basename(tt)
-    #     cfg0['topo']['veg_type'] = (self.pathtp+tt)
-    #     tt = cfg0['topo']['veg_height']
-    #     tt = os.path.basename(tt)
-    #     cfg0['topo']['veg_height'] = (self.pathtp+tt)
-    #     tt = cfg0['topo']['veg_k']
-    #     tt = os.path.basename(tt)
-    #     cfg0['topo']['veg_k'] = (self.pathtp+tt)
-    #     tt = cfg0['topo']['veg_tau']
-    #     tt = os.path.basename(tt)
-    #     cfg0['topo']['veg_tau'] = (self.pathtp+tt)
-    # elif topotype == 'netcdf':
-    #     tt = cfg0['topo']['filename']
-    #     tt = os.path.basename(tt)
-    #     cfg0['topo']['filename'] = (self.pathtp+tt)
-    #     print(cfg0['topo']['filename'])
-    #     self._logger.info('DEM file: --> %s'.format(cfg0['topo']['filename']) )
-    # cfg0['time']['start_date'] = self.st.strftime('%Y-%m-%d %H:%M')
-    # cfg0['time']['end_date'] = self.et.strftime('%Y-%m-%d %H:%M')
-    # cfg0['time']['time_zone'] = self.tmz
-    # # cfg0.set('wind','maxus_netcdf','%smaxus.nc'%self.pathtp)
-    # # cfg0.set('output','out_location',self.paths)
-    # # if cfg0.has_option('logging','log_file'):
-    # #     cfg0.set('logging','log_file','%s/out%s.log'%(self.paths,self.et.strftime("%Y%m%d")))
-    # cfg0['system']['temp_dir'] = self.tmpdir
-    #
-    # # write new ini
-    # print("Writing complete config file showing all defaults of values that were not provided...")
-    # print('{0}'.format(meas_ini_file))
-    # io.generate_config(cfg0, meas_ini_file, inicheck=True)
 
-    ####
     # Write out config file to run smrf
     # make copy and delete only awsf sections
     smrf_cfg = self.config.copy()
@@ -227,49 +176,58 @@ def run_isnobal(self):
     os.chdir(cwd)
 
 
-def restart_crash_image(init_fp_0, crash_fp, thresh):
+def restart_crash_image(self):
 
-    nbits = 16
+    nbits = self.nbits
 
-    # find water year hour
-    date = crash_fp.split('.')
-    date = int(date[len(date)-1])
+    # find water year hour and file paths
+    name_crash = 'snow.%04d'%self.restart_hr
+    fp_crash = os.path.join(self.pathro,name_crash)
+    fp_new_init = os.path.join(self.pathinit,'init%04d.ipw'.%self.restart_hr)
 
     # new ipw image for initializing restart
     print("making new init image")
     i_out = ipw.IPW()
 
     # read in crash image and old init image
-    i_crash = ipw.IPW(crash_fp)
-    i_old_init = ipw.IPW(crash_fp)
+    i_crash = ipw.IPW(fp_crash)
+#########################################################
 
-    # fill in elevation and roughness bands
-    i_out.new_band(i_old_init[0].data)
-    i_out.new_band(i_old_init[1].data)
+    # making dem band
+    if self.topotype == 'ipw':
+        i_dem = ipw.IPW(self.fp_dem)
+        i_out.new_band(i_dem.bands[0].data)
+    elif self.topotype == 'netcdf':
+        dem_file = nc.Dataset(self.fp_dem, 'r')
+        i_dem = dem_file['dem'][:]
+        i_out.new_band(i_dem)
+
+    i_out.new_band(0.005*np.ones_like(i_dem))
 
     # pull apart crash image and zero out values at index with depths < thresh
-    z_s = i_crash[0].data
-    rho = i_crash[1].data
-    m_s = i_crash[2].data
-    h20 = i_crash[3].data
-    T_s_0 = i_crash[4].data
-    T_s_l = i_crash[5].data
-    T_s = i_crash[6].data
-    z_s_l = i_crash[7].data
-    h20_sat = i_crash[8].data
+    z_s = i_crash.bands[0].data # snow depth
+    rho = i_crash.bands[1].data # snow density
+    m_s = i_crash.bands[2].data
+    h20 = i_crash.bands[3].data
+    T_s_0 = i_crash.bands[4].data # active layer temp
+    T_s_l = i_crash.bands[5].data # lower layer temp
+    T_s = i_crash.bands[6].data # avgerage snow temp
+    z_s_l = i_crash.bands[7].data
+    h20_sat = i_crash.bands[8].data # percent saturation
 
-    print np.min(rho)
-    print np.min(z_s)
-    idz = z_s < thresh
-    z_s[idz] = -75.0
-    rho[idz] = -75.0
-    m_s[idz] = -75.0
-    h20[idz] = -75.0
+    print ("correcting crash image")
+
+    idz = z_s < self.depth_thresh
+
+    z_s[idz] = 0.0
+    rho[idz] = 0.0
+    m_s[idz] = 0.0
+    h20[idz] = 0.0
     T_s_0[idz] = -75.0
     T_s_l[idz] = -75.0
     T_s[idz] = -75.0
-    z_s_l[idz] = -75.0
-    h20_sat[idz] = -75.0
+    z_s_l[idz] = 0.0
+    h20_sat[idz] = 0.0
 
     # fill in init image
     i_out.new_band(z_s)
@@ -278,5 +236,17 @@ def restart_crash_image(init_fp_0, crash_fp, thresh):
     i_out.new_band(T_s_l)
     i_out.new_band(T_s)
     i_out.new_band(h20_sat)
+    i_out.add_geo_hdr([self.u, self.v], [self.du, self.dv], self.units, self.csys)
 
-    i_out.write('init_restart%04d.ipw'%(date), nbits)
+    print('Writing to {}'.format(fp_new_init))
+    i_out.write(fp_new_init, nbits)
+
+    print('Running isnobal from restart')
+    offset = self.restart_hr
+    tmsteps = water_day(self.start_date) - offset
+
+    if (offset + tmstps) < 1000:
+        run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %s -p %s -d 0.15 -i %s/in -O 24 -e em -s snow > %s 2>&1"%(nthreads,offset,fp_new_init,self.fp_ppt_desc,self.pathi,self.fp_output)
+        # run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %sinit%04d.ipw -p %s -d 0.15 -i %sin -O 24 -e em -s snow > %s/sout%s.txt 2>&1"%(nthreads,offset,pathinit,offset,self.ppt_desc,pathi,pathr,self.end_date.strftime("%Y%m%d"))
+    else:
+        run_cmd = "time isnobal -v -P %d -r %s -t 60 -n %s -I %s -p %s -d 0.15 -i %s/in -O 24 -e em -s snow > %s 2>&1"%(nthreads,offset,tmstps,fp_new_init,self.fp_ppt_desc,self.pathi,self.fp_output)

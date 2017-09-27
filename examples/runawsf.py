@@ -16,7 +16,7 @@ start = datetime.now()
 # initialize the model
 # run the model
 
-configFile = '../test_data/AWSF_test_config.ini'
+configFile = '../test_data/AWSF_test_config_tuol.ini'
 if len(sys.argv) > 1:
     configFile = sys.argv[1]
 
@@ -47,7 +47,12 @@ with awsf.framework.framework.AWSF(configFile) as s:
     if tmp_in.lower() == 'y':
         s.run_isnobal()
 
-    # 5. convert ipw back to netcdf for processing
+    # 5. restart iSnobal from crash
+    tmp_in = raw_input('Restart from crash? (y/n):  ')
+    if tmp_in.lower() == 'y':
+        s.restart_crash_image()
+
+    # 6. convert ipw back to netcdf for processing
     tmp_in = raw_input('Convert ipw ouput to netcdf? (y/n):  ')
     if tmp_in.lower() == 'y':
         s.ipw2nc()

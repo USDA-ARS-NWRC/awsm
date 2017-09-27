@@ -1,7 +1,7 @@
 import smrf
 from smrf import ipw
 from smrf.utils import io
-from smrf.utils import water_day
+from smrf.utils import utils
 import ConfigParser as cfp
 from awsf import premodel as pm
 import os
@@ -102,7 +102,7 @@ def run_isnobal(self):
       i_in = ipw.IPW(self.prev_mod_file)
       #             i_out.new_band(i_rl0.bands[0].data)
     #   i_out.new_band(0.005*np.ones((self.ny,self.nx)))
-      i_out.new_band(0.005*np.ones_like(i_dem))
+      i_out.new_band(0.005*np.ones((self.ny,self.nx)))
       i_out.new_band(i_in.bands[0].data) # snow depth
       i_out.new_band(i_in.bands[1].data) # snow density
       i_out.new_band(i_in.bands[4].data) # active layer temp
@@ -179,11 +179,12 @@ def run_isnobal(self):
 def restart_crash_image(self):
 
     nbits = self.nbits
+    nthreads = self.ithreads
 
     # find water year hour and file paths
     name_crash = 'snow.%04d'%self.restart_hr
     fp_crash = os.path.join(self.pathro,name_crash)
-    fp_new_init = os.path.join(self.pathinit,'init%04d.ipw'.%self.restart_hr)
+    fp_new_init = os.path.join(self.pathinit,'init%04d.ipw'%self.restart_hr)
 
     # new ipw image for initializing restart
     print("making new init image")
@@ -202,17 +203,17 @@ def restart_crash_image(self):
         i_dem = dem_file['dem'][:]
         i_out.new_band(i_dem)
 
-    i_out.new_band(0.005*np.ones_like(i_dem))
+    i_out.new_band(0.005*np.ones((self.ny,self.nx)))
 
     # pull apart crash image and zero out values at index with depths < thresh
     z_s = i_crash.bands[0].data # snow depth
     rho = i_crash.bands[1].data # snow density
-    m_s = i_crash.bands[2].data
-    h20 = i_crash.bands[3].data
+    #m_s = i_crash.bands[2].data
+    #h20 = i_crash.bands[3].data
     T_s_0 = i_crash.bands[4].data # active layer temp
     T_s_l = i_crash.bands[5].data # lower layer temp
     T_s = i_crash.bands[6].data # avgerage snow temp
-    z_s_l = i_crash.bands[7].data
+    #z_s_l = i_crash.bands[7].data
     h20_sat = i_crash.bands[8].data # percent saturation
 
     print ("correcting crash image")
@@ -221,12 +222,12 @@ def restart_crash_image(self):
 
     z_s[idz] = 0.0
     rho[idz] = 0.0
-    m_s[idz] = 0.0
-    h20[idz] = 0.0
+    #m_s[idz] = 0.0
+    #h20[idz] = 0.0
     T_s_0[idz] = -75.0
     T_s_l[idz] = -75.0
     T_s[idz] = -75.0
-    z_s_l[idz] = 0.0
+    #z_s_l[idz] = 0.0
     h20_sat[idz] = 0.0
 
     # fill in init image
@@ -243,10 +244,41 @@ def restart_crash_image(self):
 
     print('Running isnobal from restart')
     offset = self.restart_hr
-    tmsteps = water_day(self.start_date) - offset
+    start_date = self.start_date.replace(tzinfo=self.tzinfo)
+    end_date = self.end_date.replace(tzinfo=self.tzinfo)
+    # calculate timesteps based on water_day function and offset
+    tmstps, tmpwy = utils.water_day(end_date)
+    tmstps = int(tmstps*24 - offset)
+
+    # make paths absolute if they are not
+    cwd = os.getcwd()
+    if os.path.isabs(self.pathr):
+        self.fp_output = os.path.join(self.pathr,'sout{}.txt'.format(self.end_date.strftime("%Y%m%d")))
+    else:
+        self.fp_output = os.path.join(os.path.abspath(self.pathr),'sout_restart{}.txt'.format(self.restart_hr))
+    if os.path.isabs(self.ppt_desc):
+        self.fp_ppt_desc = self.ppt_desc
+    else:
+        #self.fp_ppt_desc =  os.path.join(cwd, self.ppt_desc)
+        self.fp_ppt_desc =  os.path.abspath(self.ppt_desc)
+    if os.path.isabs(self.pathi):
+        pass
+    else:
+        #self.pathi = os.path.join(cwd,self.pathi)
+        self.pathi = os.path.abspath(self.pathi)
+    if os.path.isabs(fp_new_init):
+        pass
+    else:
+        #self.pathinit = os.path.join(cwd,self.pathinit)
+        fp_new_init = os.path.abspath(fp_new_init)
 
     if (offset + tmstps) < 1000:
         run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %s -p %s -d 0.15 -i %s/in -O 24 -e em -s snow > %s 2>&1"%(nthreads,offset,fp_new_init,self.fp_ppt_desc,self.pathi,self.fp_output)
         # run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %sinit%04d.ipw -p %s -d 0.15 -i %sin -O 24 -e em -s snow > %s/sout%s.txt 2>&1"%(nthreads,offset,pathinit,offset,self.ppt_desc,pathi,pathr,self.end_date.strftime("%Y%m%d"))
     else:
         run_cmd = "time isnobal -v -P %d -r %s -t 60 -n %s -I %s -p %s -d 0.15 -i %s/in -O 24 -e em -s snow > %s 2>&1"%(nthreads,offset,tmstps,fp_new_init,self.fp_ppt_desc,self.pathi,self.fp_output)
+
+    print run_cmd
+    os.chdir(self.pathro)
+    os.system(run_cmd)
+    os.chdir(cwd)

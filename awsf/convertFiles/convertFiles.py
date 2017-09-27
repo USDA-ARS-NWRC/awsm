@@ -1,5 +1,6 @@
 import smrf
 from smrf import ipw
+from smrf.utils import utils
 import ConfigParser as cfp
 from awsf import premodel as pm
 import os
@@ -19,7 +20,10 @@ def nc2ipw_mea(self):
     ###################################################################################################
     print("making the ipw files from NetCDF files (meas)")
 
-    wyh = pd.to_datetime('%s-10-01'%pm.wyb(self.end_date))
+    start_date = self.start_date.replace(tzinfo=self.tzinfo)
+    tmpday, tmpwy = utils.water_day(start_date)
+    % find start of wy
+    wyh = pd.to_datetime('{}-10-01'.format(tmpwy))
     tt = self.start_date-wyh
     offset = tt.days*24 +  tt.seconds//3600 # start index for the input file
     nbits = 16

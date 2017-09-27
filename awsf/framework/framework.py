@@ -96,6 +96,7 @@ class AWSF():
         self.start_date = pd.to_datetime(self.config['time']['start_date'])
         self.end_date = pd.to_datetime(self.config['time']['end_date'])
         self.tmz = self.config['time']['time_zone']
+        self.tzinfo = pytz.timezone(self.config['time']['time_zone'])
         # self.wyh = pd.to_datetime('%s-10-01'%pm.wyb(self.end_date))
 
         # grid data for iSnobal
@@ -135,12 +136,12 @@ class AWSF():
         else:
             self.ithreads = 4
 
-        if 'isnobal crash' in self.config:
-            if 'restart_crash' in self.config['isnobal crash']:
-                if self.config['isnobal crash']['restart_crash'] == True:
-                    self.new_init = self.config['isnobal crash']['new_init']
-                    self.depth_thresh = self.config['isnobal crash']['depth_thresh']
-                    self.restart_hr = int(self.config['isnobal crash']['wyh_restart_output'])
+        if 'isnobal restart' in self.config:
+            if 'restart_crash' in self.config['isnobal restart']:
+                if self.config['isnobal restart']['restart_crash'] == True:
+                    self.new_init = self.config['isnobal restart']['new_init']
+                    self.depth_thresh = self.config['isnobal restart']['depth_thresh']
+                    self.restart_hr = int(self.config['isnobal restart']['wyh_restart_output'])
 
         # list of sections releated to AWSF
         self.sec_awsf = ['paths', 'grid', 'files', 'awsf logging', 'isystem', 'isnobal restart']
@@ -176,6 +177,14 @@ class AWSF():
 
         # modify config and run smrf
         smin.run_isnobal(self)
+
+    def restart_crash_image(self):
+        """
+        Restart isnobal
+        """
+
+        # modify config and run smrf
+        smin.restart_crash_image(self)
 
     def mk_directories(self):
         """

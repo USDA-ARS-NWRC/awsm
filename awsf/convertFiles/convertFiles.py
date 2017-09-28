@@ -22,9 +22,10 @@ def nc2ipw_mea(self):
 
     start_date = self.start_date.replace(tzinfo=self.tzinfo)
     tmpday, tmpwy = utils.water_day(start_date)
-    % find start of wy
-    wyh = pd.to_datetime('{}-10-01'.format(tmpwy))
+    # find start of wy
+    wyh = pd.to_datetime('{}-10-01'.format(tmpwy-1))
     tt = self.start_date-wyh
+    
     offset = tt.days*24 +  tt.seconds//3600 # start index for the input file
     nbits = 16
 

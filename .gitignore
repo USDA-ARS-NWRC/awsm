@@ -78,3 +78,5 @@ target/
 #misc
 *.py~
 *.swp
+
+test_data/AWSF_test_config_tuol.ini

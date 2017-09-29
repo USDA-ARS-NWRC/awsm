@@ -48,9 +48,9 @@ with awsf.framework.framework.AWSF(configFile) as s:
         s.run_isnobal()
 
     # 5. restart iSnobal from crash
-    tmp_in = raw_input('Restart from crash? (y/n):  ')
-    if tmp_in.lower() == 'y':
-        s.restart_crash_image()
+    # tmp_in = raw_input('Restart from crash? (y/n):  ')
+    # if tmp_in.lower() == 'y':
+    #     s.restart_crash_image()
 
     # 6. convert ipw back to netcdf for processing
     tmp_in = raw_input('Convert ipw ouput to netcdf? (y/n):  ')

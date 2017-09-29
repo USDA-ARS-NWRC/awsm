@@ -99,30 +99,37 @@ def run_isnobal(self):
         i_out.new_band(i_dem)
 
     if offset > 0:
-      i_in = ipw.IPW(self.prev_mod_file)
-      #             i_out.new_band(i_rl0.bands[0].data)
-    #   i_out.new_band(0.005*np.ones((self.ny,self.nx)))
-      i_out.new_band(0.005*np.ones((self.ny,self.nx)))
-      i_out.new_band(i_in.bands[0].data) # snow depth
-      i_out.new_band(i_in.bands[1].data) # snow density
-      i_out.new_band(i_in.bands[4].data) # active layer temp
-      i_out.new_band(i_in.bands[5].data) # lower layer temp
-      i_out.new_band(i_in.bands[6].data) # avgerage snow temp
-      i_out.new_band(i_in.bands[8].data) # percent saturation
-      i_out.add_geo_hdr([self.u, self.v], [self.du, self.dv], self.units, self.csys)
-      i_out.write(os.path.join(self.pathinit,'init%04d.ipw'%(offset)), nbits)
+        i_in = ipw.IPW(self.prev_mod_file)
+        # use given rougness from old init file if given
+        if self.roughness_init is not None:
+            i.out.new_band(ipw.IPW(self.roughness_init).bands[1].data)
+        else:
+            self._logger.warning('No roughness given from old init, using value of 0.005 m')
+            i_out.new_band(0.005*np.ones((self.ny,self.nx)))
+        i_out.new_band(i_in.bands[0].data) # snow depth
+        i_out.new_band(i_in.bands[1].data) # snow density
+        i_out.new_band(i_in.bands[4].data) # active layer temp
+        i_out.new_band(i_in.bands[5].data) # lower layer temp
+        i_out.new_band(i_in.bands[6].data) # avgerage snow temp
+        i_out.new_band(i_in.bands[8].data) # percent saturation
+        i_out.add_geo_hdr([self.u, self.v], [self.du, self.dv], self.units, self.csys)
+        i_out.write(os.path.join(self.pathinit,'init%04d.ipw'%(offset)), nbits)
     else:
-      zs0 = np.zeros((self.ny,self.nx))
-      i_out.new_band(0.005*np.ones((self.ny,self.nx)))
-      #             i_out.new_band(i_rl0.bands[0].data)
-      i_out.new_band(zs0) # zeros snow cover depth
-      i_out.new_band(zs0) # 0density
-      i_out.new_band(zs0) # 0ts active
-      i_out.new_band(zs0) # 0ts avg
-      i_out.new_band(zs0) # 0liquid
-      i_out.add_geo_hdr([self.u, self.v], [self.du, self.dv], self.units, self.csys)
-      #i_out.write('%sinit%04d.ipw'%(self.pathinit,offset), nbits)
-      i_out.write(os.path.join(self.pathinit,'init%04d.ipw'%(offset)), nbits)
+        zs0 = np.zeros((self.ny,self.nx))
+        if self.roughness_init is not None:
+            i_out.new_band(ipw.IPW(self.roughness_init).bands[1].data)
+        else:
+            self._logger.warning('No roughness given from old init, using value of 0.005 m')
+            i_out.new_band(0.005*np.ones((self.ny,self.nx)))
+        #             i_out.new_band(i_rl0.bands[0].data)
+        i_out.new_band(zs0) # zeros snow cover depth
+        i_out.new_band(zs0) # 0density
+        i_out.new_band(zs0) # 0ts active
+        i_out.new_band(zs0) # 0ts avg
+        i_out.new_band(zs0) # 0liquid
+        i_out.add_geo_hdr([self.u, self.v], [self.du, self.dv], self.units, self.csys)
+        #i_out.write('%sinit%04d.ipw'%(self.pathinit,offset), nbits)
+        i_out.write(os.path.join(self.pathinit,'init%04d.ipw'%(offset)), nbits)
 
     # develop the command to run the model
     print("developing command and running")
@@ -159,15 +166,15 @@ def run_isnobal(self):
     # run iSnobal
     if offset>0:
         if (offset + tmstps) < 1000:
-            run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %s/init%04d.ipw -p %s -d 0.15 -i %s/in -O 24 -e em -s snow > %s 2>&1"%(nthreads,offset,self.pathinit,offset,self.fp_ppt_desc,self.pathi,self.fp_output)
+            run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %s/init%04d.ipw -p %s -m %s -d 0.15 -i %s/in -O 24 -e em -s snow > %s 2>&1"%(nthreads,offset,self.pathinit,offset,self.fp_ppt_desc,self.fp_mask,self.pathi,self.fp_output)
             # run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %sinit%04d.ipw -p %s -d 0.15 -i %sin -O 24 -e em -s snow > %s/sout%s.txt 2>&1"%(nthreads,offset,pathinit,offset,self.ppt_desc,pathi,pathr,self.end_date.strftime("%Y%m%d"))
         else:
-            run_cmd = "time isnobal -v -P %d -r %s -t 60 -n %s -I %s/init%04d.ipw -p %s -d 0.15 -i %s/in -O 24 -e em -s snow > %s 2>&1"%(nthreads,offset,tmstps,self.pathinit,offset,self.fp_ppt_desc,self.pathi,self.fp_output)
+            run_cmd = "time isnobal -v -P %d -r %s -t 60 -n %s -I %s/init%04d.ipw -p %s -m %s -d 0.15 -i %s/in -O 24 -e em -s snow > %s 2>&1"%(nthreads,offset,tmstps,self.pathinit,offset,self.fp_ppt_desc,self.fp_mask,self.pathi,self.fp_output)
     else:
       if tmstps<1000:
-          run_cmd = "time isnobal -v -P %d -t 60 -n 1001 -I %s/init%04d.ipw -p %s -d 0.15 -i %s/in -O 24 -e em -s snow > %s 2>&1"%(nthreads,self.pathinit,offset,self.fp_ppt_desc,self.pathi,self.fp_output)
+          run_cmd = "time isnobal -v -P %d -t 60 -n 1001 -I %s/init%04d.ipw -p %s -m %s -d 0.15 -i %s/in -O 24 -e em -s snow > %s 2>&1"%(nthreads,self.pathinit,offset,self.fp_ppt_desc,self.fp_mask,self.pathi,self.fp_output)
       else:
-          run_cmd = "time isnobal -v -P %d -t 60 -n %s -I %s/init%04d.ipw -p %s -d 0.15 -i %s/in -O 24 -e em -s snow > %s 2>&1"%(nthreads,tmstps,self.pathinit,offset,self.fp_ppt_desc,self.pathi,self.fp_output)
+          run_cmd = "time isnobal -v -P %d -t 60 -n %s -I %s/init%04d.ipw -p %s -m %s -d 0.15 -i %s/in -O 24 -e em -s snow > %s 2>&1"%(nthreads,tmstps,self.pathinit,offset,self.fp_ppt_desc,self.fp_mask,self.pathi,self.fp_output)
 
     # change directories, run, and move back
     print run_cmd
@@ -203,7 +210,11 @@ def restart_crash_image(self):
         i_dem = dem_file['dem'][:]
         i_out.new_band(i_dem)
 
-    i_out.new_band(0.005*np.ones((self.ny,self.nx)))
+    if self.roughness_init is not None:
+        i_out.new_band(ipw.IPW(self.roughness_init).bands[1].data)
+    else:
+        self._logger.warning('No roughness given from old init, using value of 0.005 m')
+        i_out.new_band(0.005*np.ones((self.ny,self.nx)))
 
     # pull apart crash image and zero out values at index with depths < thresh
     z_s = i_crash.bands[0].data # snow depth

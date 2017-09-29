@@ -116,6 +116,11 @@ class AWSF():
             self.fp_dem = self.config['topo']['filename']
 
         self.topotype = self.config['topo']['type']
+        self.fp_mask = os.path.abspath(self.config['topo']['mask'])
+        if 'roughness_init' in self.config['files']:
+            self.roughness_init = os.path.abspath(self.config['files']['roughness_init'])
+        else:
+            self.roughness_init = None
 
         if 'ppt_desc_file' in self.config['files']:
             self.ppt_desc = self.config['files']['ppt_desc_file']

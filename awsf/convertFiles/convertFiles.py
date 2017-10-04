@@ -74,7 +74,7 @@ def nc2ipw_mea(self):
     j = 0
     for idxt,t in enumerate(timeStep):
 
-        print('idxt: {} t: {}'.format(idxt, t))
+        # print('idxt: {} t: {}'.format(idxt, t))
         trad_step = th_file.variables[th_var][idxt,:]
         ta_step = ta_file.variables[ta_var][idxt,:]
         ea_step = ea_file.variables[ea_var][idxt,:]

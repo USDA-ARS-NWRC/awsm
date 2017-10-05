@@ -95,6 +95,22 @@ class AWSF():
 
         self.start_date = pd.to_datetime(self.config['time']['start_date'])
         self.end_date = pd.to_datetime(self.config['time']['end_date'])
+        self.forecast_flag = False
+        if 'forecast' in self.config:
+            if self.config['forecast']['forecast_flag'] == True:
+                self._logger.info('Forecasting set to True')
+                self.forecast_flag = True
+                if 'forecast_date' in self.config['forecast']:
+                    self.forecast_date = pd.to_datetime(self.config['forecast']['forecast_date'])
+                else:
+                    self._logger.error('Forecast set to true, but no forecast_date given')
+                if ['wrf_data'] in self.config['files']:
+                    self.fp_wrfdata = self.config['files']['wrf_data']
+                else:
+                    self._logger.error('Forecast set to true, but no wrf_data given')
+                self.zone_number = self.config['forecast']['zone_number']
+                self.zone_letter = self.config['forecast']['zone_letter']
+
         self.tmz = self.config['time']['time_zone']
         self.tzinfo = pytz.timezone(self.config['time']['time_zone'])
         # self.wyh = pd.to_datetime('%s-10-01'%pm.wyb(self.end_date))
@@ -129,17 +145,13 @@ class AWSF():
             self.ppt_desc = ''
 
         #self.anyini = self.config['paths']['smrfini']
-        self.forecast_flag = 0
-        # if 'fetime' in self.config['times']:
-        #     self.forecast_flag = 1
-        #     self.ft = pd.to_datetime(self.config['times']['fetime'])
         if 'prev_mod_file' in self.config['files']:
             self.prev_mod_file = self.config['files']['prev_mod_file']
 
         if 'ithreads' in self.config['isystem']:
             self.ithreads = self.config['isystem']['ithreads']
         else:
-            self.ithreads = 4
+            self.ithreads = 1
 
         if 'isnobal restart' in self.config:
             if 'restart_crash' in self.config['isnobal restart']:
@@ -149,9 +161,10 @@ class AWSF():
                     self.restart_hr = int(self.config['isnobal restart']['wyh_restart_output'])
 
         # list of sections releated to AWSF
-        self.sec_awsf = ['paths', 'grid', 'files', 'awsf logging', 'isystem', 'isnobal restart']
+        self.sec_awsf = ['paths', 'grid', 'files', 'awsf logging', 'isystem', 'isnobal restart', 'forecast']
         # name of smrf file to write out
         self.smrfini = self.config['paths']['smrfini']
+        self.wrfini = self.config['paths']['wrfini']
 
     def runSmrf(self):
         """

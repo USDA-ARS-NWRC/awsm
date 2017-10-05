@@ -134,24 +134,6 @@ def ipw2nc_mea(self):
     Function to create netcdf files from iSnobal output
     '''
 
-    # u  = self.u
-    # v  = self.v
-    # du  = self.du
-    # dv  = self.dv
-    # units = self.units
-    # csys = self.csys
-    # nx = self.nx
-    # ny = self.ny
-    #
-    # nbits = self.nbits
-
-    # pathro =   '/data/blizzard/rcew/rme/25yr-run+Adam+dgm/wy08/spatial/runs/run.08_v2.1/output'
-    #
-    # config_file = '/data/blizzard/rcew/rme/prime_workspace/scripts/config_PBR2008.txt'
-    # tt = cfp.ConfigParser()
-    # tt.read(config_file)
-    # cfg = dict(tt._sections)
-    # et = pd.to_datetime(cfg['TIMES']['etime'])
     wyh = pd.to_datetime('%s-10-01'%pm.wyb(self.end_date))
 
     print("convert all .ipw output files to netcdf files")

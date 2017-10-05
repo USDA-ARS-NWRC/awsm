@@ -150,7 +150,13 @@ def ipw2nc_mea(self, runtype):
     Function to create netcdf files from iSnobal output
     '''
 
-    wyh = pd.to_datetime('%s-10-01'%pm.wyb(self.end_date))
+    if runtype == 'smrf':
+        wyh = pd.to_datetime('%s-10-01'%pm.wyb(self.end_date))
+    elif runtype == 'wrf':
+        wyh = pd.to_datetime('%s-10-01'%pm.wyb(self.forecast_date))
+    else:
+        self._logger.error('Wrong run type given to ipw2nc. \
+                            not smrf or wrf')
 
     print("convert all .ipw output files to netcdf files")
     ###################################################################################################
@@ -171,8 +177,11 @@ def ipw2nc_mea(self, runtype):
                      'Average advected heat from precipitation','Average sum of EB terms for snowcover','Total evaporation',
                      'Total snowmelt','Total runoff','Snowcover cold content']
 
-    #netcdfFile = os.path.join(pathro, 'em.nc')
-    netcdfFile = os.path.join(self.pathr, 'em.nc')
+    if runtype == 'smrf':
+        netcdfFile = os.path.join(self.path_r, 'em.nc')
+    elif runtype == 'wrf':
+        netcdfFile = os.path.join(self.path_wrf_run, 'em.nc')
+
     dimensions = ('time','y','x')
     em = nc.Dataset(netcdfFile, 'w')
 
@@ -210,8 +219,11 @@ def ipw2nc_mea(self, runtype):
                        'Predicted temperature of the lower layer','Predicted temperature of the snowcover',
                        'Predicted thickness of the lower layer', 'Predicted percentage of liquid water saturation of the snowcover']
 
-    #netcdfFile = os.path.join(pathro, 'snow.nc')
-    netcdfFile = os.path.join(self.pathr, 'snow.nc')
+    if runtype == 'smrf':
+        netcdfFile = os.path.join(self.path_r, 'snow.nc')
+    elif runtype == 'wrf':
+        netcdfFile = os.path.join(self.path_wrf_run, 'snow.nc')
+
     dimensions = ('time','y','x')
     snow = nc.Dataset(netcdfFile, 'w')
 
@@ -243,7 +255,11 @@ def ipw2nc_mea(self, runtype):
     #===============================================================================
 
     # get all the files in the directory
-    d = sorted(glob.glob("%s/snow*"%self.pathro), key=os.path.getmtime)
+    if runtype == 'smrf':
+        d = sorted(glob.glob("%s/snow*"%self.pathro), key=os.path.getmtime)
+    elif runtype == 'wrf':
+        d = sorted(glob.glob("%s/snow*"%self.path_wrf_ro), key=os.path.getmtime)
+
     d.sort(key=lambda f: os.path.splitext(f))
     pbar = progressbar.ProgressBar(max_value=len(d)).start()
     j = 0

@@ -5,16 +5,8 @@
 import awsf
 from datetime import datetime
 import sys
-#import faulthandler
-
-#faulthandler.enable()
 
 start = datetime.now()
-
-# read config file
-# create a new model instance
-# initialize the model
-# run the model
 
 configFile = '../test_data/AWSF_test_config_tuol.ini'
 if len(sys.argv) > 1:
@@ -72,6 +64,6 @@ with awsf.framework.framework.AWSF(configFile) as s:
             tmp_in = raw_input('Run iSnobal forecast? (y/n):  ')
             if tmp_in.lower() == 'y':
                 s.run_isnobal_forecast()
-            # tmp_in = raw_input('Convert iSnobal forecast ouput to netcdf? (y/n): ')
-            # if tmp_in.lower() == 'y':
-            #     s.ipw2nc('wrf')
+            tmp_in = raw_input('Convert iSnobal forecast ouput to netcdf? (y/n): ')
+            if tmp_in.lower() == 'y':
+                s.ipw2nc('wrf')

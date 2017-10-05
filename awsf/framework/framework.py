@@ -74,12 +74,12 @@ class AWSF():
 
         self._logger = logging.getLogger(__name__)
 
-        self.path_dr = self.config['paths']['path_dr']
+        self.path_dr = os.path.abspath(self.config['paths']['path_dr'])
         self.basin = self.config['paths']['basin']
         if 'wy' in self.config['paths']:
             self.wy = self.config['paths']['wy']
         self.isops = self.config['paths']['isops']
-        self.basin = self.config['paths']['basin']
+
         if 'proj' in self.config['paths']:
             self.proj = self.config['paths']['proj']
         self.isops = self.config['paths']['isops']
@@ -89,9 +89,9 @@ class AWSF():
             self.desc = ''
 
         if 'pathws' in self.config['paths']:
-            self.pathws = self.config['paths']['pathws']
+            self.pathws = os.path.abspath(self.config['paths']['pathws'])
         if 'pathtp' in self.config['paths']:
-            self.pathtp = self.config['paths']['pathtp']
+            self.pathtp = os.path.abspath(self.config['paths']['pathtp'])
 
         self.start_date = pd.to_datetime(self.config['time']['start_date'])
         self.end_date = pd.to_datetime(self.config['time']['end_date'])
@@ -127,9 +127,9 @@ class AWSF():
         self.nbits = int(self.config['grid']['nbits'])
 
         if self.config['topo']['type'] == 'ipw':
-            self.fp_dem = self.config['topo']['dem']  # pull in location of the dem
+            self.fp_dem = os.path.abspath(self.config['topo']['dem'])  # pull in location of the dem
         elif self.config['topo']['type'] == 'netcdf':
-            self.fp_dem = self.config['topo']['filename']
+            self.fp_dem = os.path.abspath(self.config['topo']['filename'])
 
         self.topotype = self.config['topo']['type']
         self.fp_mask = os.path.abspath(self.config['topo']['mask'])
@@ -139,14 +139,14 @@ class AWSF():
             self.roughness_init = None
 
         if 'ppt_desc_file' in self.config['files']:
-            self.ppt_desc = self.config['files']['ppt_desc_file']
+            self.ppt_desc = os.path.abspath(self.config['files']['ppt_desc_file'])
         else:
             # self.ppt_desc = '%sdata/ppt_desc%s.txt'%(self.path_wy,self.et.strftime("%Y%m%d"))
             self.ppt_desc = ''
 
         #self.anyini = self.config['paths']['smrfini']
         if 'prev_mod_file' in self.config['files']:
-            self.prev_mod_file = self.config['files']['prev_mod_file']
+            self.prev_mod_file = os.path.abspath(self.config['files']['prev_mod_file'])
 
         if 'ithreads' in self.config['isystem']:
             self.ithreads = self.config['isystem']['ithreads']
@@ -170,29 +170,32 @@ class AWSF():
         """
         Run smrf
         """
-
         # modify config and run smrf
         smin.smrfMEAS(self)
 
-    def nc2ipw(self):
+    def runSmrf_wrf(self):
+        """
+        Run smrf with gridded wrf data
+        """
+        # modify config and run smrf
+        smin.smrf_go_wrf(self)
+
+    def nc2ipw(self, runtype):
         """
         Convert ipw smrf output to isnobal inputs
         """
+        cvf.nc2ipw_mea(self, runtype)
 
-        cvf.nc2ipw_mea(self)
-
-    def ipw2nc(self):
+    def ipw2nc(self, runtype):
         """
         convert ipw output to netcdf files
         """
-
-        cvf.ipw2nc_mea(self)
+        cvf.ipw2nc_mea(self, runtype)
 
     def run_isnobal(self):
         """
         Run isnobal
         """
-
         # modify config and run smrf
         smin.run_isnobal(self)
 
@@ -200,7 +203,6 @@ class AWSF():
         """
         Restart isnobal
         """
-
         # modify config and run smrf
         smin.restart_crash_image(self)
 
@@ -260,7 +262,6 @@ class AWSF():
                     os.makedirs(os.path.join(self.pathd, 'input/'))
                     os.makedirs(os.path.join(self.pathd, 'init/'))
                     os.makedirs(os.path.join(self.pathd, 'ppt_4b/'))
-                    os.makedirs(os.path.join(self.pathd, 'forecast/'))
 
                 if not os.path.exists(os.path.join(self.path_wy, 'runs/')):
                     os.makedirs(os.path.join(self.path_wy, 'runs/'))
@@ -291,8 +292,29 @@ class AWSF():
             self.pathr =    os.path.join(self.path_wy, 'runs/run{}_{}'.format(self.start_date.strftime("%Y%m%d"), self.end_date.strftime("%Y%m%d")))
             self.pathro =   os.path.join(self.pathr, 'output/')
 
+            # make directories for wrf
+            self.path_wrf_data = os.path.join(self.path_wy, 'data/', 'forecast{}_{}'.format(self.end_date.strftime("%Y%m%d"), self.forecast_date.strftime("%Y%m%d")))
+            self.path_wrf_run = os.path.join(self.path_wy, 'run/', 'forecast{}_{}'.format(self.end_date.strftime("%Y%m%d"), self.forecast_date.strftime("%Y%m%d")))
+            self.path_wrf_i =    os.path.join(self.path_wrf_data, 'input/')
+            self.path_wrf_init = os.path.join(self.path_wrf_data, 'init/')
+            self.path_wrf_ro =   os.path.join(self.path_wrf_run, 'output/')
+            self.path_wrf_s = os.path.join(self.path_wrf_i,'smrfOutputs')
+            self.wrf_ppt_desc = os.path.join(self.path_wrf_data, 'ppt_desc{}.txt'.format(self.forecast_date.strftime("%Y%m%d")))
+
+            if self.forecast_flag:
+                if not os.path.exists(self.path_wrf_data):
+                    os.makedirs(self.path_wrf_data)
+                    os.makedirs(self.path_wrf_init)
+                    os.makedirs(self.path_wrf_i)
+                    os.makedirs(os.path.join(self.path_wrf_i,'ppt_4b/'))
+                    os.makedirs(self.path_wrf_s)
+                if not os.path.exists(self.path_wrf_run):
+                    os.makedirs(self.path_wrf_run)
+                    os.makedirs(self.path_wrf_ro)
+
         else:
-            self._logger.error('Base directory did not exist, not safe to conitnue')
+            self._logger.error('Base directory did not exist, not safe to conitnue.\
+                                Make sure base directory exists before running.')
 
         self.paths = os.path.join(self.pathd,'smrfOutputs')
         self.ppt_desc = os.path.join(self.pathd, 'ppt_desc{}.txt'.format(self.end_date.strftime("%Y%m%d")))

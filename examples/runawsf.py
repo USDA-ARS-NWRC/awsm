@@ -29,33 +29,44 @@ if len(sys.argv) > 1:
 # 1. initialize
 # try:
 with awsf.framework.framework.AWSF(configFile) as s:
-    # 2. make directory structure if not made
+    # 2. make directory structure (always run this to assign paths)
     s.mk_directories()
 
-    # 2. distribute data by running smrf
+    # 3. distribute data by running smrf
     tmp_in = raw_input('Do you want to run smrf? (y/n):  ')
     if tmp_in.lower() == 'y':
         s.runSmrf()
 
-    # 3. convert smrf output to ipw for iSnobal
+    # 4. distribute data by running smrf
+    if 'forecast' in s.config:
+        if s.config['forecast']['forecast_flag']:
+            tmp_in = raw_input('Do you want to run smrf forecast with wrf data? (y/n):  ')
+            if tmp_in.lower() == 'y':
+                s.runSmrf_wrff()
+
+    # 5. convert smrf output to ipw for iSnobal
     tmp_in = raw_input('Convert smrf output to ipw? (y/n):  ')
     if tmp_in.lower() == 'y':
-        s.nc2ipw()
+        s.nc2ipw('smrf')
 
-    # 4. run iSnobal
+        if 'forecast' in s.config:
+            if s.config['forecast']['forecast_flag']:
+                s.nc2ipw('wrf')
+
+    # 6. run iSnobal
     tmp_in = raw_input('Run iSnobal? (y/n):  ')
     if tmp_in.lower() == 'y':
         s.run_isnobal()
 
-    # 5. restart iSnobal from crash
-    # if 'isnobal restart' in s.config:
-    #     if 'restart_crash' in s.config['isnobal restart']:
-    #         if s.config['isnobal restart']['restart_crash'] == True:
-                # tmp_in = raw_input('Restart from crash? (y/n):  ')
-                # if tmp_in.lower() == 'y':
-                #     s.restart_crash_image()
+    # 7. restart iSnobal from crash
+    if 'isnobal restart' in s.config:
+        if 'restart_crash' in s.config['isnobal restart']:
+            if s.config['isnobal restart']['restart_crash'] == True:
+                tmp_in = raw_input('Restart from crash? (y/n):  ')
+                if tmp_in.lower() == 'y':
+                    s.restart_crash_image()
 
-    # 6. convert ipw back to netcdf for processing
+    # 8. convert ipw back to netcdf for processing
     tmp_in = raw_input('Convert ipw ouput to netcdf? (y/n):  ')
     if tmp_in.lower() == 'y':
-        s.ipw2nc()
+        s.ipw2nc('smrf')

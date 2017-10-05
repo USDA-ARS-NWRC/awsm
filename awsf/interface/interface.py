@@ -33,13 +33,13 @@ def smrfMEAS(self):
     smrf_cfg['output']['out_location'] = os.path.join(self.pathd,'smrfOutputs/')
     fp_smrfini = os.path.join(os.path.dirname(self.configFile), self.smrfini)
 
-    print("writing the config file for smrf (meas)\n")
+    self._logger.info('Writing the config file for SMRF')
     io.generate_config(smrf_cfg, fp_smrfini, inicheck=False)
 
     ###################################################################################################
     ### run smrf with the config file we just made ####################################################
     ###################################################################################################
-    print("running smrf (meas)\n")
+    self._logger.info('Running SMRF')
     faulthandler.enable()
     start = datetime.now()
 
@@ -72,12 +72,6 @@ def smrfMEAS(self):
         #     s._logger.error(e)
 
 def smrf_go_wrf(config_file):
-
-
-    # more to do's not here
-    # create more routines that check for forecast flag and ask about conversion
-    # create extra directories for new runs and outputs, figure out how to combine inputs, etc.
-    #
 
     # get wrf config
     wrf_cfg = self.config.copy()
@@ -160,13 +154,13 @@ def smrf_go_wrf(config_file):
     fp_wrfini = os.path.join(os.path.dirname(self.configFile), self.wrfini)
 
     # output this config and use to run smrf
-    print("writing the config file for smrf (meas)\n")
+    self._logger.info('Writing the config file for SMRF forecast')
     io.generate_config(wrf_cfg, fp_wrfini, inicheck=False)
 
     ###################################################################################################
     ### run smrf with the config file we just made ####################################################
     ###################################################################################################
-    print("running smrf (meas)\n")
+    self._logger.info('Running SMRF forecast with gridded WRF data')
     faulthandler.enable()
     start = datetime.now()
 
@@ -255,7 +249,6 @@ def run_isnobal(self):
         i_out.new_band(zs0) # 0ts avg
         i_out.new_band(zs0) # 0liquid
         i_out.add_geo_hdr([self.u, self.v], [self.du, self.dv], self.units, self.csys)
-        #i_out.write('%sinit%04d.ipw'%(self.pathinit,offset), nbits)
         i_out.write(os.path.join(self.pathinit,'init%04d.ipw'%(offset)), nbits)
 
     # develop the command to run the model
@@ -346,12 +339,9 @@ def restart_crash_image(self):
     # pull apart crash image and zero out values at index with depths < thresh
     z_s = i_crash.bands[0].data # snow depth
     rho = i_crash.bands[1].data # snow density
-    #m_s = i_crash.bands[2].data
-    #h20 = i_crash.bands[3].data
     T_s_0 = i_crash.bands[4].data # active layer temp
     T_s_l = i_crash.bands[5].data # lower layer temp
     T_s = i_crash.bands[6].data # avgerage snow temp
-    #z_s_l = i_crash.bands[7].data
     h20_sat = i_crash.bands[8].data # percent saturation
 
     print ("correcting crash image")

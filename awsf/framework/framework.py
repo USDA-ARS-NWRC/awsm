@@ -199,6 +199,13 @@ class AWSF():
         # modify config and run smrf
         smin.run_isnobal(self)
 
+    def run_isnobal_forecast(self):
+        """
+        Run isnobal with smrf forecast data
+        """
+        # modify config and run smrf
+        smin.run_isnobal_forecast(self)
+
     def restart_crash_image(self):
         """
         Restart isnobal

@@ -37,28 +37,17 @@ with awsf.framework.framework.AWSF(configFile) as s:
     if tmp_in.lower() == 'y':
         s.runSmrf()
 
-    # 4. distribute data by running smrf
-    if 'forecast' in s.config:
-        if s.config['forecast']['forecast_flag']:
-            tmp_in = raw_input('Do you want to run smrf forecast with wrf data? (y/n):  ')
-            if tmp_in.lower() == 'y':
-                s.runSmrf_wrff()
-
-    # 5. convert smrf output to ipw for iSnobal
+    # 4. convert smrf output to ipw for iSnobal
     tmp_in = raw_input('Convert smrf output to ipw? (y/n):  ')
     if tmp_in.lower() == 'y':
         s.nc2ipw('smrf')
 
-        if 'forecast' in s.config:
-            if s.config['forecast']['forecast_flag']:
-                s.nc2ipw('wrf')
-
-    # 6. run iSnobal
+    # 5. run iSnobal
     tmp_in = raw_input('Run iSnobal? (y/n):  ')
     if tmp_in.lower() == 'y':
         s.run_isnobal()
 
-    # 7. restart iSnobal from crash
+    # 6. restart iSnobal from crash
     if 'isnobal restart' in s.config:
         if 'restart_crash' in s.config['isnobal restart']:
             if s.config['isnobal restart']['restart_crash'] == True:
@@ -66,7 +55,23 @@ with awsf.framework.framework.AWSF(configFile) as s:
                 if tmp_in.lower() == 'y':
                     s.restart_crash_image()
 
-    # 8. convert ipw back to netcdf for processing
-    tmp_in = raw_input('Convert ipw ouput to netcdf? (y/n):  ')
+    # 7. convert ipw back to netcdf for processing
+    tmp_in = raw_input('Convert iSnobal forecast ouput to netcdf? (y/n):  ')
     if tmp_in.lower() == 'y':
         s.ipw2nc('smrf')
+
+    # 8. repeat with gridded wrf data
+    if 'forecast' in s.config:
+        if s.config['forecast']['forecast_flag']:
+            tmp_in = raw_input('Do you want to run smrf forecast with wrf data? (y/n):  ')
+            if tmp_in.lower() == 'y':
+                s.runSmrf_wrff()
+            tmp_in = raw_input('Convert smrf forecast output top ipw? (y/n) ')
+            if tmp_in.lower() == 'y':
+                s.nc2ipw('wrf')
+            tmp_in = raw_input('Run iSnobal forecast? (y/n):  ')
+            if tmp_in.lower() == 'y':
+                s.run_isnobal_forecast()
+            # tmp_in = raw_input('Convert iSnobal forecast ouput to netcdf? (y/n): ')
+            # if tmp_in.lower() == 'y':
+            #     s.ipw2nc('wrf')

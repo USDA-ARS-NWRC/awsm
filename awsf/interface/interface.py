@@ -254,31 +254,28 @@ def run_isnobal(self):
     # develop the command to run the model
     print("developing command and running")
     nthreads = int(self.ithreads)
-    if self.forecast_flag == 1:
-      tt = self.ft-self.start_date                              # get a time delta to get hours from water year start
-      tmstps = tt.days*24 +  tt.seconds//3600 # start index for the input file
-    else:
-      tt = self.end_date-self.start_date
-      tmstps = tt.days*24 +  tt.seconds//3600 # start index for the input file
+
+    tt = self.end_date-self.start_date
+    tmstps = tt.days*24 +  tt.seconds//3600 # start index for the input file
 
     # make paths absolute if they are not
     cwd = os.getcwd()
 
-    self.fp_output = os.path.join(self.pathr,'sout{}.txt'.format(self.end_date.strftime("%Y%m%d")))
-    self.fp_ppt_desc = self.ppt_desc
+    fp_output = os.path.join(self.pathr,'sout{}.txt'.format(self.end_date.strftime("%Y%m%d")))
+    fp_ppt_desc = self.ppt_desc
 
     # run iSnobal
     if offset>0:
         if (offset + tmstps) < 1000:
-            run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %s/init%04d.ipw -p %s -m %s -d 0.15 -i %s/in -O 24 -e em -s snow > %s 2>&1"%(nthreads,offset,self.pathinit,offset,self.fp_ppt_desc,self.fp_mask,self.pathi,self.fp_output)
+            run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %s/init%04d.ipw -p %s -m %s -d 0.15 -i %s/in -O 24 -e em -s snow > %s 2>&1"%(nthreads,offset,self.pathinit,offset,fp_ppt_desc,self.fp_mask,self.pathi,fp_output)
             # run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %sinit%04d.ipw -p %s -d 0.15 -i %sin -O 24 -e em -s snow > %s/sout%s.txt 2>&1"%(nthreads,offset,pathinit,offset,self.ppt_desc,pathi,pathr,self.end_date.strftime("%Y%m%d"))
         else:
-            run_cmd = "time isnobal -v -P %d -r %s -t 60 -n %s -I %s/init%04d.ipw -p %s -m %s -d 0.15 -i %s/in -O 24 -e em -s snow > %s 2>&1"%(nthreads,offset,tmstps,self.pathinit,offset,self.fp_ppt_desc,self.fp_mask,self.pathi,self.fp_output)
+            run_cmd = "time isnobal -v -P %d -r %s -t 60 -n %s -I %s/init%04d.ipw -p %s -m %s -d 0.15 -i %s/in -O 24 -e em -s snow > %s 2>&1"%(nthreads,offset,tmstps,self.pathinit,offset,fp_ppt_desc,self.fp_mask,self.pathi,fp_output)
     else:
       if tmstps<1000:
-          run_cmd = "time isnobal -v -P %d -t 60 -n 1001 -I %s/init%04d.ipw -p %s -m %s -d 0.15 -i %s/in -O 24 -e em -s snow > %s 2>&1"%(nthreads,self.pathinit,offset,self.fp_ppt_desc,self.fp_mask,self.pathi,self.fp_output)
+          run_cmd = "time isnobal -v -P %d -t 60 -n 1001 -I %s/init%04d.ipw -p %s -m %s -d 0.15 -i %s/in -O 24 -e em -s snow > %s 2>&1"%(nthreads,self.pathinit,offset,fp_ppt_desc,self.fp_mask,self.pathi,fp_output)
       else:
-          run_cmd = "time isnobal -v -P %d -t 60 -n %s -I %s/init%04d.ipw -p %s -m %s -d 0.15 -i %s/in -O 24 -e em -s snow > %s 2>&1"%(nthreads,tmstps,self.pathinit,offset,self.fp_ppt_desc,self.fp_mask,self.pathi,self.fp_output)
+          run_cmd = "time isnobal -v -P %d -t 60 -n %s -I %s/init%04d.ipw -p %s -m %s -d 0.15 -i %s/in -O 24 -e em -s snow > %s 2>&1"%(nthreads,tmstps,self.pathinit,offset,fp_ppt_desc,self.fp_mask,self.pathi,fp_output)
 
     # change directories, run, and move back
     print run_cmd

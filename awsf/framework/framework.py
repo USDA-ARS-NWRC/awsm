@@ -1,17 +1,13 @@
 import logging
 import os
 import coloredlogs
-from datetime import datetime, timedelta
+from datetime import datetime
 import pandas as pd
-# import itertools
-import numpy as np
 import pytz
-# import matplotlib.pyplot as plt
 
 from smrf import data, distribute, output
 from smrf.envphys import radiation
 from smrf.utils import queue, io
-from threading import Thread
 from awsf.convertFiles import convertFiles as cvf
 from awsf.interface import interface as smin
 

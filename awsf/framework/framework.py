@@ -14,6 +14,7 @@ from smrf.utils import queue, io
 from threading import Thread
 from awsf.convertFiles import convertFiles as cvf
 from awsf.interface import interface as smin
+from awsf.interface import smrf_ipysnobal as smrf_ipy
 
 
 class AWSF():
@@ -46,8 +47,8 @@ class AWSF():
                                     UTF-8, please change and retry''')
 
         # start logging
-        if 'log_level' in self.config['awsf logging']:
-            loglevel = self.config['awsf logging']['log_level'].upper()
+        if 'log_level' in self.config['awsf system']:
+            loglevel = self.config['awsf system']['log_level'].upper()
         else:
             loglevel = 'INFO'
 
@@ -57,8 +58,8 @@ class AWSF():
 
         # setup the logging
         logfile = None
-        if 'log_file' in self.config['awsf logging']:
-            logfile = self.config['awsf logging']['log_file']
+        if 'log_file' in self.config['awsf system']:
+            logfile = self.config['awsf system']['log_file']
 
         fmt = '%(levelname)s:%(name)s:%(message)s'
         if logfile is not None:
@@ -93,8 +94,12 @@ class AWSF():
         if 'pathtp' in self.config['paths']:
             self.pathtp = self.config['paths']['pathtp']
 
+        # name of smrf file to write out (not path)
+        self.smrfini = self.config['paths']['smrfini']
+
         self.start_date = pd.to_datetime(self.config['time']['start_date'])
         self.end_date = pd.to_datetime(self.config['time']['end_date'])
+        self.time_step = self.config['time']['time_step']
         self.tmz = self.config['time']['time_zone']
         self.tzinfo = pytz.timezone(self.config['time']['time_zone'])
         # self.wyh = pd.to_datetime('%s-10-01'%pm.wyb(self.end_date))
@@ -136,10 +141,10 @@ class AWSF():
         if 'prev_mod_file' in self.config['files']:
             self.prev_mod_file = self.config['files']['prev_mod_file']
 
-        if 'ithreads' in self.config['isystem']:
-            self.ithreads = self.config['isystem']['ithreads']
+        if 'ithreads' in self.config['awsf system']:
+            self.ithreads = self.config['awsf system']['ithreads']
         else:
-            self.ithreads = 4
+            self.ithreads = 2
 
         if 'isnobal restart' in self.config:
             if 'restart_crash' in self.config['isnobal restart']:
@@ -148,10 +153,22 @@ class AWSF():
                     self.depth_thresh = self.config['isnobal restart']['depth_thresh']
                     self.restart_hr = int(self.config['isnobal restart']['wyh_restart_output'])
 
+        # if we are going to run ipysnobal with smrf
+        if 'ipysnobal' in self.config:
+            if self.config['ipysnobal']['smrf_ipysnobal_flag'] == True:
+                self.ipy_time_step = self.config['ipysnobal']['time_step']
+                self.ipy_threads = self.config['ipysnobal']['nthreads']
+                self.ipy_init = self.config['ipysnobal initial conditions']['init_file']
+                self.ipy_init_type = self.config['ipysnobal initial conditions']['input_type']
+                self.ipy_frequency = self.config['ipysnobal output']['frequency']
+                if 'ipysnobal constants' in self.config:
+                    self.ipy_max_z_s_0 = self.config['ipysnobal constants']['max_z_s_0']
+                    self.ipy_z_u = self.config['ipysnobal constants']['z_u']
+                    self.ipy_z_T = self.config['ipysnobal constants']['z_T']
+                    self.ipy_z_g = self.config['ipysnobal constants']['z_g']
+
         # list of sections releated to AWSF
         self.sec_awsf = ['paths', 'grid', 'files', 'awsf logging', 'isystem', 'isnobal restart']
-        # name of smrf file to write out
-        self.smrfini = self.config['paths']['smrfini']
 
     def runSmrf(self):
         """
@@ -180,15 +197,20 @@ class AWSF():
         Run isnobal
         """
 
-        # modify config and run smrf
         smin.run_isnobal(self)
+
+    def run_smrf_ipysnobal(self):
+        """
+        Run smrf and pass inputs to ipysnobal in memory
+        """
+
+        smrf_ipy.run_smrf_ipysnobal(self)
 
     def restart_crash_image(self):
         """
         Restart isnobal
         """
 
-        # modify config and run smrf
         smin.restart_crash_image(self)
 
     def mk_directories(self):
@@ -283,6 +305,7 @@ class AWSF():
 
         self.paths = os.path.join(self.pathd,'smrfOutputs')
         self.ppt_desc = os.path.join(self.pathd, 'ppt_desc{}.txt'.format(self.end_date.strftime("%Y%m%d")))
+
 
     def __enter__(self):
         return self

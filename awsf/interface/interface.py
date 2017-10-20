@@ -14,11 +14,11 @@ from datetime import datetime
 import sys
 from smrf.utils import io
 
-def smrfMEAS(self):
-    '''
-    script to automate smrf tasks for multiple runs for real time forecasting
-    '''
-
+def create_smrf_config(self):
+    """
+    Create a smrf config for running standard smrf run. We do this because
+    the AWSF sections will break the config checker utility
+    """
     # ###################################################################################################
     # ### read in base and write out the specific config file for smrf ##################################
     # ###################################################################################################
@@ -36,9 +36,20 @@ def smrfMEAS(self):
     print("writing the config file for smrf (meas)\n")
     io.generate_config(smrf_cfg, fp_smrfini, inicheck=False)
 
+    return fp_smrfini
+
+def smrfMEAS(self):
+    '''
+    script to automate smrf tasks for multiple runs for real time forecasting
+    '''
+
     ###################################################################################################
     ### run smrf with the config file we just made ####################################################
     ###################################################################################################
+
+    # first create config file to run smrf
+    fp_smrfini = create_smrf_config(self)
+
     print("running smrf (meas)\n")
     faulthandler.enable()
     start = datetime.now()

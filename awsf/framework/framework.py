@@ -114,6 +114,7 @@ class AWSF():
         self.nx = int(self.config['grid']['nx'])
         self.ny = int(self.config['grid']['ny'])
         self.nbits = int(self.config['grid']['nbits'])
+        self.soil_temp = self.config['soil_temp']['temp']
 
         if self.config['topo']['type'] == 'ipw':
             self.fp_dem = self.config['topo']['dem']  # pull in location of the dem
@@ -154,8 +155,11 @@ class AWSF():
                     self.restart_hr = int(self.config['isnobal restart']['wyh_restart_output'])
 
         # if we are going to run ipysnobal with smrf
+        #print self.config['ipysnobal']
+        #print self.config['ipysnobal']['smrf_ipysnobal_flag']
         if 'ipysnobal' in self.config:
             if self.config['ipysnobal']['smrf_ipysnobal_flag'] == True:
+                #print('Stuff happening here \n\n\n')
                 self.ipy_time_step = self.config['ipysnobal']['time_step']
                 self.ipy_threads = self.config['ipysnobal']['nthreads']
                 self.ipy_init = self.config['ipysnobal initial conditions']['init_file']

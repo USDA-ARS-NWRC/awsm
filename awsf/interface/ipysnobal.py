@@ -122,7 +122,7 @@ def date_range(start_date, end_date, increment):
     return np.array(result)
 
 
-def get_args(configFile):
+def get_args(self):
     """
     Parse the configuration file
 
@@ -549,7 +549,7 @@ def open_init_files(options):
 ########### Functions for interfacing with smrf run ############
 ################################################################
 
-def init_from_smrf(configFile):
+def init_from_smrf(self):
     """
     mimic the main.c from the Snobal model
 
@@ -558,7 +558,7 @@ def init_from_smrf(configFile):
     """
 
     # parse the input arguments
-    options, point_run = get_args(configFile)
+    options, point_run = get_args(self)
 
     # get the timestep info
     params, tstep_info = get_tstep_info(options['constants'], options)
@@ -580,7 +580,7 @@ class QueueIsnobal(threading.Thread):
 
     def __init__(self, queue, date_time, out_frequency,thread_variables,
                  options, params, tstep_info, init,
-                 output_rec, nx, ny):
+                 output_rec, nx, ny, soil_temp):
         """
         Args:
             date_time: array of date_time
@@ -599,6 +599,7 @@ class QueueIsnobal(threading.Thread):
         self.output_rec = output_rec
         self.nx = nx
         self.ny = ny
+        self.soil_temp = soil_temp
 
         self._logger = logging.getLogger(__name__)
         self._logger.debug('Initialized iPySnobal thread')

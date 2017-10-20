@@ -12,13 +12,14 @@ import sys
 import matplotlib.pyplot as plt
 import numpy as np
 from datetime import datetime
-from interface import ipysnobal
+from awsf.interface import ipysnobal
+from awsf.interface import interface
 
 
 def run_smrf_ipysnobal(self):
 
     # first create config file to run smrf
-    fp_smrfini = create_smrf_config(self)
+    fp_smrfini = interface.create_smrf_config(self)
 
     start = datetime.now()
 
@@ -136,7 +137,8 @@ def run_smrf_ipysnobal(self):
                                    init,
                                    output_rec,
                                    s.topo.nx,
-                                   s.topo.ny))
+                                   s.topo.ny,
+                                   self.soil_temp))
 
         # the cleaner
         t.append(queue.QueueCleaner(s.date_time, q))

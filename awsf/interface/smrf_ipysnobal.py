@@ -51,6 +51,10 @@ def run_smrf_ipysnobal(self):
         q = {}
         t = []
 
+        if s.distribute['precip'].nasde_model == 'marks2017':
+            s.thread_variables += ['storm_total', 'storm_id']
+
+
         # replace output with isnobal in threaded variables
         s.thread_variables.remove('output')
         s.thread_variables.append('isnobal')

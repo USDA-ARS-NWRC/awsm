@@ -33,4 +33,4 @@ with awsf.framework.framework.AWSF(configFile) as s:
     s.mk_directories()
 
     # 2. do everything else
-    #s.run_smrf_ipysnobal()
+    s.run_smrf_ipysnobal()

@@ -20,6 +20,7 @@ import netCDF4 as nc
 # import matplotlib.pyplot as plt
 import progressbar
 from copy import copy
+from smrf import ipw
 
 try:
     from Queue import Queue, Empty, Full
@@ -187,6 +188,7 @@ def get_args(self):
     check_range (data_tstep_min, 1.0, hrs2min(60),"input data's timestep")
     if ((data_tstep_min > 60) and (data_tstep_min % 60 != 0)):
         raise ValueError("Data timestep > 60 min must be multiple of 60 min (whole hrs)")
+    config['time'] = {}
     config['time']['time_step'] = data_tstep_min
 
     # add to constant sections for tstep_info calculation
@@ -196,7 +198,7 @@ def get_args(self):
     # read in the start date and end date
     start_date = self.start_date
 
-    end_date = sefl.end_date
+    end_date = self.end_date
     if end_date < start_date:
         raise ValueError('end_date is before start_date')
     nsteps = (end_date-start_date).total_seconds()/60  # elapsed time in minutes
@@ -215,6 +217,7 @@ def get_args(self):
     config['time']['date_time'] = dv
 
     # check the output section
+    config['output'] = {}
     config['output']['frequency'] = int(self.ipy_frequency)
 
     # user has requested a point run from spatial data
@@ -222,10 +225,25 @@ def get_args(self):
 
     config['output']['output_mode'] = 'data'
     config['output']['out_filename'] = None
+    config['inputs'] = {}
     config['inputs']['point'] = None
 
     config['output']['nthreads'] = int(self.ipy_threads)
     config['output']['location'] = self.pathro
+
+    config['initial_conditions'] = {}
+    config['initial_conditions']['file'] = os.path.abspath(self.config['ipysnobal initial conditions']['init_file'])
+    config['initial_conditions']['input_type'] = self.config['ipysnobal initial conditions']['input_type'].lower()
+    if 'restart' in self.config['ipysnobal initial conditions']:
+        config['initial_conditions']['restart'] = self.config['ipysnobal initial conditions']['restart']
+    else:
+        config['initial_conditions']['restart'] = False
+
+    if 'mask_file' in self.config['ipysnobal initial conditions']:
+        if config['initial_conditions']['input_type'] == 'ipw':
+            config['initial_conditions']['mask_file'] = self.config['ipysnobal initial conditions']['mask_file']
+        elif config['initial_conditions']['input_type'] == 'netcdf':
+            print('Mask should be in netcdf, not external file')
 
     return config, point_run
 
@@ -499,7 +517,7 @@ def initialize(params, tstep_info, init):
     return s
 
 
-def open_init_files(options):
+def open_init_files(self, options):
     """
     Open the netCDF files for initial conditions and inputs
     - Reads in the initial_conditions file
@@ -512,29 +530,65 @@ def open_init_files(options):
     """
 
     #------------------------------------------------------------------------------
-    # get the initial conditions
-    i = nc.Dataset(options['initial_conditions']['file'])
-
     # read the required variables in
     init = {}
-    init['x'] = i.variables['x'][:]         # get the x coordinates
-    init['y'] = i.variables['y'][:]         # get the y coordinates
-    init['elevation'] = i.variables['z'][:]         # get the elevation
-    init['z_0'] = i.variables['z_0'][:]     # get the roughness length
 
-    # All other variables will be assumed zero if not present
-    all_zeros = np.zeros_like(init['elevation'])
-    flds = ['z_s', 'rho', 'T_s_0', 'T_s', 'h2o_sat', 'mask']
+    # get the initial conditions
+    if options['initial_conditions']['input_type'] == 'netcdf':
+        i = nc.Dataset(options['initial_conditions']['file'])
 
-    for f in flds:
-        if i.variables.has_key(f):
-            init[f] = i.variables[f][:]         # read in the variables
-        elif f == 'mask':
-            init[f] = np.ones_like(init['elevation'])   # if no mask set all to ones so all will be ran
+        init['x'] = i.variables['x'][:]         # get the x coordinates
+        init['y'] = i.variables['y'][:]         # get the y coordinates
+        init['elevation'] = i.variables['z'][:]         # get the elevation
+        init['z_0'] = i.variables['z_0'][:]     # get the roughness length
+
+        # All other variables will be assumed zero if not present
+        all_zeros = np.zeros_like(init['elevation'])
+        flds = ['z_s', 'rho', 'T_s_0', 'T_s', 'h2o_sat', 'mask']
+
+        for f in flds:
+            if i.variables.has_key(f):
+                init[f] = i.variables[f][:]         # read in the variables
+            elif f == 'mask':
+                init[f] = np.ones_like(init['elevation'])   # if no mask set all to ones so all will be ran
+            else:
+                init[f] = all_zeros                 # default is set to zeros
+
+        i.close()
+
+    elif options['initial_conditions']['input_type'] == 'ipw':
+
+        i = ipw.IPW(options['initial_conditions']['file'])
+        if 'mask_file' in options['initial_conditions']:
+            imask = ipw.IPW(options['initial_conditions']['mask_file'])
+            msk = imask.bands[0].data
+
+        x = self.v + self.dv*np.arange(self.nx)
+        y = self.u + self.du*np.arange(self.ny)
+
+        # read the required variables in
+        init = {}
+        init['x'] = x         # get the x coordinates
+        init['y'] = y         # get the y coordinates
+        init['elevation'] = i.bands[0].data[:]        # get the elevation
+        init['z_0'] = i.bands[1].data[:]     # get the roughness length
+
+        # All other variables will be assumed zero if not present
+        all_zeros = np.zeros_like(init['elevation'])
+
+        init['z_s'] = i.bands[2].data[:]
+        init['rho'] = i.bands[3].data[:]
+        init['T_s_0'] = i.bands[4].data[:]
+        init['T_s'] = i.bands[5].data[:]
+        init['h2o_sat'] = i.bands[6].data[:]
+        # Add mask if input
+        if 'mask_file' in options['initial_conditions']:
+            init['mask'] = msk
         else:
-            init[f] = all_zeros                 # default is set to zeros
+            init['mask'] = np.ones_like(init['elevation'])
 
-    i.close()
+    else:
+        print('Wrong input type for iPySnobal init file')
 
     for key in init.keys():
         init[key] = init[key].astype(np.float64)
@@ -564,7 +618,7 @@ def init_from_smrf(self):
     params, tstep_info = get_tstep_info(options['constants'], options)
 
     # open the files and read in data
-    init = open_init_files(options)
+    init = open_init_files(self, options)
 
     output_rec = initialize(params, tstep_info, init)
 
@@ -676,16 +730,24 @@ class QueueIsnobal(threading.Thread):
                     if data is None:
                         print v
                         data = np.zeros((self.ny, self.nx))
-                        print('Error of no data from smrf to iSnobal')
+                        print('Error - no data from smrf to iSnobal')
                         input2[map_val[v]] = data
                     else:
                         input2[map_val[v]] = data
             # set ground temp
+            print('Freeze {}'.format(FREEZE))
             input2['T_g'] = -2.5*np.ones((self.ny, self.nx))
             input2['T_a'] += FREEZE
             input2['T_pp'] += FREEZE
             input2['T_g'] += FREEZE
+            print np.min(input2['T_a'])
+            print np.min(input2['T_pp'])
+            print np.min(input2['T_g'])
+            print np.min(input1['T_a'])
+            print np.min(input1['T_pp'])
+            print np.min(input1['T_g'])
 
+            print('running timestep: {}'.format(tstep))
             rt = snobal.do_tstep_grid(input1, input2, self.output_rec,
                                       self.tstep_info, self.options['constants'],
                                       self.params, first_step, nthreads=20)
@@ -694,6 +756,7 @@ class QueueIsnobal(threading.Thread):
                 print('ipysnobal error on time step %s, pixel %i' % (tstep, rt))
                 break
 
+            print('Finished timestep: {}'.format(tstep))
             input1 = input2.copy()
 
             # output at the frequency and the last time step

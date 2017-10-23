@@ -166,10 +166,14 @@ class AWSF():
                 self.ipy_init_type = self.config['ipysnobal initial conditions']['input_type']
                 self.ipy_frequency = self.config['ipysnobal output']['frequency']
                 if 'ipysnobal constants' in self.config:
+                    print self.config['ipysnobal constants']
                     self.ipy_max_z_s_0 = self.config['ipysnobal constants']['max_z_s_0']
                     self.ipy_z_u = self.config['ipysnobal constants']['z_u']
-                    self.ipy_z_T = self.config['ipysnobal constants']['z_T']
+                    self.ipy_z_T = self.config['ipysnobal constants']['z_t']
                     self.ipy_z_g = self.config['ipysnobal constants']['z_g']
+                    print self.ipy_z_u
+                    print self.ipy_z_T
+                    print 'done printing these'
 
         # list of sections releated to AWSF
         self.sec_awsf = ['paths', 'grid', 'files', 'awsf logging', 'isystem', 'isnobal restart']
@@ -303,6 +307,8 @@ class AWSF():
             self.pathinit = os.path.join(self.pathd, 'init/')
             self.pathr =    os.path.join(self.path_wy, 'runs/run{}_{}'.format(self.start_date.strftime("%Y%m%d"), self.end_date.strftime("%Y%m%d")))
             self.pathro =   os.path.join(self.pathr, 'output/')
+            if not os.path.exists(self.pathro):
+                os.makedirs(self.pathro)
 
         else:
             self._logger.error('Base directory did not exist, not safe to conitnue')

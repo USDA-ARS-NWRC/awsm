@@ -75,6 +75,13 @@ class AWSF():
 
         self._logger = logging.getLogger(__name__)
 
+        ################### Decide which modules to run ######################
+        self.do_smrf = self.config['awsf master']['run_smrf']
+        self.do_isnobal = self.config['awsf master']['run_isnobal']
+        self.do_wrf = self.config['awsf master']['use_wrf']
+        self.do_smrf_ipysnobal = self.config['awsf master']['run_smrf_ipysnobal']
+
+        ################# Store some paths from config file ##################
         self.path_dr = self.config['paths']['path_dr']
         self.basin = self.config['paths']['basin']
         if 'wy' in self.config['paths']:
@@ -97,6 +104,7 @@ class AWSF():
         # name of smrf file to write out (not path)
         self.smrfini = self.config['paths']['smrfini']
 
+        # time information
         self.start_date = pd.to_datetime(self.config['time']['start_date'])
         self.end_date = pd.to_datetime(self.config['time']['end_date'])
         self.time_step = self.config['time']['time_step']
@@ -116,6 +124,7 @@ class AWSF():
         self.nbits = int(self.config['grid']['nbits'])
         self.soil_temp = self.config['soil_temp']['temp']
 
+        # topo information
         if self.config['topo']['type'] == 'ipw':
             self.fp_dem = self.config['topo']['dem']  # pull in location of the dem
         elif self.config['topo']['type'] == 'netcdf':
@@ -162,21 +171,12 @@ class AWSF():
                 #print('Stuff happening here \n\n\n')
                 self.ipy_time_step = self.config['ipysnobal']['time_step']
                 self.ipy_threads = self.config['ipysnobal']['nthreads']
-                self.ipy_init = self.config['ipysnobal initial conditions']['init_file']
                 self.ipy_init_type = self.config['ipysnobal initial conditions']['input_type']
-                self.ipy_frequency = self.config['ipysnobal output']['frequency']
-                if 'ipysnobal constants' in self.config:
-                    print self.config['ipysnobal constants']
-                    self.ipy_max_z_s_0 = self.config['ipysnobal constants']['max_z_s_0']
-                    self.ipy_z_u = self.config['ipysnobal constants']['z_u']
-                    self.ipy_z_T = self.config['ipysnobal constants']['z_t']
-                    self.ipy_z_g = self.config['ipysnobal constants']['z_g']
-                    print self.ipy_z_u
-                    print self.ipy_z_T
-                    print 'done printing these'
 
         # list of sections releated to AWSF
-        self.sec_awsf = ['paths', 'grid', 'files', 'awsf logging', 'isystem', 'isnobal restart']
+        self.sec_awsf = ['awsf master', 'paths', 'grid', 'files', 'awsf logging', 'isystem',
+                        'isnobal restart', 'ipysnobal', 'ipysnobal initial conditions',
+                        'ipysnobal output', 'ipysnobal constants']
 
     def runSmrf(self):
         """

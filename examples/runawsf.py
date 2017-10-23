@@ -28,31 +28,27 @@ if len(sys.argv) > 1:
 
 # 1. initialize
 # try:
-with awsf.framework.framework.AWSF(configFile) as s:
+with awsf.framework.framework.AWSF(configFile) as a:
     # 2. make directory structure if not made
     s.mk_directories()
 
     # 2. distribute data by running smrf
-    tmp_in = raw_input('Do you want to run smrf? (y/n):  ')
-    if tmp_in.lower() == 'y':
-        s.runSmrf()
+    if a.do_smrf:
+        a.runSmrf()
 
     # 3. convert smrf output to ipw for iSnobal
-    tmp_in = raw_input('Convert smrf output to ipw? (y/n):  ')
-    if tmp_in.lower() == 'y':
-        s.nc2ipw()
+    if a.do_isnobal:
+        a.nc2ipw()
 
-    # 4. run iSnobal
-    tmp_in = raw_input('Run iSnobal? (y/n):  ')
-    if tmp_in.lower() == 'y':
-        s.run_isnobal()
+        # 4. run iSnobal
+        if not a.config['isnobal restart']['restart_crash']:
+            a.run_isnobal()
+        else:
+            # 5. restart iSnobal from crash
+            a.restart_crash_image()
 
-    # 5. restart iSnobal from crash
-    # tmp_in = raw_input('Restart from crash? (y/n):  ')
-    # if tmp_in.lower() == 'y':
-    #     s.restart_crash_image()
+        # 6. convert ipw back to netcdf for processing
+        a.ipw2nc()
 
-    # 6. convert ipw back to netcdf for processing
-    tmp_in = raw_input('Convert ipw ouput to netcdf? (y/n):  ')
-    if tmp_in.lower() == 'y':
-        s.ipw2nc()
+    if a.do_smrf_ipysnobal:
+        a.run_smrf_ipysnobal()

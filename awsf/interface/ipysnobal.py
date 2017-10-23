@@ -171,8 +171,16 @@ def get_args(self):
         'relative_heights': True,
     }
 
-    # make blank config
+    # make blank config and fill with corresponding sections
     config = {}
+    config['time'] = {}
+    config['time']['time_step'] = self.ipy_time_step
+    config['time']['start_date'] = self.start_date
+    config['time']['end_date'] = self.end_date
+    config['output'] = self.config['ipysnobal output']
+    config['output']['location'] = self.pathro
+    config['output']['nthreads'] = int(self.ipy_threads)
+    config['constants'] = self.config['ipysnobal constants']
     # read in the constants
     c = {}
     for v in self.config['ipysnobal constants']:
@@ -184,11 +192,10 @@ def get_args(self):
     #------------------------------------------------------------------------------
     # read in the time and ensure a few things
     # nsteps will only be used if end_date is not specified
-    data_tstep_min = int(self.ipy_time_step)
+    data_tstep_min = int(config['time']['time_step'])
     check_range (data_tstep_min, 1.0, hrs2min(60),"input data's timestep")
     if ((data_tstep_min > 60) and (data_tstep_min % 60 != 0)):
         raise ValueError("Data timestep > 60 min must be multiple of 60 min (whole hrs)")
-    config['time'] = {}
     config['time']['time_step'] = data_tstep_min
 
     # add to constant sections for tstep_info calculation
@@ -217,8 +224,7 @@ def get_args(self):
     config['time']['date_time'] = dv
 
     # check the output section
-    config['output'] = {}
-    config['output']['frequency'] = int(self.ipy_frequency)
+    config['output']['frequency'] = int(config['output']['frequency'])
 
     # user has requested a point run from spatial data
     point_run = False
@@ -227,9 +233,9 @@ def get_args(self):
     config['output']['out_filename'] = None
     config['inputs'] = {}
     config['inputs']['point'] = None
+    config['inputs']['input_type'] = self.ipy_init_type
+    config['inputs']['soil_temp'] = self.soil_temp
 
-    config['output']['nthreads'] = int(self.ipy_threads)
-    config['output']['location'] = self.pathro
 
     config['initial_conditions'] = {}
     config['initial_conditions']['file'] = os.path.abspath(self.config['ipysnobal initial conditions']['init_file'])
@@ -532,7 +538,6 @@ def open_init_files(self, options):
     #------------------------------------------------------------------------------
     # read the required variables in
     init = {}
-
     # get the initial conditions
     if options['initial_conditions']['input_type'] == 'netcdf':
         i = nc.Dataset(options['initial_conditions']['file'])
@@ -581,6 +586,7 @@ def open_init_files(self, options):
         init['T_s_0'] = i.bands[4].data[:]
         init['T_s'] = i.bands[5].data[:]
         init['h2o_sat'] = i.bands[6].data[:]
+
         # Add mask if input
         if 'mask_file' in options['initial_conditions']:
             init['mask'] = msk
@@ -594,6 +600,8 @@ def open_init_files(self, options):
         init[key] = init[key].astype(np.float64)
 
     # convert temperatures to K
+    #init['T_s'][init['T_s'] <= 75.0] = 0.0
+    #init['T_s_0'][init['T_s_0'] <= 75.0] = 0.0
     init['T_s'] += FREEZE
     init['T_s_0'] += FREEZE
 
@@ -632,7 +640,7 @@ class QueueIsnobal(threading.Thread):
     Takes values from the queue and uses them to run iPySnobal
     """
 
-    def __init__(self, queue, date_time, out_frequency,thread_variables,
+    def __init__(self, queue, date_time, thread_variables,
                  options, params, tstep_info, init,
                  output_rec, nx, ny, soil_temp):
         """
@@ -644,7 +652,6 @@ class QueueIsnobal(threading.Thread):
         threading.Thread.__init__(self, name='isnobal')
         self.queue = queue
         self.date_time = date_time
-        self.out_frequency = out_frequency
         self.thread_variables = thread_variables
         self.options = options
         self.params = params
@@ -654,6 +661,7 @@ class QueueIsnobal(threading.Thread):
         self.nx = nx
         self.ny = ny
         self.soil_temp = soil_temp
+        self.nthreads = self.options['output']['nthreads']
 
         self._logger = logging.getLogger(__name__)
         self._logger.debug('Initialized iPySnobal thread')
@@ -735,22 +743,15 @@ class QueueIsnobal(threading.Thread):
                     else:
                         input2[map_val[v]] = data
             # set ground temp
-            print('Freeze {}'.format(FREEZE))
             input2['T_g'] = -2.5*np.ones((self.ny, self.nx))
             input2['T_a'] += FREEZE
             input2['T_pp'] += FREEZE
             input2['T_g'] += FREEZE
-            print np.min(input2['T_a'])
-            print np.min(input2['T_pp'])
-            print np.min(input2['T_g'])
-            print np.min(input1['T_a'])
-            print np.min(input1['T_pp'])
-            print np.min(input1['T_g'])
 
             print('running timestep: {}'.format(tstep))
             rt = snobal.do_tstep_grid(input1, input2, self.output_rec,
                                       self.tstep_info, self.options['constants'],
-                                      self.params, first_step, nthreads=20)
+                                      self.params, first_step, nthreads=self.nthreads)
 
             if rt != -1:
                 print('ipysnobal error on time step %s, pixel %i' % (tstep, rt))

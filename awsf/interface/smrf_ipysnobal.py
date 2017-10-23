@@ -133,7 +133,6 @@ def run_smrf_ipysnobal(self):
 
         # isnobal thread
         t.append(ipysnobal.QueueIsnobal(q, s.date_time,
-                                   s.config['output']['frequency'],
                                    s.thread_variables,
                                    options,
                                    params,

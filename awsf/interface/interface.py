@@ -14,14 +14,15 @@ from datetime import datetime
 import sys
 from smrf.utils import io
 
-def smrfMEAS(self):
-    '''
-    script to automate smrf tasks for multiple runs for real time forecasting
-    '''
-
-    # ###################################################################################################
-    # ### read in base and write out the specific config file for smrf ##################################
-    # ###################################################################################################
+def create_smrf_config(self):
+    """
+    Create a smrf config for running standard :mod: `smr` run. Use the
+    :mod: `AWSF` config and remove the sections specific to :mod: `AWSF`.
+    We do this because these sections will break the config checker utility
+    """
+    # ########################################################################
+    # ### read in base and write out the specific config file for smrf #######
+    # ########################################################################
 
     # Write out config file to run smrf
     # make copy and delete only awsf sections
@@ -36,10 +37,22 @@ def smrfMEAS(self):
     self._logger.info('Writing the config file for SMRF')
     io.generate_config(smrf_cfg, fp_smrfini, inicheck=False)
 
+    return fp_smrfini
+
+def smrfMEAS(self):
+    '''
+    Run standard SMRF run. Calls :mod: `awsf.interface.interface.creae_smrf_config`
+    to make :mod: `smrf` config file and runs :mod: `smrf.framework.SMRF` similar
+    to standard run_smrf.py script
+    '''
+
     ###################################################################################################
     ### run smrf with the config file we just made ####################################################
     ###################################################################################################
     self._logger.info('Running SMRF')
+    # first create config file to run smrf
+    fp_smrfini = create_smrf_config(self)
+
     faulthandler.enable()
     start = datetime.now()
 
@@ -193,6 +206,10 @@ def smrf_go_wrf(config_file):
         #     s._logger.error(e)
 
 def run_isnobal(self):
+    '''
+    Run iSnobal from command line. Checks necessary directories, creates
+    initialization image and calls iSnobal.
+    '''
 
     print("calculating time vars")
     wyh = pd.to_datetime('%s-10-01'%pm.wyb(self.end_date))
@@ -360,7 +377,10 @@ def run_isnobal_forecast(self):
 
 
 def restart_crash_image(self):
-
+    '''
+    Restart iSnobal from crash. Read in last output, zero depths smaller than
+    a threshold, write new initialization image, and call iSnobal.
+    '''
     nbits = self.nbits
     nthreads = self.ithreads
 

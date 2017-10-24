@@ -20,50 +20,45 @@ if len(sys.argv) > 1:
 
 # 1. initialize
 # try:
-with awsf.framework.framework.AWSF(configFile) as s:
-    # 2. make directory structure (always run this to assign paths)
+with awsf.framework.framework.AWSF(configFile) as a:
+    # 2. make directory structure if not made
     s.mk_directories()
 
-    # 3. distribute data by running smrf
-    tmp_in = raw_input('Do you want to run smrf? (y/n):  ')
-    if tmp_in.lower() == 'y':
-        s.runSmrf()
+    # 2. distribute data by running smrf
+    if a.do_smrf:
+        a.runSmrf()
 
-    # 4. convert smrf output to ipw for iSnobal
-    tmp_in = raw_input('Convert smrf output to ipw? (y/n):  ')
-    if tmp_in.lower() == 'y':
-        s.nc2ipw('smrf')
+    # 3. convert smrf output to ipw for iSnobal
+    if a.do_isnobal:
+        a.nc2ipw()
 
-    # 5. run iSnobal
-    tmp_in = raw_input('Run iSnobal? (y/n):  ')
-    if tmp_in.lower() == 'y':
-        s.run_isnobal()
+        # 4. run iSnobal
+        if not a.config['isnobal restart']['restart_crash']:
+            a.run_isnobal()
+        else:
+            # 5. restart iSnobal from crash
+            if 'restart_crash' in a.config['isnobal restart']:
+                if a.config['isnobal restart']['restart_crash'] == True:
+                    a.restart_crash_image()
 
-    # 6. restart iSnobal from crash
-    if 'isnobal restart' in s.config:
-        if 'restart_crash' in s.config['isnobal restart']:
-            if s.config['isnobal restart']['restart_crash'] == True:
-                tmp_in = raw_input('Restart from crash? (y/n):  ')
-                if tmp_in.lower() == 'y':
-                    s.restart_crash_image()
+        # 6. convert ipw back to netcdf for processing
+        a.ipw2nc()
 
-    # 7. convert ipw back to netcdf for processing
-    tmp_in = raw_input('Convert iSnobal forecast ouput to netcdf? (y/n):  ')
-    if tmp_in.lower() == 'y':
-        s.ipw2nc('smrf')
+    # perform same operations using gridded WRF data
+    if a.do_forecast:
+        if 'forecast' in a.config:
+            if a.config['forecast']['forecast_flag']:
+                if a.do_smrf:
+                    s.runSmrf_wrff()
+                if a.do_isnobal:
+                    a.nc2ipw('wrf')
 
-    # 8. repeat with gridded wrf data
-    if 'forecast' in s.config:
-        if s.config['forecast']['forecast_flag']:
-            tmp_in = raw_input('Do you want to run smrf forecast with wrf data? (y/n):  ')
-            if tmp_in.lower() == 'y':
-                s.runSmrf_wrff()
-            tmp_in = raw_input('Convert smrf forecast output top ipw? (y/n) ')
-            if tmp_in.lower() == 'y':
-                s.nc2ipw('wrf')
-            tmp_in = raw_input('Run iSnobal forecast? (y/n):  ')
-            if tmp_in.lower() == 'y':
-                s.run_isnobal_forecast()
-            tmp_in = raw_input('Convert iSnobal forecast ouput to netcdf? (y/n): ')
-            if tmp_in.lower() == 'y':
-                s.ipw2nc('wrf')
+                    a.run_isnobal_forecast()
+
+                    a.ipw2nc('wrf')
+
+    # Run iPySnobal from SMRF in memory
+    if a.do_smrf_ipysnobal:
+        a.run_smrf_ipysnobal()
+
+    a._logger.info(datetime.now() - start)

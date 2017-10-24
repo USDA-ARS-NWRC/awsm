@@ -52,3 +52,5 @@ with awsf.framework.framework.AWSF(configFile) as a:
 
     if a.do_smrf_ipysnobal:
         a.run_smrf_ipysnobal()
+
+    a._logger.info(datetime.now() - start)

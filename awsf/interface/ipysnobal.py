@@ -174,7 +174,7 @@ def get_args(self):
     # make blank config and fill with corresponding sections
     config = {}
     config['time'] = {}
-    config['time']['time_step'] = self.ipy_time_step
+    config['time']['time_step'] = self.time_step
     config['time']['start_date'] = self.start_date
     config['time']['end_date'] = self.end_date
     config['output'] = self.config['ipysnobal output']

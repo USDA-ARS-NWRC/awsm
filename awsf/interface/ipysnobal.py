@@ -733,7 +733,7 @@ class QueueIsnobal(threading.Thread):
             input2 = {}
             for v in force_variables:
                 if v in self.queue.keys():
-                    # print v
+                    # get variable from smrf queue
                     data = self.queue[v].get(tstep, block=True, timeout=None)
                     if data is None:
                         print v
@@ -744,6 +744,7 @@ class QueueIsnobal(threading.Thread):
                         input2[map_val[v]] = data
             # set ground temp
             input2['T_g'] = -2.5*np.ones((self.ny, self.nx))
+            # convert variables to Kelvin
             input2['T_a'] += FREEZE
             input2['T_pp'] += FREEZE
             input2['T_g'] += FREEZE

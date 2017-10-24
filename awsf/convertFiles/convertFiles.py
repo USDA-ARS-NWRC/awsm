@@ -178,7 +178,7 @@ def ipw2nc_mea(self, runtype):
                      'Total snowmelt','Total runoff','Snowcover cold content']
 
     if runtype == 'smrf':
-        netcdfFile = os.path.join(self.path_r, 'em.nc')
+        netcdfFile = os.path.join(self.pathr, 'em.nc')
     elif runtype == 'wrf':
         netcdfFile = os.path.join(self.path_wrf_run, 'em.nc')
 
@@ -220,7 +220,7 @@ def ipw2nc_mea(self, runtype):
                        'Predicted thickness of the lower layer', 'Predicted percentage of liquid water saturation of the snowcover']
 
     if runtype == 'smrf':
-        netcdfFile = os.path.join(self.path_r, 'snow.nc')
+        netcdfFile = os.path.join(self.pathr, 'snow.nc')
     elif runtype == 'wrf':
         netcdfFile = os.path.join(self.path_wrf_run, 'snow.nc')
 

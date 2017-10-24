@@ -22,7 +22,7 @@ if len(sys.argv) > 1:
 # try:
 with awsf.framework.framework.AWSF(configFile) as a:
     # 2. make directory structure if not made
-    s.mk_directories()
+    a.mk_directories()
 
     # 2. distribute data by running smrf
     if a.do_smrf:
@@ -30,7 +30,7 @@ with awsf.framework.framework.AWSF(configFile) as a:
 
     # 3. convert smrf output to ipw for iSnobal
     if a.do_isnobal:
-        a.nc2ipw()
+        a.nc2ipw('smrf')
 
         # 4. run iSnobal
         if not a.config['isnobal restart']['restart_crash']:
@@ -42,14 +42,14 @@ with awsf.framework.framework.AWSF(configFile) as a:
                     a.restart_crash_image()
 
         # 6. convert ipw back to netcdf for processing
-        a.ipw2nc()
+        a.ipw2nc('smrf')
 
     # perform same operations using gridded WRF data
-    if a.do_forecast:
+    if a.do_wrf:
         if 'forecast' in a.config:
             if a.config['forecast']['forecast_flag']:
                 if a.do_smrf:
-                    s.runSmrf_wrff()
+                    a.runSmrf_wrf()
                 if a.do_isnobal:
                     a.nc2ipw('wrf')
 

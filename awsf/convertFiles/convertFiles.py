@@ -11,51 +11,67 @@ import netCDF4 as nc
 import progressbar
 import glob
 
-def nc2ipw_mea(self):
+def nc2ipw_mea(self, runtype):
     '''
     Function to create iSnobal forcing and precip images from smrf ouputs
     '''
     ###################################################################################################
     ### make .ipw input files from netCDF files #######################################################
     ###################################################################################################
-    print("making the ipw files from NetCDF files (meas)")
+    print("making the ipw files from NetCDF files for {}".format(runtype))
 
-    start_date = self.start_date.replace(tzinfo=self.tzinfo)
+    # check if this is forecast or not
+    if runtype == 'smrf':
+        start_date = self.start_date.replace(tzinfo=self.tzinfo)
+    elif runtype == 'wrf':
+        start_date = self.end_date.replace(tzinfo=self.tzinfo)
+    else:
+        self._logger.error('Wrong run type given to nc2ipw. \
+                            not smrf or wrf')
+
     tmpday, tmpwy = utils.water_day(start_date)
     # find start of wy
     wyh = pd.to_datetime('{}-10-01'.format(tmpwy-1))
-    tt = self.start_date-wyh
+
+    if runtype == 'smrf':
+        tt = self.start_date - wyh
+        smrfpath = self.paths
+        datapath = self.pathd
+        f = open(self.ppt_desc,'w')
+    elif runtype == 'wrf':
+        tt = self.end_date - wyh
+        smrfpath = self.path_wrf_s
+        datapath = self.path_wrf_data
+        f = open(self.wrf_ppt_desc,'w')
 
     offset = tt.days*24 +  tt.seconds//3600 # start index for the input file
-    nbits = 16
+
 
     # File paths
-    th = os.path.join(self.paths,'thermal.nc')
+    th = os.path.join(smrfpath,'thermal.nc')
     th_var = 'thermal'
-    ta = os.path.join(self.paths,'air_temp.nc')
+    ta = os.path.join(smrfpath,'air_temp.nc')
     ta_var = 'air_temp'
-    ea = os.path.join(self.paths,'vapor_pressure.nc')
+    ea = os.path.join(smrfpath,'vapor_pressure.nc')
     ea_var = 'vapor_pressure'
-    wind = os.path.join(self.paths,'wind_speed.nc')
+    wind = os.path.join(smrfpath,'wind_speed.nc')
     wind_var = 'wind_speed'
     #tg_step = -2.5*np.ones((self.ny,self.nx))
-    sn = os.path.join(self.paths,'net_solar.nc')
+    sn = os.path.join(smrfpath,'net_solar.nc')
     sn_var = 'net_solar'
 
-    in_path = os.path.join(self.pathd,'input/')
+    in_path = os.path.join(datapath,'input/')
 
-    mp = os.path.join(self.paths,'precip.nc')
+    mp = os.path.join(smrfpath,'precip.nc')
     mp_var = 'precip'
-    ps = os.path.join(self.paths,'percent_snow.nc')
+    ps = os.path.join(smrfpath,'percent_snow.nc')
     ps_var = 'percent_snow'
-    rho = os.path.join(self.paths,'snow_density.nc')
+    rho = os.path.join(smrfpath,'snow_density.nc')
     rho_var = 'snow_density'
-    tp = os.path.join(self.paths,'dew_point.nc')
+    tp = os.path.join(smrfpath,'dew_point.nc')
     tp_var = 'dew_point'
-    in_pathp = os.path.join(self.pathd,'ppt_4b')
-    #self.ppt_desc = os.path.join(self.path_wy, 'data/ppt_desc{}.txt'.format(self.end_date.strftime("%Y%m%d")))
-    f = open(self.ppt_desc,'w')
 
+    in_pathp = os.path.join(datapath,'ppt_4b')
 
     th_file = nc.Dataset(th, 'r')
     ta_file = nc.Dataset(ta, 'r')
@@ -97,7 +113,7 @@ def nc2ipw_mea(self):
             i.new_band(sn_step)
 
         i.add_geo_hdr([self.u, self.v], [self.du, self.dv], self.units, self.csys)
-        i.write(in_step, nbits)
+        i.write(in_step, self.nbits)
 
         # only output if precip
         if np.sum(mp_step) > 0:
@@ -111,7 +127,7 @@ def nc2ipw_mea(self):
             i.new_band(rho_step)
             i.new_band(tp_step)
             i.add_geo_hdr([self.u, self.v], [self.du, self.dv], self.units, self.csys)
-            i.write(in_stepp, nbits)
+            i.write(in_stepp, self.nbits)
             f.write('%i %s\n' % (t, in_stepp))
 
         j += 1
@@ -129,30 +145,18 @@ def nc2ipw_mea(self):
     f.close()
     pbar.finish()
 
-def ipw2nc_mea(self):
+def ipw2nc_mea(self, runtype):
     '''
     Function to create netcdf files from iSnobal output
     '''
 
-    # u  = self.u
-    # v  = self.v
-    # du  = self.du
-    # dv  = self.dv
-    # units = self.units
-    # csys = self.csys
-    # nx = self.nx
-    # ny = self.ny
-    #
-    # nbits = self.nbits
-
-    # pathro =   '/data/blizzard/rcew/rme/25yr-run+Adam+dgm/wy08/spatial/runs/run.08_v2.1/output'
-    #
-    # config_file = '/data/blizzard/rcew/rme/prime_workspace/scripts/config_PBR2008.txt'
-    # tt = cfp.ConfigParser()
-    # tt.read(config_file)
-    # cfg = dict(tt._sections)
-    # et = pd.to_datetime(cfg['TIMES']['etime'])
-    wyh = pd.to_datetime('%s-10-01'%pm.wyb(self.end_date))
+    if runtype == 'smrf':
+        wyh = pd.to_datetime('%s-10-01'%pm.wyb(self.end_date))
+    elif runtype == 'wrf':
+        wyh = pd.to_datetime('%s-10-01'%pm.wyb(self.forecast_date))
+    else:
+        self._logger.error('Wrong run type given to ipw2nc. \
+                            not smrf or wrf')
 
     print("convert all .ipw output files to netcdf files")
     ###################################################################################################
@@ -173,8 +177,11 @@ def ipw2nc_mea(self):
                      'Average advected heat from precipitation','Average sum of EB terms for snowcover','Total evaporation',
                      'Total snowmelt','Total runoff','Snowcover cold content']
 
-    #netcdfFile = os.path.join(pathro, 'em.nc')
-    netcdfFile = os.path.join(self.pathr, 'em.nc')
+    if runtype == 'smrf':
+        netcdfFile = os.path.join(self.pathr, 'em.nc')
+    elif runtype == 'wrf':
+        netcdfFile = os.path.join(self.path_wrf_run, 'em.nc')
+
     dimensions = ('time','y','x')
     em = nc.Dataset(netcdfFile, 'w')
 
@@ -212,8 +219,11 @@ def ipw2nc_mea(self):
                        'Predicted temperature of the lower layer','Predicted temperature of the snowcover',
                        'Predicted thickness of the lower layer', 'Predicted percentage of liquid water saturation of the snowcover']
 
-    #netcdfFile = os.path.join(pathro, 'snow.nc')
-    netcdfFile = os.path.join(self.pathr, 'snow.nc')
+    if runtype == 'smrf':
+        netcdfFile = os.path.join(self.pathr, 'snow.nc')
+    elif runtype == 'wrf':
+        netcdfFile = os.path.join(self.path_wrf_run, 'snow.nc')
+
     dimensions = ('time','y','x')
     snow = nc.Dataset(netcdfFile, 'w')
 
@@ -245,7 +255,11 @@ def ipw2nc_mea(self):
     #===============================================================================
 
     # get all the files in the directory
-    d = sorted(glob.glob("%s/snow*"%self.pathro), key=os.path.getmtime)
+    if runtype == 'smrf':
+        d = sorted(glob.glob("%s/snow*"%self.pathro), key=os.path.getmtime)
+    elif runtype == 'wrf':
+        d = sorted(glob.glob("%s/snow*"%self.path_wrf_ro), key=os.path.getmtime)
+
     d.sort(key=lambda f: os.path.splitext(f))
     pbar = progressbar.ProgressBar(max_value=len(d)).start()
     j = 0

@@ -1,16 +1,13 @@
 import logging
 import os
 import coloredlogs
-from datetime import datetime, timedelta
+from datetime import datetime
 import pandas as pd
-# import itertools
-import numpy as np
 import pytz
 
 from smrf import data, distribute, output
 from smrf.envphys import radiation
 from smrf.utils import queue, io
-from threading import Thread
 from awsf.convertFiles import convertFiles as cvf
 from awsf.interface import interface as smin
 from awsf.interface import smrf_ipysnobal as smrf_ipy
@@ -82,7 +79,7 @@ class AWSF():
 
         ################# Store some paths from config file ##################
         # path to the base drive (i.e. /data/blizzard)
-        self.path_dr = self.config['paths']['path_dr']
+        self.path_dr = os.path.abspath(self.config['paths']['path_dr'])
         # name of your basin (i.e. Tuolumne)
         self.basin = self.config['paths']['basin']
         # water year of run
@@ -101,10 +98,10 @@ class AWSF():
 
         # path with scripts
         if 'pathws' in self.config['paths']:
-            self.pathws = self.config['paths']['pathws']
+            self.pathws = os.path.abspath(self.config['paths']['pathws'])
         # path to topo files
         if 'pathtp' in self.config['paths']:
-            self.pathtp = self.config['paths']['pathtp']
+            self.pathtp = os.path.abspath(self.config['paths']['pathtp'])
 
         # name of smrf file to write out (not path)
         self.smrfini = self.config['paths']['smrfini']
@@ -112,10 +109,27 @@ class AWSF():
         ################# Time information ##################
         self.start_date = pd.to_datetime(self.config['time']['start_date'])
         self.end_date = pd.to_datetime(self.config['time']['end_date'])
+
+        if self.do_wrf:
+            if 'forecast' in self.config:
+                self._logger.info('Forecasting set to True')
+
+                if 'forecast_date' in self.config['forecast']:
+                    self.forecast_date = pd.to_datetime(self.config['forecast']['forecast_date'])
+                else:
+                    self._logger.error('Forecast set to true, but no forecast_date given')
+                if ['wrf_data'] in self.config['forecast']:
+                    self.fp_wrfdata = self.config['forecast']['wrf_data']
+                else:
+                    self._logger.error('Forecast set to true, but no wrf_data given')
+                self.zone_number = self.config['forecast']['zone_number']
+                self.zone_letter = self.config['forecast']['zone_letter']
+            else:
+                self._logger.error('use_wrf set to True, but no forecast section.')
+
         self.time_step = self.config['time']['time_step']
         self.tmz = self.config['time']['time_zone']
         self.tzinfo = pytz.timezone(self.config['time']['time_zone'])
-        # self.wyh = pd.to_datetime('%s-10-01'%pm.wyb(self.end_date))
 
         ################# Grid data for iSnobal ##################
         self.u  = int(self.config['grid']['u'])
@@ -132,9 +146,10 @@ class AWSF():
         ################# Topo information ##################
         self.topotype = self.config['topo']['type']
         if self.topotype == 'ipw':
-            self.fp_dem = self.config['topo']['dem']  # pull in location of the dem
+            self.fp_dem = os.path.abspath(self.config['topo']['dem'])  # pull in location of the dem
         elif self.topotype == 'netcdf':
-            self.fp_dem = self.config['topo']['filename']
+            self.fp_dem = os.path.abspath(self.config['topo']['filename'])
+
         # mask file
         self.fp_mask = os.path.abspath(self.config['topo']['mask'])
         # init file just for surface roughness
@@ -143,21 +158,14 @@ class AWSF():
         else:
             self.roughness_init = None
 
-        #self.anyini = self.config['paths']['smrfini']
-        self.forecast_flag = 0
-        # if 'fetime' in self.config['times']:
-        #     self.forecast_flag = 1
-        #     self.ft = pd.to_datetime(self.config['times']['fetime'])
-
-        # previous state file
         if 'prev_mod_file' in self.config['files']:
-            self.prev_mod_file = self.config['files']['prev_mod_file']
+            self.prev_mod_file = os.path.abspath(self.config['files']['prev_mod_file'])
 
         # threads for running iSnobal
         if 'ithreads' in self.config['awsf system']:
             self.ithreads = self.config['awsf system']['ithreads']
         else:
-            self.ithreads = 2
+            self.ithreads = 1
 
         # options for restarting iSnobal
         if 'isnobal restart' in self.config:
@@ -167,6 +175,9 @@ class AWSF():
                     self.depth_thresh = self.config['isnobal restart']['depth_thresh']
                     self.restart_hr = int(self.config['isnobal restart']['wyh_restart_output'])
 
+        # name of smrf file to write out
+        self.smrfini = self.config['paths']['smrfini']
+        self.wrfini = self.config['paths']['wrfini']
         # if we are going to run ipysnobal with smrf
         if 'ipysnobal' in self.config:
             if self.config['ipysnobal']['smrf_ipysnobal_flag'] == True:
@@ -177,31 +188,35 @@ class AWSF():
         # list of sections releated to AWSF (These will be removed for smrf config)
         self.sec_awsf = ['awsf master', 'paths', 'grid', 'files', 'awsf logging', 'isystem',
                         'isnobal restart', 'ipysnobal', 'ipysnobal initial conditions',
-                        'ipysnobal output', 'ipysnobal constants']
+                        'ipysnobal output', 'ipysnobal constants', 'forecast']
 
     def runSmrf(self):
         """
         Run smrf. Calls :mod: `awsf.interface.interface.smrfMEAS`
         """
-
         # modify config and run smrf
         smin.smrfMEAS(self)
 
-    def nc2ipw(self):
+    def runSmrf_wrf(self):
         """
         Convert ipw smrf output to isnobal inputs. Calls
         :mod: `awsf.convertFiles.convertFiles.nc2ipw_mea`
         """
+        # modify config and run smrf
+        smin.smrf_go_wrf(self)
 
-        cvf.nc2ipw_mea(self)
+    def nc2ipw(self, runtype):
+        """
+        Convert ipw smrf output to isnobal inputs
+        """
+        cvf.nc2ipw_mea(self, runtype)
 
-    def ipw2nc(self):
+    def ipw2nc(self, runtype):
         """
         Convert ipw output to netcdf files. Calls
         :mod: `awsf.convertFiles.convertFiles.ipw2nc_mea`
         """
-
-        cvf.ipw2nc_mea(self)
+        cvf.ipw2nc_mea(self, runtype)
 
     def run_isnobal(self):
         """
@@ -209,6 +224,13 @@ class AWSF():
         """
 
         smin.run_isnobal(self)
+
+    def run_isnobal_forecast(self):
+        """
+        Run isnobal with smrf forecast data
+        """
+        # modify config and run smrf
+        smin.run_isnobal_forecast(self)
 
     def run_smrf_ipysnobal(self):
         """
@@ -222,7 +244,7 @@ class AWSF():
         """
         Restart isnobal. Calls :mod: `awsf.interface.interface.restart_crash_image`
         """
-
+        # modify config and run smrf
         smin.restart_crash_image(self)
 
     def mk_directories(self):
@@ -281,7 +303,6 @@ class AWSF():
                     os.makedirs(os.path.join(self.pathd, 'input/'))
                     os.makedirs(os.path.join(self.pathd, 'init/'))
                     os.makedirs(os.path.join(self.pathd, 'ppt_4b/'))
-                    os.makedirs(os.path.join(self.pathd, 'forecast/'))
 
                 if not os.path.exists(os.path.join(self.path_wy, 'runs/')):
                     os.makedirs(os.path.join(self.path_wy, 'runs/'))
@@ -314,8 +335,29 @@ class AWSF():
             if not os.path.exists(self.pathro):
                 os.makedirs(self.pathro)
 
+            # make directories for wrf
+            if self.do_wrf:
+                self.path_wrf_data = os.path.join(self.path_wy, 'data/', 'forecast{}_{}'.format(self.end_date.strftime("%Y%m%d"), self.forecast_date.strftime("%Y%m%d")))
+                self.path_wrf_run = os.path.join(self.path_wy, 'run/', 'forecast{}_{}'.format(self.end_date.strftime("%Y%m%d"), self.forecast_date.strftime("%Y%m%d")))
+                self.path_wrf_i =    os.path.join(self.path_wrf_data, 'input/')
+                self.path_wrf_init = os.path.join(self.path_wrf_data, 'init/')
+                self.path_wrf_ro =   os.path.join(self.path_wrf_run, 'output/')
+                self.path_wrf_s = os.path.join(self.path_wrf_i,'smrfOutputs')
+                self.wrf_ppt_desc = os.path.join(self.path_wrf_data, 'ppt_desc{}.txt'.format(self.forecast_date.strftime("%Y%m%d")))
+                
+                if not os.path.exists(self.path_wrf_data):
+                    os.makedirs(self.path_wrf_data)
+                    os.makedirs(self.path_wrf_init)
+                    os.makedirs(self.path_wrf_i)
+                    os.makedirs(os.path.join(self.path_wrf_i,'ppt_4b/'))
+                    os.makedirs(self.path_wrf_s)
+                if not os.path.exists(self.path_wrf_run):
+                    os.makedirs(self.path_wrf_run)
+                    os.makedirs(self.path_wrf_ro)
+
         else:
-            self._logger.error('Base directory did not exist, not safe to conitnue')
+            self._logger.error('Base directory did not exist, not safe to conitnue.\
+                                Make sure base directory exists before running.')
 
         self.paths = os.path.join(self.pathd,'smrfOutputs')
         self.ppt_desc = os.path.join(self.pathd, 'ppt_desc{}.txt'.format(self.end_date.strftime("%Y%m%d")))

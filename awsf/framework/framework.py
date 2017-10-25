@@ -42,34 +42,10 @@ class AWSF():
             raise UnicodeDecodeError('''The configuration file is not encoded in
                                     UTF-8, please change and retry''')
 
-        # start logging
-        if 'log_level' in self.config['awsf system']:
-            loglevel = self.config['awsf system']['log_level'].upper()
-        else:
-            loglevel = 'INFO'
-
-        numeric_level = getattr(logging, loglevel, None)
-        if not isinstance(numeric_level, int):
-            raise ValueError('Invalid log level: %s' % loglevel)
-
-        # setup the logging
-        logfile = None
-        if 'log_file' in self.config['awsf system']:
-            logfile = self.config['awsf system']['log_file']
-
-        fmt = '%(levelname)s:%(name)s:%(message)s'
-        if logfile is not None:
-            logging.basicConfig(filename=logfile,
-                                filemode='w',
-                                level=numeric_level,
-                                format=fmt)
-        else:
-            logging.basicConfig(level=numeric_level)
-            coloredlogs.install(level=numeric_level, fmt=fmt)
-
-        self._loglevel = numeric_level
-
-        self._logger = logging.getLogger(__name__)
+        # create blank log and error log because logger is not initialized yet
+        self.tmp_log = []
+        self.tmp_err = []
+        self.tmp_warn = []
 
         ################### Decide which modules to run ######################
         self.do_smrf = self.config['awsf master']['run_smrf']
@@ -112,20 +88,20 @@ class AWSF():
 
         if self.do_wrf:
             if 'forecast' in self.config:
-                self._logger.info('Forecasting set to True')
+                self.tmp_log.append('Forecasting set to True')
 
                 if 'forecast_date' in self.config['forecast']:
                     self.forecast_date = pd.to_datetime(self.config['forecast']['forecast_date'])
                 else:
-                    self._logger.error('Forecast set to true, but no forecast_date given')
+                    self.tmp_err.append('Forecast set to true, but no forecast_date given')
                 if ['wrf_data'] in self.config['forecast']:
                     self.fp_wrfdata = self.config['forecast']['wrf_data']
                 else:
-                    self._logger.error('Forecast set to true, but no wrf_data given')
+                    self.tmp_err.append('Forecast set to true, but no wrf_data given')
                 self.zone_number = self.config['forecast']['zone_number']
                 self.zone_letter = self.config['forecast']['zone_letter']
             else:
-                self._logger.error('use_wrf set to True, but no forecast section.')
+                self.tmp_err.append('use_wrf set to True, but no forecast section.')
 
         self.time_step = self.config['time']['time_step']
         self.tmz = self.config['time']['time_zone']
@@ -190,6 +166,38 @@ class AWSF():
                         'isnobal restart', 'ipysnobal', 'ipysnobal initial conditions',
                         'ipysnobal output', 'ipysnobal constants', 'forecast']
 
+        self.mk_directories()
+
+    def createLog(self):
+        # start logging
+        if 'log_level' in self.config['awsf system']:
+            loglevel = self.config['awsf system']['log_level'].upper()
+        else:
+            loglevel = 'INFO'
+
+        numeric_level = getattr(logging, loglevel, None)
+        if not isinstance(numeric_level, int):
+            raise ValueError('Invalid log level: %s' % loglevel)
+
+        # setup the logging
+        logfile = None
+        if 'log_file' in self.config['awsf system']:
+            logfile = self.config['awsf system']['log_file']
+
+        fmt = '%(levelname)s:%(name)s:%(message)s'
+        if logfile is not None:
+            logging.basicConfig(filename=logfile,
+                                filemode='w',
+                                level=numeric_level,
+                                format=fmt)
+        else:
+            logging.basicConfig(level=numeric_level)
+            coloredlogs.install(level=numeric_level, fmt=fmt)
+
+        self._loglevel = numeric_level
+
+        self._logger = logging.getLogger(__name__)
+
     def runSmrf(self):
         """
         Run smrf. Calls :mod: `awsf.interface.interface.smrfMEAS`
@@ -252,7 +260,7 @@ class AWSF():
         Create all needed directories starting from the working drive
         """
         # rigid directory work
-        self._logger.info('AWSF creating directories')
+        self.tmp_log.append('AWSF creating directories')
         # make basin path
         self.path_ba = os.path.join(self.path_dr,self.basin)
 
@@ -307,7 +315,7 @@ class AWSF():
                 if not os.path.exists(os.path.join(self.path_wy, 'runs/')):
                     os.makedirs(os.path.join(self.path_wy, 'runs/'))
             else:
-                self._logger.warning('This has the potential to overwrite results in {}!!!'.format(self.pathd))
+                self.tmp_warn.append('This has the potential to overwrite results in {}!!!'.format(self.pathd))
 
             # find where to write file
             if self.isops:
@@ -325,7 +333,7 @@ class AWSF():
                 f.write(self.desc)
                 f.close()
             else:
-                self._logger.info('Description file aleardy exists')
+                self.tmp_log.append('Description file aleardy exists\n')
 
             # assign path names for isnobal
             self.pathi =    os.path.join(self.pathd, 'input/')
@@ -356,8 +364,21 @@ class AWSF():
                     os.makedirs(self.path_wrf_ro)
 
         else:
-            self._logger.error('Base directory did not exist, not safe to conitnue.\
+            self.tmp_err.append('Base directory did not exist, not safe to conitnue.\
                                 Make sure base directory exists before running.')
+
+        # create log now that directory structure is done
+        self.createLog()
+        
+        if len(self.tmp_log) > 0:
+            for l in self.tmp_log:
+                self._logger.info(l)
+        if len(self.tmp_warn) > 0:
+            for l in self.tmp_warn:
+                self._logger.warning(l)
+        if len(self.tmp_err) > 0:
+            for l in self.tmp_err:
+                self._logger.error(l)
 
         self.paths = os.path.join(self.pathd,'smrfOutputs')
         self.ppt_desc = os.path.join(self.pathd, 'ppt_desc{}.txt'.format(self.end_date.strftime("%Y%m%d")))

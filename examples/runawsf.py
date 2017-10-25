@@ -22,7 +22,6 @@ if len(sys.argv) > 1:
 # try:
 with awsf.framework.framework.AWSF(configFile) as a:
     # 2. make directory structure if not made
-    a.mk_directories()
 
     # 2. distribute data by running smrf
     if a.do_smrf:

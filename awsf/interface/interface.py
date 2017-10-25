@@ -400,7 +400,7 @@ def restart_crash_image(self):
     fp_new_init = os.path.join(self.pathinit,'init%04d.ipw'%self.restart_hr)
 
     # new ipw image for initializing restart
-    print("making new init image")
+    self._logger.info("making new init image")
     i_out = ipw.IPW()
 
     # read in crash image and old init image
@@ -430,7 +430,7 @@ def restart_crash_image(self):
     T_s = i_crash.bands[6].data # avgerage snow temp
     h20_sat = i_crash.bands[8].data # percent saturation
 
-    print ("correcting crash image")
+    self._logger.info("correcting crash image")
 
     idz = z_s < self.depth_thresh
 
@@ -453,10 +453,10 @@ def restart_crash_image(self):
     i_out.new_band(h20_sat)
     i_out.add_geo_hdr([self.u, self.v], [self.du, self.dv], self.units, self.csys)
 
-    print('Writing to {}'.format(fp_new_init))
+    self._logger.info('Writing to {}'.format(fp_new_init))
     i_out.write(fp_new_init, nbits)
 
-    print('Running isnobal from restart')
+    self._logger.info('Running isnobal from restart')
     offset = self.restart_hr
     start_date = self.start_date.replace(tzinfo=self.tzinfo)
     end_date = self.end_date.replace(tzinfo=self.tzinfo)
@@ -487,12 +487,20 @@ def restart_crash_image(self):
         fp_new_init = os.path.abspath(fp_new_init)
 
     if (offset + tmstps) < 1000:
-        run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %s -p %s -d 0.15 -i %s/in -O 24 -e em -s snow > %s 2>&1"%(nthreads,offset,fp_new_init,fp_ppt_desc,self.pathi,fp_output)
+        run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %s -p %s -d 0.15 -i %s/in -O 24 -e em -s snow 2>&1"%(nthreads,offset,fp_new_init,fp_ppt_desc,self.pathi)
         # run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %sinit%04d.ipw -p %s -d 0.15 -i %sin -O 24 -e em -s snow > %s/sout%s.txt 2>&1"%(nthreads,offset,pathinit,offset,self.ppt_desc,pathi,pathr,self.end_date.strftime("%Y%m%d"))
     else:
-        run_cmd = "time isnobal -v -P %d -r %s -t 60 -n %s -I %s -p %s -d 0.15 -i %s/in -O 24 -e em -s snow > %s 2>&1"%(nthreads,offset,tmstps,fp_new_init,fp_ppt_desc,self.pathi,fp_output)
+        run_cmd = "time isnobal -v -P %d -r %s -t 60 -n %s -I %s -p %s -d 0.15 -i %s/in -O 24 -e em -s snow 2>&1"%(nthreads,offset,tmstps,fp_new_init,fp_ppt_desc,self.pathi)
 
-    print run_cmd
+    self._logger.info(run_cmd)
+
     os.chdir(self.pathro)
-    os.system(run_cmd)
+    p = subprocess.Popen(run_cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    # wait to finish
+    p.wait()
+    # read output and error
+    out, err = p.communicate()
+    self._logger.info(out)
+    self._logger.info(err)
+    #os.system(run_cmd)
     os.chdir(cwd)

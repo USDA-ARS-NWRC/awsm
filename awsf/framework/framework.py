@@ -171,7 +171,7 @@ class AWSF():
         if 'isnobal restart' in self.config:
             if 'restart_crash' in self.config['isnobal restart']:
                 if self.config['isnobal restart']['restart_crash'] == True:
-                    self.new_init = self.config['isnobal restart']['new_init']
+                    #self.new_init = self.config['isnobal restart']['new_init']
                     self.depth_thresh = self.config['isnobal restart']['depth_thresh']
                     self.restart_hr = int(self.config['isnobal restart']['wyh_restart_output'])
 
@@ -261,7 +261,7 @@ class AWSF():
             self.path_od = os.path.join(self.path_ba,'ops')
             # check if specified water year
             if len(str(self.wy)) > 1:
-                self.path_wy = os.path.join(self.path_od,str(self.wy))
+                self.path_wy = os.path.join(self.path_od,'wy{}'.format(self.wy))
             else:
                 self.path_wy = self.path_od
 
@@ -270,7 +270,7 @@ class AWSF():
             self.path_proj = os.path.join(self.path_od, self.proj)
 
             if len(str(self.wy)) > 1:
-                self.path_wy = os.path.join(self.path_proj,str(self.wy))
+                self.path_wy = os.path.join(self.path_proj,'wy{}'.format(self.wy))
             else:
                 self.path_wy = self.path_proj
 

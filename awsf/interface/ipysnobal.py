@@ -249,7 +249,7 @@ def get_args(self):
         if config['initial_conditions']['input_type'] == 'ipw':
             config['initial_conditions']['mask_file'] = self.config['ipysnobal initial conditions']['mask_file']
         elif config['initial_conditions']['input_type'] == 'netcdf':
-            print('Mask should be in netcdf, not external file')
+            self._logger.error('Mask should be in netcdf, not external file')
 
     return config, point_run
 
@@ -594,7 +594,7 @@ def open_init_files(self, options):
             init['mask'] = np.ones_like(init['elevation'])
 
     else:
-        print('Wrong input type for iPySnobal init file')
+        self._logger.error('Wrong input type for iPySnobal init file')
 
     for key in init.keys():
         init[key] = init[key].astype(np.float64)
@@ -616,7 +616,7 @@ def init_from_smrf(self):
     mimic the main.c from the Snobal model
 
     Args:
-        configFile: path to configuration file
+        self: AWSF instance
     """
 
     # parse the input arguments
@@ -642,7 +642,7 @@ class QueueIsnobal(threading.Thread):
 
     def __init__(self, queue, date_time, thread_variables,
                  options, params, tstep_info, init,
-                 output_rec, nx, ny, soil_temp):
+                 output_rec, nx, ny, soil_temp, logger):
         """
         Args:
             date_time: array of date_time
@@ -663,7 +663,8 @@ class QueueIsnobal(threading.Thread):
         self.soil_temp = soil_temp
         self.nthreads = self.options['output']['nthreads']
 
-        self._logger = logging.getLogger(__name__)
+        # get AWSF logger
+        self._logger = logger
         self._logger.debug('Initialized iPySnobal thread')
 
     def run(self):
@@ -700,17 +701,16 @@ class QueueIsnobal(threading.Thread):
         input1 = {}
         for v in force_variables:
             if v in self.queue.keys():
-                # print v
+
                 data = self.queue[v].get(self.date_time[0], block=True, timeout=None)
                 if data is None:
-                    print v
                     data = np.zeros((self.ny, self.nx))
-                    print('Error of no data from smrf to iSnobal')
+                    self._logger.info('No data from smrf to iSnobal for {} in {}'.format(v, self.date_time[0]))
                     input1[map_val[v]] = data
                 else:
                     input1[map_val[v]] = data
             elif v != 'soil_temp':
-                print('Value not in keys: {}'.format(v))
+                self._logger.error('Value not in keys: {}'.format(v))
 
         # set ground temp
         input1['T_g'] = -2.5*np.ones((self.ny, self.nx))
@@ -721,7 +721,7 @@ class QueueIsnobal(threading.Thread):
 
         # tell queue we assigned all the variables
         self.queue['isnobal'].put([self.date_time[0], True])
-        print('Finished initializing first timestep')
+        self._logger.info('Finished initializing first timestep for iPySnobal')
 
         #pbar = progressbar.ProgressBar(max_value=len(options['time']['date_time']))
         j = 1
@@ -729,16 +729,15 @@ class QueueIsnobal(threading.Thread):
         for tstep in self.date_time[1:]:
         #for tstep in options['time']['date_time'][953:958]:
         # get the output variables then pass to the function
-            #print('Timestep: {}'.format(tstep))
             input2 = {}
             for v in force_variables:
                 if v in self.queue.keys():
                     # get variable from smrf queue
                     data = self.queue[v].get(tstep, block=True, timeout=None)
                     if data is None:
-                        print v
+
                         data = np.zeros((self.ny, self.nx))
-                        print('Error - no data from smrf to iSnobal')
+                        self._logger.info('No data from smrf to iSnobal for {} in {}'.format(v, tstep))
                         input2[map_val[v]] = data
                     else:
                         input2[map_val[v]] = data
@@ -749,16 +748,16 @@ class QueueIsnobal(threading.Thread):
             input2['T_pp'] += FREEZE
             input2['T_g'] += FREEZE
 
-            print('running timestep: {}'.format(tstep))
+            self._logger.info('running timestep: {}'.format(tstep))
             rt = snobal.do_tstep_grid(input1, input2, self.output_rec,
                                       self.tstep_info, self.options['constants'],
                                       self.params, first_step, nthreads=self.nthreads)
 
             if rt != -1:
-                print('ipysnobal error on time step %s, pixel %i' % (tstep, rt))
+                self.logger.error('ipysnobal error on time step {}, pixel {}'.format(tstep, rt))
                 break
 
-            print('Finished timestep: {}'.format(tstep))
+            self._logger.info('Finished timestep: {}'.format(tstep))
             input1 = input2.copy()
 
             # output at the frequency and the last time step
@@ -775,14 +774,3 @@ class QueueIsnobal(threading.Thread):
             #self._logger.debug('%s iSnobal run from queues' % tstep)
 
         #pbar.finish()
-
-
-
-if __name__ == "__main__":
-
-    if len(sys.argv) == 1:
-        raise Exception('Configuration file must be specified')
-    else:
-        configFile = sys.argv[1]
-
-    main(configFile)

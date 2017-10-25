@@ -344,7 +344,7 @@ class AWSF():
                 self.path_wrf_ro =   os.path.join(self.path_wrf_run, 'output/')
                 self.path_wrf_s = os.path.join(self.path_wrf_i,'smrfOutputs')
                 self.wrf_ppt_desc = os.path.join(self.path_wrf_data, 'ppt_desc{}.txt'.format(self.forecast_date.strftime("%Y%m%d")))
-                
+
                 if not os.path.exists(self.path_wrf_data):
                     os.makedirs(self.path_wrf_data)
                     os.makedirs(self.path_wrf_init)

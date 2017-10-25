@@ -13,6 +13,7 @@ import progressbar
 from datetime import datetime
 import sys
 from smrf.utils import io
+import subprocess
 
 def create_smrf_config(self):
     """
@@ -57,7 +58,7 @@ def smrfMEAS(self):
     start = datetime.now()
 
     # with smrf.framework.SMRF(meas_ini_file) as s:
-    with smrf.framework.SMRF(fp_smrfini) as s:
+    with smrf.framework.SMRF(fp_smrfini, self._logger) as s:
         #try:
             # 2. load topo data
             s.loadTopo()
@@ -178,7 +179,7 @@ def smrf_go_wrf(config_file):
     start = datetime.now()
 
     # with smrf.framework.SMRF(meas_ini_file) as s:
-    with smrf.framework.SMRF(fp_wrfini) as s:
+    with smrf.framework.SMRF(fp_wrfini, self._logger) as s:
         #try:
             # 2. load topo data
             s.loadTopo()
@@ -211,7 +212,7 @@ def run_isnobal(self):
     initialization image and calls iSnobal.
     '''
 
-    print("calculating time vars")
+    self._logger.info('Setting up to run iSnobal')
     wyh = pd.to_datetime('%s-10-01'%pm.wyb(self.end_date))
     tt = self.start_date-wyh
     offset = tt.days*24 +  tt.seconds//3600 # start index for the input file
@@ -224,7 +225,7 @@ def run_isnobal(self):
         os.makedirs(self.pathinit)
 
     # making initial conditions file
-    print("making initial conds img")
+    self._logger.debug("making initial conds img for iSnobal")
     i_out = ipw.IPW()
 
     # making dem band
@@ -269,7 +270,7 @@ def run_isnobal(self):
         i_out.write(os.path.join(self.pathinit,'init%04d.ipw'%(offset)), nbits)
 
     # develop the command to run the model
-    print("developing command and running")
+    self._logger.debug("Developing command and running iSnobal")
     nthreads = int(self.ithreads)
 
     tt = self.end_date-self.start_date
@@ -284,20 +285,29 @@ def run_isnobal(self):
     # run iSnobal
     if offset>0:
         if (offset + tmstps) < 1000:
-            run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %s/init%04d.ipw -p %s -m %s -d 0.15 -i %s/in -O 24 -e em -s snow > %s 2>&1"%(nthreads,offset,self.pathinit,offset,fp_ppt_desc,self.fp_mask,self.pathi,fp_output)
+            run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %s/init%04d.ipw -p %s -m %s -d 0.15 -i %s/in -O 24 -e em -s snow"%(nthreads,offset,self.pathinit,offset,fp_ppt_desc,self.fp_mask,self.pathi)
+            # run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %s/init%04d.ipw -p %s -m %s -d 0.15 -i %s/in -O 24 -e em -s snow > %s 2>&1"%(nthreads,offset,self.pathinit,offset,fp_ppt_desc,self.fp_mask,self.pathi,fp_output)
             # run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %sinit%04d.ipw -p %s -d 0.15 -i %sin -O 24 -e em -s snow > %s/sout%s.txt 2>&1"%(nthreads,offset,pathinit,offset,self.ppt_desc,pathi,pathr,self.end_date.strftime("%Y%m%d"))
         else:
-            run_cmd = "time isnobal -v -P %d -r %s -t 60 -n %s -I %s/init%04d.ipw -p %s -m %s -d 0.15 -i %s/in -O 24 -e em -s snow > %s 2>&1"%(nthreads,offset,tmstps,self.pathinit,offset,fp_ppt_desc,self.fp_mask,self.pathi,fp_output)
+            run_cmd = "time isnobal -v -P %d -r %s -t 60 -n %s -I %s/init%04d.ipw -p %s -m %s -d 0.15 -i %s/in -O 24 -e em -s snow"%(nthreads,offset,tmstps,self.pathinit,offset,fp_ppt_desc,self.fp_mask,self.pathi)
     else:
-      if tmstps<1000:
-          run_cmd = "time isnobal -v -P %d -t 60 -n 1001 -I %s/init%04d.ipw -p %s -m %s -d 0.15 -i %s/in -O 24 -e em -s snow > %s 2>&1"%(nthreads,self.pathinit,offset,fp_ppt_desc,self.fp_mask,self.pathi,fp_output)
-      else:
-          run_cmd = "time isnobal -v -P %d -t 60 -n %s -I %s/init%04d.ipw -p %s -m %s -d 0.15 -i %s/in -O 24 -e em -s snow > %s 2>&1"%(nthreads,tmstps,self.pathinit,offset,fp_ppt_desc,self.fp_mask,self.pathi,fp_output)
+        if tmstps<1000:
+            run_cmd = "time isnobal -v -P %d -t 60 -n 1001 -I %s/init%04d.ipw -p %s -m %s -d 0.15 -i %s/in -O 24 -e em -s snow 2>&1"%(nthreads,self.pathinit,offset,fp_ppt_desc,self.fp_mask,self.pathi)
+        else:
+            run_cmd = "time isnobal -v -P %d -t 60 -n %s -I %s/init%04d.ipw -p %s -m %s -d 0.15 -i %s/in -O 24 -e em -s snow"%(nthreads,tmstps,self.pathinit,offset,fp_ppt_desc,self.fp_mask,self.pathi)
 
     # change directories, run, and move back
-    print run_cmd
+    self._logger.debug("Running {}".format(run_cmd))
     os.chdir(self.pathro)
-    os.system(run_cmd)
+    # call iSnobal
+    p = subprocess.Popen(run_cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    # wait to finish
+    p.wait()
+    # read output and error
+    out, err = p.communicate()
+    self._logger.info(out)
+    self._logger.info(err)
+    # os.system(run_cmd)
     os.chdir(cwd)
 
 def run_isnobal_forecast(self):

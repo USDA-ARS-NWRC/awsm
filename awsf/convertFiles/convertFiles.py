@@ -18,7 +18,7 @@ def nc2ipw_mea(self, runtype):
     ###################################################################################################
     ### make .ipw input files from netCDF files #######################################################
     ###################################################################################################
-    print("making the ipw files from NetCDF files for {}".format(runtype))
+    self._logger.info("making the ipw files from NetCDF files for {}".format(runtype))
 
     # check if this is forecast or not
     if runtype == 'smrf':
@@ -144,11 +144,13 @@ def nc2ipw_mea(self, runtype):
     tp_file.close()
     f.close()
     pbar.finish()
+    self._logger.info("finished making the ipw files from NetCDF files for {}".format(runtype))
 
 def ipw2nc_mea(self, runtype):
     '''
     Function to create netcdf files from iSnobal output
     '''
+    self._logger.info("making the NetCDF files from ipw files for {}".format(runtype))
 
     if runtype == 'smrf':
         wyh = pd.to_datetime('%s-10-01'%pm.wyb(self.end_date))
@@ -292,3 +294,5 @@ def ipw2nc_mea(self, runtype):
     pbar.finish()
     snow.close()
     em.close()
+
+    self._logger.info("finished making the NetCDF files from ipw files for {}".format(runtype))

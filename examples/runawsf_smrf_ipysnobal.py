@@ -29,8 +29,6 @@ if len(sys.argv) > 1:
 # 1. initialize
 # try:
 with awsf.framework.framework.AWSF(configFile) as a:
-    # 2. make directory structure if not made
-    a.mk_directories()
 
     # 2. do everything else
     a.run_smrf_ipysnobal()

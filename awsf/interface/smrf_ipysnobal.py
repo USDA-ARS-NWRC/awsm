@@ -27,7 +27,7 @@ def run_smrf_ipysnobal(self):
         configFile = sys.argv[1]
 
     # initialize
-    with smrf.framework.SMRF(fp_smrfini) as s:
+    with smrf.framework.SMRF(fp_smrfini, self._logger) as s:
         # load topo data
         s.loadTopo()
 
@@ -141,7 +141,8 @@ def run_smrf_ipysnobal(self):
                                    output_rec,
                                    s.topo.nx,
                                    s.topo.ny,
-                                   self.soil_temp))
+                                   self.soil_temp,
+                                   self._logger))
 
         # the cleaner
         t.append(queue.QueueCleaner(s.date_time, q))

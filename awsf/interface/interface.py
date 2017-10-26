@@ -284,18 +284,33 @@ def run_isnobal(self):
     fp_ppt_desc = self.ppt_desc
 
     # run iSnobal
-    if offset>0:
-        if (offset + tmstps) < 1000:
-            run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %s/init%04d.ipw -p %s -m %s -d 0.15 -i %s/in -O 24 -e em -s snow"%(nthreads,offset,self.pathinit,offset,fp_ppt_desc,self.fp_mask,self.pathi)
-            # run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %s/init%04d.ipw -p %s -m %s -d 0.15 -i %s/in -O 24 -e em -s snow > %s 2>&1"%(nthreads,offset,self.pathinit,offset,fp_ppt_desc,self.fp_mask,self.pathi,fp_output)
-            # run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %sinit%04d.ipw -p %s -d 0.15 -i %sin -O 24 -e em -s snow > %s/sout%s.txt 2>&1"%(nthreads,offset,pathinit,offset,self.ppt_desc,pathi,pathr,self.end_date.strftime("%Y%m%d"))
+    if self.mask_isnobal == True:
+        if offset>0:
+            if (offset + tmstps) < 1000:
+                run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %s/init%04d.ipw -p %s -m %s -d 0.15 -i %s/in -O 24 -e em -s snow"%(nthreads,offset,self.pathinit,offset,fp_ppt_desc,self.fp_mask,self.pathi)
+                # run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %s/init%04d.ipw -p %s -m %s -d 0.15 -i %s/in -O 24 -e em -s snow > %s 2>&1"%(nthreads,offset,self.pathinit,offset,fp_ppt_desc,self.fp_mask,self.pathi,fp_output)
+                # run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %sinit%04d.ipw -p %s -d 0.15 -i %sin -O 24 -e em -s snow > %s/sout%s.txt 2>&1"%(nthreads,offset,pathinit,offset,self.ppt_desc,pathi,pathr,self.end_date.strftime("%Y%m%d"))
+            else:
+                run_cmd = "time isnobal -v -P %d -r %s -t 60 -n %s -I %s/init%04d.ipw -p %s -m %s -d 0.15 -i %s/in -O 24 -e em -s snow"%(nthreads,offset,tmstps,self.pathinit,offset,fp_ppt_desc,self.fp_mask,self.pathi)
         else:
-            run_cmd = "time isnobal -v -P %d -r %s -t 60 -n %s -I %s/init%04d.ipw -p %s -m %s -d 0.15 -i %s/in -O 24 -e em -s snow"%(nthreads,offset,tmstps,self.pathinit,offset,fp_ppt_desc,self.fp_mask,self.pathi)
+            if tmstps < 1000:
+                run_cmd = "time isnobal -v -P %d -t 60 -n 1001 -I %s/init%04d.ipw -p %s -m %s -d 0.15 -i %s/in -O 24 -e em -s snow 2>&1"%(nthreads,self.pathinit,offset,fp_ppt_desc,self.fp_mask,self.pathi)
+            else:
+                run_cmd = "time isnobal -v -P %d -t 60 -n %s -I %s/init%04d.ipw -p %s -m %s -d 0.15 -i %s/in -O 24 -e em -s snow"%(nthreads,tmstps,self.pathinit,offset,fp_ppt_desc,self.fp_mask,self.pathi)
     else:
-        if tmstps<1000:
-            run_cmd = "time isnobal -v -P %d -t 60 -n 1001 -I %s/init%04d.ipw -p %s -m %s -d 0.15 -i %s/in -O 24 -e em -s snow 2>&1"%(nthreads,self.pathinit,offset,fp_ppt_desc,self.fp_mask,self.pathi)
+        if offset>0:
+            if (offset + tmstps) < 1000:
+                run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %s/init%04d.ipw -p %s -d 0.15 -i %s/in -O 24 -e em -s snow"%(nthreads,offset,self.pathinit,offset,fp_ppt_desc,self.pathi)
+                # run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %s/init%04d.ipw -p %s -m %s -d 0.15 -i %s/in -O 24 -e em -s snow > %s 2>&1"%(nthreads,offset,self.pathinit,offset,fp_ppt_desc,self.fp_mask,self.pathi,fp_output)
+                # run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %sinit%04d.ipw -p %s -d 0.15 -i %sin -O 24 -e em -s snow > %s/sout%s.txt 2>&1"%(nthreads,offset,pathinit,offset,self.ppt_desc,pathi,pathr,self.end_date.strftime("%Y%m%d"))
+            else:
+                run_cmd = "time isnobal -v -P %d -r %s -t 60 -n %s -I %s/init%04d.ipw -p %s -d 0.15 -i %s/in -O 24 -e em -s snow"%(nthreads,offset,tmstps,self.pathinit,offset,fp_ppt_desc,self.pathi)
         else:
-            run_cmd = "time isnobal -v -P %d -t 60 -n %s -I %s/init%04d.ipw -p %s -m %s -d 0.15 -i %s/in -O 24 -e em -s snow"%(nthreads,tmstps,self.pathinit,offset,fp_ppt_desc,self.fp_mask,self.pathi)
+            if tmstps < 1000:
+                run_cmd = "time isnobal -v -P %d -t 60 -n 1001 -I %s/init%04d.ipw -p %s -d 0.15 -i %s/in -O 24 -e em -s snow 2>&1"%(nthreads,self.pathinit,offset,fp_ppt_desc,self.pathi)
+            else:
+                run_cmd = "time isnobal -v -P %d -t 60 -n %s -I %s/init%04d.ipw -p %s -d 0.15 -i %s/in -O 24 -e em -s snow"%(nthreads,tmstps,self.pathinit,offset,fp_ppt_desc,self.pathi)
+
 
     # change directories, run, and move back
     self._logger.debug("Running {}".format(run_cmd))
@@ -380,11 +395,18 @@ def run_isnobal_forecast(self):
     fp_ppt_desc = self.wrf_ppt_desc
 
     # run iSnobal
-    if (offset + tmstps) < 1000:
-        run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %s/init%04d.ipw -p %s -m %s -d 0.15 -i %s/in -O 24 -e em -s snow > %s 2>&1"%(nthreads,offset,self.path_wrf_init,offset,fp_ppt_desc,self.fp_mask,self.path_wrf_i,fp_output)
-        # run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %sinit%04d.ipw -p %s -d 0.15 -i %sin -O 24 -e em -s snow > %s/sout%s.txt 2>&1"%(nthreads,offset,pathinit,offset,self.ppt_desc,pathi,pathr,self.end_date.strftime("%Y%m%d"))
+    if self.mask_isnobal == True:
+        if (offset + tmstps) < 1000:
+            run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %s/init%04d.ipw -p %s -m %s -d 0.15 -i %s/in -O 24 -e em -s snow > %s 2>&1"%(nthreads,offset,self.path_wrf_init,offset,fp_ppt_desc,self.fp_mask,self.path_wrf_i,fp_output)
+            # run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %sinit%04d.ipw -p %s -d 0.15 -i %sin -O 24 -e em -s snow > %s/sout%s.txt 2>&1"%(nthreads,offset,pathinit,offset,self.ppt_desc,pathi,pathr,self.end_date.strftime("%Y%m%d"))
+        else:
+            run_cmd = "time isnobal -v -P %d -r %s -t 60 -n %s -I %s/init%04d.ipw -p %s -m %s -d 0.15 -i %s/in -O 24 -e em -s snow > %s 2>&1"%(nthreads,offset,tmstps,self.path_wrf_init,offset,fp_ppt_desc,self.fp_mask,self.path_wrf_i,fp_output)
     else:
-        run_cmd = "time isnobal -v -P %d -r %s -t 60 -n %s -I %s/init%04d.ipw -p %s -m %s -d 0.15 -i %s/in -O 24 -e em -s snow > %s 2>&1"%(nthreads,offset,tmstps,self.path_wrf_init,offset,fp_ppt_desc,self.fp_mask,self.path_wrf_i,fp_output)
+        if (offset + tmstps) < 1000:
+            run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %s/init%04d.ipw -p %s -d 0.15 -i %s/in -O 24 -e em -s snow > %s 2>&1"%(nthreads,offset,self.path_wrf_init,offset,fp_ppt_desc,self.path_wrf_i,fp_output)
+            # run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %sinit%04d.ipw -p %s -d 0.15 -i %sin -O 24 -e em -s snow > %s/sout%s.txt 2>&1"%(nthreads,offset,pathinit,offset,self.ppt_desc,pathi,pathr,self.end_date.strftime("%Y%m%d"))
+        else:
+            run_cmd = "time isnobal -v -P %d -r %s -t 60 -n %s -I %s/init%04d.ipw -p %s -d 0.15 -i %s/in -O 24 -e em -s snow > %s 2>&1"%(nthreads,offset,tmstps,self.path_wrf_init,offset,fp_ppt_desc,self.path_wrf_i,fp_output)
 
     # change directories, run, and move back
     self._logger.debug("Running {}".format(run_cmd))
@@ -502,12 +524,18 @@ def restart_crash_image(self):
         #self.pathinit = os.path.join(cwd,self.pathinit)
         fp_new_init = os.path.abspath(fp_new_init)
 
-    if (offset + tmstps) < 1000:
-        run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %s -p %s -d 0.15 -i %s/in -O 24 -e em -s snow 2>&1"%(nthreads,offset,fp_new_init,fp_ppt_desc,self.pathi)
-        # run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %sinit%04d.ipw -p %s -d 0.15 -i %sin -O 24 -e em -s snow > %s/sout%s.txt 2>&1"%(nthreads,offset,pathinit,offset,self.ppt_desc,pathi,pathr,self.end_date.strftime("%Y%m%d"))
+    if self.mask_isnobal == True:
+        if (offset + tmstps) < 1000:
+            run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %s -p %s -m %s -d 0.15 -i %s/in -O 24 -e em -s snow 2>&1"%(nthreads,offset,fp_new_init,fp_ppt_desc,self.fp_mask,self.pathi)
+            # run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %sinit%04d.ipw -p %s -d 0.15 -i %sin -O 24 -e em -s snow > %s/sout%s.txt 2>&1"%(nthreads,offset,pathinit,offset,self.ppt_desc,pathi,pathr,self.end_date.strftime("%Y%m%d"))
+        else:
+            run_cmd = "time isnobal -v -P %d -r %s -t 60 -n %s -I %s -p %s -m %s -d 0.15 -i %s/in -O 24 -e em -s snow 2>&1"%(nthreads,offset,tmstps,fp_new_init,fp_ppt_desc,self.fp_mask,self.pathi)
     else:
-        run_cmd = "time isnobal -v -P %d -r %s -t 60 -n %s -I %s -p %s -d 0.15 -i %s/in -O 24 -e em -s snow 2>&1"%(nthreads,offset,tmstps,fp_new_init,fp_ppt_desc,self.pathi)
-
+        if (offset + tmstps) < 1000:
+            run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %s -p %s -d 0.15 -i %s/in -O 24 -e em -s snow 2>&1"%(nthreads,offset,fp_new_init,fp_ppt_desc,self.pathi)
+            # run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %sinit%04d.ipw -p %s -d 0.15 -i %sin -O 24 -e em -s snow > %s/sout%s.txt 2>&1"%(nthreads,offset,pathinit,offset,self.ppt_desc,pathi,pathr,self.end_date.strftime("%Y%m%d"))
+        else:
+            run_cmd = "time isnobal -v -P %d -r %s -t 60 -n %s -I %s -p %s -d 0.15 -i %s/in -O 24 -e em -s snow 2>&1"%(nthreads,offset,tmstps,fp_new_init,fp_ppt_desc,self.pathi)
     # change directories, run, and move back
     self._logger.debug("Running {}".format(run_cmd))
 

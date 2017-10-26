@@ -54,6 +54,10 @@ class AWSF():
         self.do_wrf = self.config['awsf master']['use_wrf']
         self.do_smrf_ipysnobal = self.config['awsf master']['run_smrf_ipysnobal']
 
+        self.mask_isnobal = False
+        if 'mask_isnobal' in self.config['awsf master']:
+            self.mask_isnobal = self.config['awsf master']['mask_isnobal']
+
 
         ################# Time information ##################
         self.start_date = pd.to_datetime(self.config['time']['start_date'])

@@ -181,7 +181,7 @@ class AWSF():
         if 'log_to_file' in self.config['awsf system']:
             if self.config['awsf system']['log_to_file'] == True:
                 if self.config['isnobal restart']['restart_crash'] == True:
-                    logfile = os.path.join(self.path_wy, 'log_restart_{}.out'.format(self.restart_hr)
+                    logfile = os.path.join(self.path_wy, 'log_restart_{}.out'.format(self.restart_hr))
                 else:
                     logfile = os.path.join(self.path_wy, 'log_{}_{}.out'.format(self.start_date.strftime("%Y%m%d"), self.end_date.strftime("%Y%m%d")))
                 # let user know

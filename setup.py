@@ -39,7 +39,7 @@ setup(
 
 
     include_package_data=True,
-    scripts=['scripts/run_awsf'],
+    scripts=['scripts/awsf'],
     install_requires=requirements,
     license="ISC license",
     zip_safe=False,

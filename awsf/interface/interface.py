@@ -33,6 +33,7 @@ def create_smrf_config(self):
             del smrf_cfg[key]
     # set ouput location in smrf config
     smrf_cfg['output']['out_location'] = os.path.join(self.pathd,'smrfOutputs/')
+    smrf_cfg['system']['temp_dir'] = os.path.join(self.pathd,'smrfOutputs/tmp')
     fp_smrfini = os.path.join(os.path.dirname(self.configFile), self.smrfini)
 
     self._logger.info('Writing the config file for SMRF')
@@ -301,12 +302,18 @@ def run_isnobal(self):
     os.chdir(self.pathro)
     # call iSnobal
     p = subprocess.Popen(run_cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    
+    while True:
+        line = p.stdout.readline()
+        self._logger.info(line)
+        if not line:
+            break
+
     # wait to finish
-    p.wait()
-    # read output and error
-    out, err = p.communicate()
-    self._logger.info(out)
-    self._logger.info(err)
+    #p.wait()
+
+    #self._logger.info(out)
+    #self._logger.info(err)
     # os.system(run_cmd)
     os.chdir(cwd)
 

@@ -8,6 +8,7 @@ import pytz
 from smrf import data, distribute, output
 from smrf.envphys import radiation
 from smrf.utils import queue, io
+from smrf.utils import utils
 from awsf.convertFiles import convertFiles as cvf
 from awsf.interface import interface as smin
 from awsf.interface import smrf_ipysnobal as smrf_ipy
@@ -53,14 +54,23 @@ class AWSF():
         self.do_wrf = self.config['awsf master']['use_wrf']
         self.do_smrf_ipysnobal = self.config['awsf master']['run_smrf_ipysnobal']
 
+
+        ################# Time information ##################
+        self.start_date = pd.to_datetime(self.config['time']['start_date'])
+        self.end_date = pd.to_datetime(self.config['time']['end_date'])
+        self.time_step = self.config['time']['time_step']
+        self.tmz = self.config['time']['time_zone']
+        self.tzinfo = pytz.timezone(self.config['time']['time_zone'])
+        # date to use for finding wy
+        tmp_date = self.end_date.replace(tzinfo=self.tzinfo)
+
         ################# Store some paths from config file ##################
         # path to the base drive (i.e. /data/blizzard)
         self.path_dr = os.path.abspath(self.config['paths']['path_dr'])
         # name of your basin (i.e. Tuolumne)
         self.basin = self.config['paths']['basin']
         # water year of run
-        if 'wy' in self.config['paths']:
-            self.wy = self.config['paths']['wy']
+        self.wy = utils.water_day(tmp_date)[1]
         # if the run is operational or not
         self.isops = self.config['paths']['isops']
         # name of project if not an operational run
@@ -79,12 +89,6 @@ class AWSF():
         if 'pathtp' in self.config['paths']:
             self.pathtp = os.path.abspath(self.config['paths']['pathtp'])
 
-        # name of smrf file to write out (not path)
-        self.smrfini = self.config['paths']['smrfini']
-
-        ################# Time information ##################
-        self.start_date = pd.to_datetime(self.config['time']['start_date'])
-        self.end_date = pd.to_datetime(self.config['time']['end_date'])
 
         if self.do_wrf:
             if 'forecast' in self.config:
@@ -102,10 +106,6 @@ class AWSF():
                 self.zone_letter = self.config['forecast']['zone_letter']
             else:
                 self.tmp_err.append('use_wrf set to True, but no forecast section.')
-
-        self.time_step = self.config['time']['time_step']
-        self.tmz = self.config['time']['time_zone']
-        self.tzinfo = pytz.timezone(self.config['time']['time_zone'])
 
         ################# Grid data for iSnobal ##################
         self.u  = int(self.config['grid']['u'])
@@ -151,9 +151,6 @@ class AWSF():
                     self.depth_thresh = self.config['isnobal restart']['depth_thresh']
                     self.restart_hr = int(self.config['isnobal restart']['wyh_restart_output'])
 
-        # name of smrf file to write out
-        self.smrfini = self.config['paths']['smrfini']
-        self.wrfini = self.config['paths']['wrfini']
         # if we are going to run ipysnobal with smrf
         if 'ipysnobal' in self.config:
             if self.config['ipysnobal']['smrf_ipysnobal_flag'] == True:
@@ -181,8 +178,14 @@ class AWSF():
 
         # setup the logging
         logfile = None
-        if 'log_file' in self.config['awsf system']:
-            logfile = self.config['awsf system']['log_file']
+        if 'log_to_file' in self.config['awsf system']:
+            if self.config['awsf system']['log_to_file'] == True:
+                if self.config['isnobal restart']['restart_crash'] == True:
+                    logfile = os.path.join(self.path_wy, 'log_restart_{}.out'.format(self.restart_hr)
+                else:
+                    logfile = os.path.join(self.path_wy, 'log_{}_{}.out'.format(self.start_date.strftime("%Y%m%d"), self.end_date.strftime("%Y%m%d")))
+                # let user know
+                print('Logging to file: {}'.format(logfile))
 
         fmt = '%(levelname)s:%(name)s:%(message)s'
         if logfile is not None:
@@ -285,6 +288,10 @@ class AWSF():
         # specific data folder conatining
         self.pathd = os.path.join(self.path_wy, 'data/data{}_{}'.format(self.start_date.strftime("%Y%m%d"), self.end_date.strftime("%Y%m%d")))
 
+        # name of temporary smrf file to write out
+        self.smrfini = os.path.join(self.path_wy, 'tmp_smrf_config.ini')
+        self.wrfini = os.path.join(self.path_wy, 'tmp_smrf_wrf_config.ini')
+
         if os.path.exists(self.path_dr):
             if not os.path.exists(self.path_wy):  # if the working path specified in the config file does not exist
                 y_n = 'a'                        # set a funny value to y_n
@@ -369,7 +376,7 @@ class AWSF():
 
         # create log now that directory structure is done
         self.createLog()
-        
+
         if len(self.tmp_log) > 0:
             for l in self.tmp_log:
                 self._logger.info(l)

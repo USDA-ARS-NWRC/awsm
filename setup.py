@@ -36,7 +36,10 @@ setup(
 			  'awsf.interface',
 			  'awsf.framework'
 			  ],
+
+
     include_package_data=True,
+    scripts=['scripts/run_awsf'],
     install_requires=requirements,
     license="ISC license",
     zip_safe=False,

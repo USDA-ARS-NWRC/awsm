@@ -60,7 +60,8 @@ def run_smrf_ipysnobal(self):
                                    s.topo.nx,
                                    s.topo.ny,
                                    self.soil_temp,
-                                   self._logger))
+                                   self._logger,
+                                   self.tzinfo))
 
         # the cleaner
         t.append(queue.QueueCleaner(s.date_time, q))

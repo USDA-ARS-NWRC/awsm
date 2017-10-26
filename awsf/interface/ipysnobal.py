@@ -21,6 +21,7 @@ import netCDF4 as nc
 import progressbar
 from copy import copy
 from smrf import ipw
+from smrf.utils import utils
 
 try:
     from Queue import Queue, Empty, Full
@@ -586,6 +587,8 @@ def open_init_files(self, options):
         init['T_s_0'] = i.bands[4].data[:]
         init['T_s'] = i.bands[5].data[:]
         init['h2o_sat'] = i.bands[6].data[:]
+        if len(i.bands) > 7:
+            init['T_s_l'] = i.bands[6].data[:]
 
         # Add mask if input
         if 'mask_file' in options['initial_conditions']:
@@ -600,10 +603,12 @@ def open_init_files(self, options):
         init[key] = init[key].astype(np.float64)
 
     # convert temperatures to K
-    #init['T_s'][init['T_s'] <= 75.0] = 0.0
-    #init['T_s_0'][init['T_s_0'] <= 75.0] = 0.0
+    # init['T_s'][init['T_s'] <= 75.0] = 0.0
+    # init['T_s_0'][init['T_s_0'] <= 75.0] = 0.0
+    # init['T_s_l'][init['T_s_l'] <= 75.0] = 0.0
     init['T_s'] += FREEZE
     init['T_s_0'] += FREEZE
+    init['T_s_l'] += FREEZE
 
     return init
 
@@ -642,7 +647,7 @@ class QueueIsnobal(threading.Thread):
 
     def __init__(self, queue, date_time, thread_variables,
                  options, params, tstep_info, init,
-                 output_rec, nx, ny, soil_temp, logger):
+                 output_rec, nx, ny, soil_temp, logger, tzi):
         """
         Args:
             date_time: array of date_time
@@ -662,6 +667,7 @@ class QueueIsnobal(threading.Thread):
         self.ny = ny
         self.soil_temp = soil_temp
         self.nthreads = self.options['output']['nthreads']
+        self.tzinfo = tzi
 
         # get AWSF logger
         self._logger = logger
@@ -684,7 +690,10 @@ class QueueIsnobal(threading.Thread):
 
         data_tstep = self.tstep_info[0]['time_step']
         timeSinceOut = 0.0
-        start_step = 0 # if restart then it would be higher if this were iSnobal
+        tmp_date = self.date_time[0].replace(tzinfo=self.tzinfo)
+        wyhr = utils.water_day(tmp_date)[0] * 24.0
+        start_step = wyhr # if restart then it would be higher if this were iSnobal
+        # start_step = 0 # if restart then it would be higher if this were iSnobal
         step_time = start_step * data_tstep
 
         self.output_rec['current_time'] = step_time * np.ones(self.output_rec['elevation'].shape)

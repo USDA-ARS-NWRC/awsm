@@ -9,8 +9,11 @@ interpretation
 20160118 Scott Havens
 """
 
-from pysnobal import snobal
-import os
+try:
+    from pysnobal import snobal
+except:
+    print('pysnobal not installed, ignoring')
+
 import ConfigParser
 import sys, os
 import numpy as np

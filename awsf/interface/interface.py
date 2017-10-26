@@ -302,7 +302,7 @@ def run_isnobal(self):
     os.chdir(self.pathro)
     # call iSnobal
     p = subprocess.Popen(run_cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    
+
     while True:
         line = p.stdout.readline()
         self._logger.info(line)
@@ -387,10 +387,19 @@ def run_isnobal_forecast(self):
         run_cmd = "time isnobal -v -P %d -r %s -t 60 -n %s -I %s/init%04d.ipw -p %s -m %s -d 0.15 -i %s/in -O 24 -e em -s snow > %s 2>&1"%(nthreads,offset,tmstps,self.path_wrf_init,offset,fp_ppt_desc,self.fp_mask,self.path_wrf_i,fp_output)
 
     # change directories, run, and move back
-    print run_cmd
+    self._logger.debug("Running {}".format(run_cmd))
+
     os.chdir(self.path_wrf_ro)
-    os.system(run_cmd)
+    p = subprocess.Popen(run_cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+    while True:
+        line = p.stdout.readline()
+        self._logger.info(line)
+        if not line:
+            break
+
     os.chdir(cwd)
+
 
 
 def restart_crash_image(self):
@@ -412,7 +421,7 @@ def restart_crash_image(self):
 
     # read in crash image and old init image
     i_crash = ipw.IPW(fp_crash)
-#########################################################
+    #########################################################
 
     # making dem band
     if self.topotype == 'ipw':
@@ -464,7 +473,7 @@ def restart_crash_image(self):
     i_out.write(fp_new_init, nbits)
 
     self._logger.info('Running isnobal from restart')
-    offset = self.restart_hr
+    offset = self.restart_hr+1
     start_date = self.start_date.replace(tzinfo=self.tzinfo)
     end_date = self.end_date.replace(tzinfo=self.tzinfo)
     # calculate timesteps based on water_day function and offset
@@ -499,15 +508,16 @@ def restart_crash_image(self):
     else:
         run_cmd = "time isnobal -v -P %d -r %s -t 60 -n %s -I %s -p %s -d 0.15 -i %s/in -O 24 -e em -s snow 2>&1"%(nthreads,offset,tmstps,fp_new_init,fp_ppt_desc,self.pathi)
 
-    self._logger.info(run_cmd)
+    # change directories, run, and move back
+    self._logger.debug("Running {}".format(run_cmd))
 
     os.chdir(self.pathro)
     p = subprocess.Popen(run_cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    # wait to finish
-    p.wait()
-    # read output and error
-    out, err = p.communicate()
-    self._logger.info(out)
-    self._logger.info(err)
-    #os.system(run_cmd)
+
+    while True:
+        line = p.stdout.readline()
+        self._logger.info(line)
+        if not line:
+            break
+
     os.chdir(cwd)

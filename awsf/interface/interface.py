@@ -14,6 +14,7 @@ from datetime import datetime
 import sys
 from smrf.utils import io
 import subprocess
+import copy
 
 def create_smrf_config(self):
     """
@@ -27,14 +28,15 @@ def create_smrf_config(self):
 
     # Write out config file to run smrf
     # make copy and delete only awsf sections
-    smrf_cfg = self.config.copy()
+    smrf_cfg = copy.deepcopy(self.config)
     for key in smrf_cfg:
         if key in self.sec_awsf:
             del smrf_cfg[key]
     # set ouput location in smrf config
     smrf_cfg['output']['out_location'] = os.path.join(self.pathd,'smrfOutputs/')
     smrf_cfg['system']['temp_dir'] = os.path.join(self.pathd,'smrfOutputs/tmp')
-    fp_smrfini = os.path.join(os.path.dirname(self.configFile), self.smrfini)
+    #fp_smrfini = os.path.join(os.path.dirname(self.configFile), self.smrfini)
+    fp_smrfini = self.smrfini
 
     self._logger.info('Writing the config file for SMRF')
     io.generate_config(smrf_cfg, fp_smrfini, inicheck=False)
@@ -51,49 +53,50 @@ def smrfMEAS(self):
     ###################################################################################################
     ### run smrf with the config file we just made ####################################################
     ###################################################################################################
-    self._logger.info('Running SMRF')
-    # first create config file to run smrf
-    fp_smrfini = create_smrf_config(self)
+    if self.end_date > self.start_date:
+        self._logger.info('Running SMRF')
+        # first create config file to run smrf
+        fp_smrfini = create_smrf_config(self)
 
-    faulthandler.enable()
-    start = datetime.now()
+        faulthandler.enable()
+        start = datetime.now()
 
-    # with smrf.framework.SMRF(meas_ini_file) as s:
-    with smrf.framework.SMRF(fp_smrfini, self._logger) as s:
-        #try:
-            # 2. load topo data
-            s.loadTopo()
+        # with smrf.framework.SMRF(meas_ini_file) as s:
+        with smrf.framework.SMRF(fp_smrfini, self._logger) as s:
+            #try:
+                # 2. load topo data
+                s.loadTopo()
 
-            # 3. initialize the distribution
-            s.initializeDistribution()
+                # 3. initialize the distribution
+                s.initializeDistribution()
 
-            # initialize the outputs if desired
-            s.initializeOutput()
+                # initialize the outputs if desired
+                s.initializeOutput()
 
-            #===============================================================================
-            # Distribute data
-            #===============================================================================
+                #===============================================================================
+                # Distribute data
+                #===============================================================================
 
-            # 5. load weather data  and station metadata
-            s.loadData()
+                # 5. load weather data  and station metadata
+                s.loadData()
 
-            # 6. distribute
-            s.distributeData()
+                # 6. distribute
+                s.distributeData()
 
-            s._logger.info(datetime.now() - start)
+                s._logger.info(datetime.now() - start)
 
-        # except Exception as e:
-        #     print 'Error: %s' % e
-        #     s._logger.error(e)
+            # except Exception as e:
+            #     print 'Error: %s' % e
+            #     s._logger.error(e)
 
-def smrf_go_wrf(config_file):
+def smrf_go_wrf(self):
 
     # get wrf config
-    wrf_cfg = self.config.copy()
+    wrf_cfg = copy.deepcopy(self.config)
     # replace start time with end time
     wrf_cfg['time']['start_date'] = wrf_cfg['time']['end_date']
     # replace end time with forecast time
-    wrf_cfg['time']['end_date'] = wrf_cfg['time']['forecast_date']
+    wrf_cfg['time']['end_date'] = wrf_cfg['forecast']['forecast_date']
 
     # edit config file to use gridded wrf data
     if 'stations' in wrf_cfg:
@@ -103,6 +106,9 @@ def smrf_go_wrf(config_file):
     if 'mysql' in wrf_cfg:
         del wrf_cfg['mysql']
 
+    if 'gridded' not in wrf_cfg:
+        wrf_cfg['gridded'] = copy.deepcopy(wrf_cfg['time'])
+        wrf_cfg['gridded'].clear()
     wrf_cfg['gridded']['file'] = self.fp_wrfdata
     wrf_cfg['gridded']['data_type'] = 'wrf'
     wrf_cfg['gridded']['zone_number'] = self.zone_number
@@ -111,33 +117,37 @@ def smrf_go_wrf(config_file):
     # delete AWSF sections
     for key in wrf_cfg:
         if key in self.sec_awsf:
-            del smrf_cfg[key]
+            del wrf_cfg[key]
 
     ###################################################################################################
     ### serious config edits to run wrf  ##############################################################
     ###################################################################################################
-    del wrf_cfg['air_temp']
+    # del wrf_cfg['air_temp'][:]
+    wrf_cfg['air_temp'].clear()
     wrf_cfg['air_temp']['distribution'] = 'grid'
     wrf_cfg['air_temp']['method'] = 'linear'
     wrf_cfg['air_temp']['detrend'] = True
     wrf_cfg['air_temp']['slope'] = -1
     wrf_cfg['air_temp']['mask'] = True
 
-    del wrf_cfg['vapor_pressure']
+    # del wrf_cfg['vapor_pressure'][:]
+    wrf_cfg['vapor_pressure'].clear()
     wrf_cfg['vapor_pressure']['distribution'] = 'grid'
     wrf_cfg['vapor_pressure']['method'] = 'linear'
     wrf_cfg['vapor_pressure']['detrend'] = True
     wrf_cfg['vapor_pressure']['slope'] = -1
     wrf_cfg['vapor_pressure']['mask'] = True
-    wrf_cfg['vapor_pressure']['tolerance'] = self.cfg['vapor_pressure']['tolerance']
-    wrf_cfg['vapor_pressure']['nthreads'] = self.cfg['vapor_pressure']['nthreads']
+    wrf_cfg['vapor_pressure']['tolerance'] = self.config['vapor_pressure']['tolerance']
+    wrf_cfg['vapor_pressure']['nthreads'] = self.config['vapor_pressure']['nthreads']
 
-    del wrf_cfg['wind']
+    # del wrf_cfg['wind'][:]
+    wrf_cfg['wind'].clear()
     wrf_cfg['wind']['distribution'] = 'grid'
     wrf_cfg['wind']['method'] = 'linear'
     wrf_cfg['wind']['detrend'] = False
 
-    del wrf_cfg['precip']
+    # del wrf_cfg['precip'][:]
+    wrf_cfg['precip'].clear()
     wrf_cfg['precip']['distribution'] = 'grid'
     wrf_cfg['precip']['method'] = 'cubic'
     wrf_cfg['precip']['detrend'] = True
@@ -148,8 +158,10 @@ def smrf_go_wrf(config_file):
     wrf_cfg['precip']['nasde_model'] = self.config['precip']['nasde_model']
 
     # leave albedo
+    wrf_cfg['albedo'] = self.config['albedo']
 
-    del wrf_cfg['solar']
+    # del wrf_cfg['solar'][:]
+    wrf_cfg['solar'].clear()
     wrf_cfg['solar']['distribution'] = 'grid'
     wrf_cfg['solar']['method'] = 'linear'
     wrf_cfg['solar']['detrend'] = False
@@ -158,7 +170,8 @@ def smrf_go_wrf(config_file):
     wrf_cfg['solar']['clear_omega'] = self.config['solar']['clear_omega']
     wrf_cfg['solar']['clear_gamma'] = self.config['solar']['clear_gamma']
 
-    del wrf_cfg['thermal']
+    # del wrf_cfg['thermal'][:]
+    wrf_cfg['thermal'].clear()
     wrf_cfg['thermal']['distribution'] = 'grid'
     wrf_cfg['thermal']['method'] = 'linear'
     wrf_cfg['thermal']['detrend'] = False
@@ -166,7 +179,13 @@ def smrf_go_wrf(config_file):
     # replace output directory with forecast data
     wrf_cfg['output']['out_location'] = os.path.join(self.pathd,'forecast/')
     wrf_cfg['output']['log_file'] = os.path.join(self.pathd,'forecast','wrf_log.txt')
-    fp_wrfini = os.path.join(os.path.dirname(self.configFile), self.wrfini)
+    wrf_cfg['system']['temp_dir'] = os.path.join(self.pathd,'forecast/tmp')
+    fp_wrfini = self.wrfini
+
+    for k in wrf_cfg:
+        #print k
+        #print type(wrf_cfg[k])
+        print (wrf_cfg.get(k).items())
 
     # output this config and use to run smrf
     self._logger.info('Writing the config file for SMRF forecast')

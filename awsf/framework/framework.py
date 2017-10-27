@@ -112,7 +112,7 @@ class AWSF():
                     self.forecast_date = pd.to_datetime(self.config['forecast']['forecast_date'])
                 else:
                     self.tmp_err.append('Forecast set to true, but no forecast_date given')
-                if ['wrf_data'] in self.config['forecast']:
+                if 'wrf_data' in self.config['forecast']:
                     self.fp_wrfdata = self.config['forecast']['wrf_data']
                 else:
                     self.tmp_err.append('Forecast set to true, but no wrf_data given')
@@ -173,7 +173,7 @@ class AWSF():
                 self.ipy_init_type = self.config['ipysnobal initial conditions']['input_type']
 
         # list of sections releated to AWSF (These will be removed for smrf config)
-        self.sec_awsf = ['awsf master', 'paths', 'grid', 'files', 'awsf logging', 'isystem',
+        self.sec_awsf = ['awsf master', 'awsf system', 'paths', 'grid', 'files', 'awsf logging', 'isystem',
                         'isnobal restart', 'ipysnobal', 'ipysnobal initial conditions',
                         'ipysnobal output', 'ipysnobal constants', 'forecast']
 

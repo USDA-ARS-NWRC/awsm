@@ -35,8 +35,8 @@ def run():
                 a.run_isnobal()
 
                 # convert ipw back to netcdf for processing
-                if a.do_make_nc:
-                    a.ipw2nc('smrf')
+            if a.do_make_nc:
+                a.ipw2nc('smrf')
         # if restart
         else:
             if a.do_isnobal:
@@ -48,16 +48,16 @@ def run():
 
         # perform same operations using gridded WRF data
         if a.do_wrf:
-            if 'forecast' in a.config:
-                if a.config['forecast']['forecast_flag']:
-                    if a.do_smrf:
-                        a.runSmrf_wrf()
-                    if a.do_isnobal:
-                        a.nc2ipw('wrf')
+            if a.do_smrf:
+                a.runSmrf_wrf()
+            if a.do_isnobal:
+                if a.do_make_in:
+                    a.nc2ipw('wrf')
 
-                        a.run_isnobal_forecast()
+                a.run_isnobal_forecast()
 
-                        a.ipw2nc('wrf')
+            if a.do_make_nc:
+                a.ipw2nc('wrf')
 
         # Run iPySnobal from SMRF in memory
         if a.do_smrf_ipysnobal:

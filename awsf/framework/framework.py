@@ -54,6 +54,16 @@ class AWSF():
         self.do_wrf = self.config['awsf master']['use_wrf']
         self.do_smrf_ipysnobal = self.config['awsf master']['run_smrf_ipysnobal']
 
+        # options for converting files
+        self.do_make_in = True
+        self.do_make_nc = True
+
+        if 'make_in' in self.config['awsf master']:
+            self.do_make_in = self.config['awsf master']['make_in']
+        if 'make_nc' in self.config['awsf master']:
+            self.do_make_nc = self.config['awsf master']['make_nc']
+
+        # options for masking with isnobal run
         self.mask_isnobal = False
         if 'mask_isnobal' in self.config['awsf master']:
             self.mask_isnobal = self.config['awsf master']['mask_isnobal']

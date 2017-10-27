@@ -242,7 +242,7 @@ def run_isnobal(self):
         i_in = ipw.IPW(self.prev_mod_file)
         # use given rougness from old init file if given
         if self.roughness_init is not None:
-            i.out.new_band(ipw.IPW(self.roughness_init).bands[1].data)
+            i_out.new_band(ipw.IPW(self.roughness_init).bands[1].data)
         else:
             self._logger.warning('No roughness given from old init, using value of 0.005 m')
             i_out.new_band(0.005*np.ones((self.ny,self.nx)))

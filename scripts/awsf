@@ -29,18 +29,22 @@ def run():
 
             # convert smrf output to ipw for iSnobal
             if a.do_isnobal:
-                a.nc2ipw('smrf')
+                if a.do_make_in:
+                    a.nc2ipw('smrf')
                 # run iSnobal
                 a.run_isnobal()
+
                 # convert ipw back to netcdf for processing
-                a.ipw2nc('smrf')
+                if a.do_mak_nc:
+                    a.ipw2nc('smrf')
         # if restart
         else:
             if a.do_isnobal:
                 # restart iSnobal from crash
                 a.restart_crash_image()
                 # convert ipw back to netcdf for processing
-                a.ipw2nc('smrf')
+                if a.do_mak_nc:
+                    a.ipw2nc('smrf')
 
         # perform same operations using gridded WRF data
         if a.do_wrf:

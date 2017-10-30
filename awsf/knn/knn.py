@@ -36,7 +36,7 @@ conversion = {
     }
 
 model_keys = ['air_temp', 'cloud_factor', 'precip_intensity', 'vapor_pressure', 'wind_speed', 'wind_direction',
-              'solar_radiation']
+              'solar_radiation', 'precip_accum']
 #model_keys = ['air_temp', 'precip_accum', 'vapor_pressure'] # for a quick comparison
 
 def organize_data(df, resample=None, smooth=False):
@@ -71,13 +71,13 @@ def organize_data(df, resample=None, smooth=False):
 
     return DF
 
-def get_data(start_date, end_date, w=14, resample='1D'):
+def get_data(start_date, end_date, sql_user, w=14, resample='1D'):
 
-    cnx = mysql.connector.connect(user='scott',
-                                  password='avalanche',
-                                  host='10.200.28.137',
-                                  database='weather_db',
-                                  port='32768')
+    cnx = mysql.connector.connect(user=sql_user['user'],
+                                  password=sql_user['password'],
+                                  host=sql_user['host'],
+                                  database=sql_user['database'],
+                                  port=sql_user['port'])
 
     # get the station id's
     qry = "SELECT tbl_metadata.* FROM tbl_metadata INNER JOIN tbl_stations_view ON tbl_metadata.primary_id=tbl_stations_view.primary_id WHERE client='TUOL_2017'"
@@ -89,7 +89,8 @@ def get_data(start_date, end_date, w=14, resample='1D'):
     # save metadata
     d_meta = d.copy()
     # check to see if UTM locations are calculated
-    d_meta[['X', 'Y']] = d_meta.apply(to_utm, axis=1)
+    d_meta['X'] = d_meta['utm_x']
+    d_meta['Y'] = d_meta['utm_y']
 
     ww = '{}D'.format(np.ceil(w/2))
     sd = start_date - pd.to_timedelta(ww)
@@ -140,20 +141,6 @@ def get_data(start_date, end_date, w=14, resample='1D'):
                 DF = pd.concat([DF, df])
 
     return DF, d, d_meta
-
-
-def to_utm(row):
-    """
-    Convert a row from data frame to X,Y
-    """
-    if (row['X'] is None) and (row['Y'] is None):
-        return pd.Series(utm.from_latlon(row['latitude'],
-                                         row['longitude'])[:2])
-    elif np.isnan(row['X']) and np.isnan(row['Y']):
-        return pd.Series(utm.from_latlon(row['latitude'],
-                                         row['longitude'])[:2])
-    else:
-        return pd.Series([row['X'], row['Y']])
 
 
 def create_weather(data, t, w=14):
@@ -265,17 +252,14 @@ def construct_senario(data, days, resample='3h'):
 
     return DF
 
-def do_knn(myawsf, fpath):
+def do_knn(myawsf, fpath, sql_user, start_date, end_date, scen_num):
 
-    start_date = pd.to_datetime('2017-03-01')
-    end_date = pd.to_datetime('2017-03-14')
     resample = '1D'
     w = 20
-    scen_num = 10
 
     t = pd.date_range(start_date, end_date, freq=resample)
 
-    data, all_data, d_meta = get_data(start_date, end_date, w, resample)
+    data, all_data, d_meta = get_data(start_date, end_date, sql_user, w, resample)
     org_data = organize_data(all_data)
 
     # loop through and create a bunch of random weather senarios
@@ -305,12 +289,13 @@ def do_knn(myawsf, fpath):
             raise ValueError('Path {} exists'.format(dir_out))
 
         for v in model_keys:
-            # file for each variable
-            fp_out = os.path.join(dir_out, '{}.csv'.format(v))
-            m = DD[v]
-            # output file to csv
-            m.to_csv(fp_out, na_rep='NaN')
-            # output metadata to csv
-            d_meta.to_csv(meta_out)
+            if v != 'precip_accum':
+                # file for each variable
+                fp_out = os.path.join(dir_out, '{}.csv'.format(v))
+                m = DD[v]
+                # output file to csv
+                m.to_csv(fp_out, na_rep='NaN')
+                # output metadata to csv
+                d_meta.to_csv(meta_out)
 
     print('Done')

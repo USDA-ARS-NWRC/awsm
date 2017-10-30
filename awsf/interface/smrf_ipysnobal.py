@@ -38,7 +38,7 @@ def run_smrf_ipysnobal(self):
         s.loadData()
 
         # initialize ipysnobal state
-        options, params, tstep_info, init, output_rec = ipysnobal.init_from_smrf(self)
+        options, params, tstep_info, init, output_rec = ipysnobal.init_from_smrf(self, s)
 
         #s.initializeOutput()
 

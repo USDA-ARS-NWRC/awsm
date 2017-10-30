@@ -6,7 +6,8 @@ __author__ = """Micah Sandusky"""
 __email__ = 'micah.sandusky@ars.usda.gov'
 __version__ = '0.1.0'
 
-from awsf import convertFiles
-from awsf import interface
-from awsf import framework
+from . import convertFiles
+from . import interface
+from . import framework
+from . import knn
 from . import premodel

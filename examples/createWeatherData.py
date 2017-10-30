@@ -1,9 +1,10 @@
 import numpy as np
 import pandas as pd
-from awsf.weather import knn
+from awsf.knn import knn
 
 # run knn
-knn.run_knn(None)
+fpath = '../test_data/weatherGenerator/'
+knn.do_knn(None, fpath)
 
 # next steps
 # run instance of awsf...

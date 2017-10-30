@@ -85,6 +85,9 @@ def get_data(start_date, end_date, w=14, resample='1D'):
     # select the data from tbl_level2
     sta = "','".join(d.index)
 
+    # save metadata
+    d_meta = d.copy()
+
     ww = '{}D'.format(np.ceil(w/2))
     sd = start_date - pd.to_timedelta(ww)
     ed = end_date + pd.to_timedelta(ww)
@@ -103,6 +106,9 @@ def get_data(start_date, end_date, w=14, resample='1D'):
 
     # Fill returned values 'None' with NaN
     d = d.fillna(value=np.nan, axis='columns')
+
+    # check to see if UTM locations are calculated
+    d[['X', 'Y']] = d.apply(to_utm, axis=1)
 
     cnx.close()
 
@@ -133,7 +139,21 @@ def get_data(start_date, end_date, w=14, resample='1D'):
             else:
                 DF = pd.concat([DF, df])
 
-    return DF, d
+    return DF, d, d_meta
+
+
+def to_utm(row):
+    """
+    Convert a row from data frame to X,Y
+    """
+    if (row['X'] is None) and (row['Y'] is None):
+        return pd.Series(utm.from_latlon(row['latitude'],
+                                         row['longitude'])[:2])
+    elif np.isnan(row['X']) and np.isnan(row['Y']):
+        return pd.Series(utm.from_latlon(row['latitude'],
+                                         row['longitude'])[:2])
+    else:
+        return pd.Series([row['X'], row['Y']])
 
 
 def create_weather(data, t, w=14):
@@ -255,7 +275,7 @@ def run_knn(myawsf):
 
     t = pd.date_range(start_date, end_date, freq=resample)
 
-    data, all_data = get_data(start_date, end_date, w, resample)
+    data, all_data, d_meta = get_data(start_date, end_date, w, resample)
     org_data = organize_data(all_data)
 
     # loop through and create a bunch of random weather senarios
@@ -272,17 +292,22 @@ def run_knn(myawsf):
     # make directory for each scenario and output station data to csv
     for j, DD in enumerate(D):
         # '/data/blizzard/awsftest/tuolumne/devel'
-        dir_out = os.path.join('./weatherdata/scenario{}'.format(j))
+        fpath = './weatherdata/scenario'
+        # output directory
+        dir_out = os.path.join(fpath, '{}'.format(j))
+        # metadata name
+        meta_out = os.path.join(dir_out, 'metadata.csv')
         if not os.path.exists(dir_out):
             os.makedirs(dir_out)
         print('Making {} scenario data'.format(j))
 
         for v in model_keys:
+            # file for each variable
             fp_out = os.path.join(dir_out, '{}.csv'.format(v))
             m = DD[v]
+            # output file to csv
             m.to_csv(fp_out, na_rep='NaN')
-
-        # need meta data still
-
+            # output metadata to csv
+            d_meta.to_csv(meta_out)
 
     print('Done')

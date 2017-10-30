@@ -35,7 +35,7 @@ conversion = {
         'cloud_factor': np.mean
     }
 
-model_keys = ['air_temp', 'cloud_factor', 'precip_accum', 'vapor_pressure', 'wind_speed', 'wind_direction',
+model_keys = ['air_temp', 'cloud_factor', 'precip_intensity', 'vapor_pressure', 'wind_speed', 'wind_direction',
               'solar_radiation']
 #model_keys = ['air_temp', 'precip_accum', 'vapor_pressure'] # for a quick comparison
 
@@ -88,6 +88,8 @@ def get_data(start_date, end_date, w=14, resample='1D'):
 
     # save metadata
     d_meta = d.copy()
+    # check to see if UTM locations are calculated
+    d_meta[['X', 'Y']] = d_meta.apply(to_utm, axis=1)
 
     ww = '{}D'.format(np.ceil(w/2))
     sd = start_date - pd.to_timedelta(ww)
@@ -107,9 +109,6 @@ def get_data(start_date, end_date, w=14, resample='1D'):
 
     # Fill returned values 'None' with NaN
     d = d.fillna(value=np.nan, axis='columns')
-
-    # check to see if UTM locations are calculated
-    #d[['X', 'Y']] = d.apply(to_utm, axis=1)
 
     cnx.close()
 

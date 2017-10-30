@@ -179,6 +179,9 @@ class AWSF():
 
         self.mk_directories()
 
+        # create log now that directory structure is done
+        self.createLog()
+
     def createLog(self):
         # start logging
         if 'log_level' in self.config['awsf system']:
@@ -214,6 +217,17 @@ class AWSF():
         self._loglevel = numeric_level
 
         self._logger = logging.getLogger(__name__)
+
+        # dump saved logs
+        if len(self.tmp_log) > 0:
+            for l in self.tmp_log:
+                self._logger.info(l)
+        if len(self.tmp_warn) > 0:
+            for l in self.tmp_warn:
+                self._logger.warning(l)
+        if len(self.tmp_err) > 0:
+            for l in self.tmp_err:
+                self._logger.error(l)
 
     def runSmrf(self):
         """
@@ -387,19 +401,6 @@ class AWSF():
         else:
             self.tmp_err.append('Base directory did not exist, not safe to conitnue.\
                                 Make sure base directory exists before running.')
-
-        # create log now that directory structure is done
-        self.createLog()
-
-        if len(self.tmp_log) > 0:
-            for l in self.tmp_log:
-                self._logger.info(l)
-        if len(self.tmp_warn) > 0:
-            for l in self.tmp_warn:
-                self._logger.warning(l)
-        if len(self.tmp_err) > 0:
-            for l in self.tmp_err:
-                self._logger.error(l)
 
         self.paths = os.path.join(self.pathd,'smrfOutputs')
         self.ppt_desc = os.path.join(self.pathd, 'ppt_desc{}.txt'.format(self.end_date.strftime("%Y%m%d")))

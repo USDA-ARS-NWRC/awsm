@@ -16,7 +16,7 @@ from smrf.utils import io
 import subprocess
 import copy
 
-def create_smrf_config(self):
+def create_smrf_config(myawsf):
     """
     Create a smrf config for running standard :mod: `smr` run. Use the
     :mod: `AWSF` config and remove the sections specific to :mod: `AWSF`.
@@ -28,17 +28,18 @@ def create_smrf_config(self):
 
     # Write out config file to run smrf
     # make copy and delete only awsf sections
-    smrf_cfg = copy.deepcopy(self.config)
+    # smrf_cfg = copy.deepcopy(myawsf.config)
+    smrf_cfg = myawsf.config.copy()
     for key in smrf_cfg:
-        if key in self.sec_awsf:
+        if key in myawsf.sec_awsf:
             del smrf_cfg[key]
     # set ouput location in smrf config
-    smrf_cfg['output']['out_location'] = os.path.join(self.pathd,'smrfOutputs/')
-    smrf_cfg['system']['temp_dir'] = os.path.join(self.pathd,'smrfOutputs/tmp')
+    smrf_cfg['output']['out_location'] = os.path.join(myawsf.pathd,'smrfOutputs/')
+    smrf_cfg['system']['temp_dir'] = os.path.join(myawsf.pathd,'smrfOutputs/tmp')
     #fp_smrfini = os.path.join(os.path.dirname(self.configFile), self.smrfini)
-    fp_smrfini = self.smrfini
+    fp_smrfini = myawsf.smrfini
 
-    self._logger.info('Writing the config file for SMRF')
+    myawsf._logger.info('Writing the config file for SMRF')
     io.generate_config(smrf_cfg, fp_smrfini, inicheck=False)
 
     return fp_smrfini
@@ -487,9 +488,15 @@ def restart_crash_image(self):
     T_s = i_crash.bands[6].data # avgerage snow temp
     h20_sat = i_crash.bands[8].data # percent saturation
 
-    self._logger.info("correcting crash image")
+    self._logger.info("correcting crash image, deleting depths under {} [m]".format())
 
+    # find pixels that need reset
     idz = z_s < self.depth_thresh
+
+    # find number of pixels reset
+    num_pix = len(np.where(idz == True))
+
+    self._logger.warning('Zeroing depth in {} pixels!'.format(num_pix))
 
     z_s[idz] = 0.0
     rho[idz] = 0.0

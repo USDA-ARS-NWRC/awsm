@@ -527,7 +527,7 @@ def initialize(params, tstep_info, init):
     return s
 
 
-def open_init_files(self, options):
+def open_init_files(self, options, dem):
     """
     Open the netCDF files for initial conditions and inputs
     - Reads in the initial_conditions file
@@ -599,6 +599,43 @@ def open_init_files(self, options):
         else:
             init['mask'] = np.ones_like(init['elevation'])
 
+    elif options['initial_conditions']['input_type'] == 'ipw_out':
+        # initialize from output file and roughness init
+        i = ipw.IPW(options['initial_conditions']['file'])
+        if 'mask_file' in options['initial_conditions']:
+            imask = ipw.IPW(options['initial_conditions']['mask_file'])
+            msk = imask.bands[0].data
+
+        x = self.v + self.dv*np.arange(self.nx)
+        y = self.u + self.du*np.arange(self.ny)
+
+        # read the required variables in
+        init = {}
+        init['x'] = x         # get the x coordinates
+        init['y'] = y         # get the y coordinates
+        init['elevation'] = dem        # get the elevation
+        if self.roughness_init is not None:
+            init['z_0'] = ipw.IPW(self.roughness_init).bands[1].data[:] # get the roughness length
+        else:
+            init['z_0'] = 0.005*np.ones((self.ny,self.nx))
+            self._logger.warning('No roughness given from old init, using value of 0.005 m')
+
+        # All other variables will be assumed zero if not present
+        all_zeros = np.zeros_like(init['elevation'])
+
+        init['z_s'] = i.bands[0].data[:]
+        init['rho'] = i.bands[1].data[:]
+        init['T_s_0'] = i.bands[4].data[:]
+        init['T_s_l'] = i.bands[5].data[:]
+        init['T_s'] = i.bands[6].data[:]
+        init['h2o_sat'] = i.bands[8].data[:]
+
+        # Add mask if input
+        if 'mask_file' in options['initial_conditions']:
+            init['mask'] = msk
+        else:
+            init['mask'] = np.ones_like(init['elevation'])
+
     else:
         self._logger.error('Wrong input type for iPySnobal init file')
 
@@ -619,7 +656,7 @@ def open_init_files(self, options):
 ########### Functions for interfacing with smrf run ############
 ################################################################
 
-def init_from_smrf(self):
+def init_from_smrf(self, mysmrf):
     """
     mimic the main.c from the Snobal model
 
@@ -634,7 +671,7 @@ def init_from_smrf(self):
     params, tstep_info = get_tstep_info(options['constants'], options)
 
     # open the files and read in data
-    init = open_init_files(self, options)
+    init = open_init_files(self, options, mysmrf.topo.dem)
 
     output_rec = initialize(params, tstep_info, init)
 
@@ -698,6 +735,7 @@ class QueueIsnobal(threading.Thread):
         start_step = wyhr # if restart then it would be higher if this were iSnobal
         # start_step = 0 # if restart then it would be higher if this were iSnobal
         step_time = start_step * data_tstep
+        # step_time = start_step * 60.0
 
         self.output_rec['current_time'] = step_time * np.ones(self.output_rec['elevation'].shape)
         self.output_rec['time_since_out'] = timeSinceOut * np.ones(self.output_rec['elevation'].shape)
@@ -771,9 +809,9 @@ class QueueIsnobal(threading.Thread):
 
             self._logger.info('Finished timestep: {}'.format(tstep))
             input1 = input2.copy()
-
+            # print data_tstep/(3600.0)
             # output at the frequency and the last time step
-            if (j % self.options['output']['frequency'] == 0) or (j == len(self.options['time']['date_time'])):
+            if (j*(data_tstep/3600.0) % self.options['output']['frequency'] == 0) or (j == len(self.options['time']['date_time'])):
                 output_timestep(self.output_rec, tstep, self.options)
                 self.output_rec['time_since_out'] = np.zeros(self.output_rec['elevation'].shape)
 

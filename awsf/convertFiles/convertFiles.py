@@ -197,7 +197,7 @@ def ipw2nc_mea(self, runtype):
     em.createVariable('y', 'f', dimensions[1])
     em.createVariable('x', 'f', dimensions[2])
 
-    setattr(em.variables['time'], 'units', 'days since %s' % wyh)
+    setattr(em.variables['time'], 'units', 'hours since %s' % wyh)
     setattr(em.variables['time'], 'calendar', 'standard')
     setattr(em.variables['time'], 'time_zone', time_zone)
     em.variables['x'][:] = x
@@ -263,16 +263,26 @@ def ipw2nc_mea(self, runtype):
         d = sorted(glob.glob("%s/snow*"%self.path_wrf_ro), key=os.path.getmtime)
 
     d.sort(key=lambda f: os.path.splitext(f))
-    pbar = progressbar.ProgressBar(max_value=len(d)).start()
+    # pbar = progressbar.ProgressBar(max_value=len(d)).start()
     j = 0
 
-    for f in d:
+    for idf, f in enumerate(d):
+        # print out counter at certain percentages. pbar doesn't play nice
+        # with logging
+        if j == int(len(d)/4):
+            self._logger.info("25 percent finished with making NetCDF files!")
+        if j == int(len(d)/2):
+            self._logger.info("50 percent finished with making NetCDF files!")
+        if j == int(3*len(d)/4):
+            self._logger.info("75 percent finished with making NetCDF files!")
+
         # get the hr
-        head, nm = os.path.split(f)
-        hr = nm.split('.')[1]
-        hr = int(hr)
-        snow.variables['time'][j] = hr+1
-        em.variables['time'][j] = hr+1
+        nm = os.path.basename(f)
+        head = os.path.dirname(f)
+        hr = int(nm.split('.')[1])
+        # hr = int(hr)
+        snow.variables['time'][j] = hr #+1
+        em.variables['time'][j] = hr #+1
 
         # Read the IPW file
         i = ipw.IPW(f)
@@ -282,17 +292,19 @@ def ipw2nc_mea(self, runtype):
             snow.variables[var][j,:] = i.bands[b].data
 
         # output to the em netcdf file
-        emFile = "%s/%s.%04i" % (head, 'em', hr)
-        i = ipw.IPW(emFile)
+        # emFile = "%s/%s.%04i" % (head, 'em', hr)
+        emFile = os.path.join(head, 'em.%04i'%(hr))
+        i_em = ipw.IPW(emFile)
         for b,var in enumerate(m['name']):
-            em.variables[var][j,:] = i.bands[b].data
+            em.variables[var][j,:] = i_em.bands[b].data
 
         em.sync()
         snow.sync()
         j += 1
-        pbar.update(j)
-    pbar.finish()
+
+        # pbar.update(j)
+    # pbar.finish()
     snow.close()
     em.close()
 
-    self._logger.info("finished making the NetCDF files from ipw files for {}".format(runtype))
+    self._logger.info("Finished making the NetCDF files from iSnobal output!")

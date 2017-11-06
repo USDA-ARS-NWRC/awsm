@@ -179,6 +179,9 @@ class AWSF():
 
         self.mk_directories()
 
+        # create log now that directory structure is done
+        self.createLog()
+
     def createLog(self):
         # start logging
         if 'log_level' in self.config['awsf system']:
@@ -214,6 +217,17 @@ class AWSF():
         self._loglevel = numeric_level
 
         self._logger = logging.getLogger(__name__)
+
+        # dump saved logs
+        if len(self.tmp_log) > 0:
+            for l in self.tmp_log:
+                self._logger.info(l)
+        if len(self.tmp_warn) > 0:
+            for l in self.tmp_warn:
+                self._logger.warning(l)
+        if len(self.tmp_err) > 0:
+            for l in self.tmp_err:
+                self._logger.error(l)
 
     def runSmrf(self):
         """
@@ -285,19 +299,13 @@ class AWSF():
         if self.isops:
             self.path_od = os.path.join(self.path_ba,'ops')
             # check if specified water year
-            if len(str(self.wy)) > 1:
-                self.path_wy = os.path.join(self.path_od,'wy{}'.format(self.wy))
-            else:
-                self.path_wy = self.path_od
+            self.path_wy = os.path.join(self.path_od,'wy{}'.format(self.wy))
+            # self.path_proj = self.path_wy
 
         else:
             self.path_od = os.path.join(self.path_ba,'devel')
-            self.path_proj = os.path.join(self.path_od, self.proj)
-
-            if len(str(self.wy)) > 1:
-                self.path_wy = os.path.join(self.path_proj,'wy{}'.format(self.wy))
-            else:
-                self.path_wy = self.path_proj
+            self.path_wy = os.path.join(self.path_od,'wy{}'.format(self.wy))
+            self.path_wy = os.path.join(self.path_wy, self.proj)
 
         # specific data folder conatining
         self.pathd = os.path.join(self.path_wy, 'data/data{}_{}'.format(self.start_date.strftime("%Y%m%d"), self.end_date.strftime("%Y%m%d")))
@@ -342,7 +350,7 @@ class AWSF():
             if self.isops:
                 fp_desc = os.path.join(self.path_od, 'projectDescription.txt')
             else:
-                fp_desc = os.path.join(self.path_proj, 'projectDescription.txt')
+                fp_desc = os.path.join(self.path_wy, 'projectDescription.txt')
 
             if not os.path.isfile(fp_desc):
                 # look for description or prompt for one
@@ -387,19 +395,6 @@ class AWSF():
         else:
             self.tmp_err.append('Base directory did not exist, not safe to conitnue.\
                                 Make sure base directory exists before running.')
-
-        # create log now that directory structure is done
-        self.createLog()
-
-        if len(self.tmp_log) > 0:
-            for l in self.tmp_log:
-                self._logger.info(l)
-        if len(self.tmp_warn) > 0:
-            for l in self.tmp_warn:
-                self._logger.warning(l)
-        if len(self.tmp_err) > 0:
-            for l in self.tmp_err:
-                self._logger.error(l)
 
         self.paths = os.path.join(self.pathd,'smrfOutputs')
         self.ppt_desc = os.path.join(self.pathd, 'ppt_desc{}.txt'.format(self.end_date.strftime("%Y%m%d")))

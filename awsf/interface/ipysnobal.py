@@ -735,6 +735,7 @@ class QueueIsnobal(threading.Thread):
         start_step = wyhr # if restart then it would be higher if this were iSnobal
         # start_step = 0 # if restart then it would be higher if this were iSnobal
         step_time = start_step * data_tstep
+        # step_time = start_step * 60.0
 
         self.output_rec['current_time'] = step_time * np.ones(self.output_rec['elevation'].shape)
         self.output_rec['time_since_out'] = timeSinceOut * np.ones(self.output_rec['elevation'].shape)
@@ -808,9 +809,9 @@ class QueueIsnobal(threading.Thread):
 
             self._logger.info('Finished timestep: {}'.format(tstep))
             input1 = input2.copy()
-
+            # print data_tstep/(3600.0)
             # output at the frequency and the last time step
-            if (j % self.options['output']['frequency'] == 0) or (j == len(self.options['time']['date_time'])):
+            if (j*(data_tstep/3600.0) % self.options['output']['frequency'] == 0) or (j == len(self.options['time']['date_time'])):
                 output_timestep(self.output_rec, tstep, self.options)
                 self.output_rec['time_since_out'] = np.zeros(self.output_rec['elevation'].shape)
 

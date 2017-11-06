@@ -16,10 +16,10 @@ from awsf.interface import ipysnobal
 from awsf.interface import interface
 
 
-def run_smrf_ipysnobal(self):
+def run_smrf_ipysnobal(myawsf):
 
     # first create config file to run smrf
-    fp_smrfini = interface.create_smrf_config(self)
+    fp_smrfini = interface.create_smrf_config(myawsf)
 
     start = datetime.now()
 
@@ -27,7 +27,7 @@ def run_smrf_ipysnobal(self):
         configFile = sys.argv[1]
 
     # initialize
-    with smrf.framework.SMRF(fp_smrfini, self._logger) as s:
+    with smrf.framework.SMRF(fp_smrfini, myawsf._logger) as s:
         # load topo data
         s.loadTopo()
 
@@ -38,12 +38,13 @@ def run_smrf_ipysnobal(self):
         s.loadData()
 
         # initialize ipysnobal state
-        options, params, tstep_info, init, output_rec = ipysnobal.init_from_smrf(self, s)
+        options, params, tstep_info, init, output_rec = ipysnobal.init_from_smrf(myawsf, s)
 
         #s.initializeOutput()
-
-        s.thread_variables.remove('output')
-        s.thread_variables.append('isnobal')
+        if 'output' in s.thread_variables:
+            s.thread_variables.remove('output')
+        if not 'isnobal' in s.thread_variables:
+            s.thread_variables.append('isnobal')
 
         # 7. Distribute the data
         # -------------------------------------
@@ -59,9 +60,9 @@ def run_smrf_ipysnobal(self):
                                    output_rec,
                                    s.topo.nx,
                                    s.topo.ny,
-                                   self.soil_temp,
-                                   self._logger,
-                                   self.tzinfo))
+                                   myawsf.soil_temp,
+                                   myawsf._logger,
+                                   myawsf.tzinfo))
 
         # the cleaner
         t.append(queue.QueueCleaner(s.date_time, q))
@@ -76,5 +77,6 @@ def run_smrf_ipysnobal(self):
 
         for i in range(len(t)):
             t[i].join()
+
 
         s._logger.debug('DONE!!!!')

@@ -299,19 +299,13 @@ class AWSF():
         if self.isops:
             self.path_od = os.path.join(self.path_ba,'ops')
             # check if specified water year
-            if len(str(self.wy)) > 1:
-                self.path_wy = os.path.join(self.path_od,'wy{}'.format(self.wy))
-            else:
-                self.path_wy = self.path_od
+            self.path_wy = os.path.join(self.path_od,'wy{}'.format(self.wy))
+            # self.path_proj = self.path_wy
 
         else:
             self.path_od = os.path.join(self.path_ba,'devel')
-            self.path_proj = os.path.join(self.path_od, self.proj)
-
-            if len(str(self.wy)) > 1:
-                self.path_wy = os.path.join(self.path_proj,'wy{}'.format(self.wy))
-            else:
-                self.path_wy = self.path_proj
+            self.path_wy = os.path.join(self.path_od,'wy{}'.format(self.wy))
+            self.path_wy = os.path.join(self.path_wy, self.proj)
 
         # specific data folder conatining
         self.pathd = os.path.join(self.path_wy, 'data/data{}_{}'.format(self.start_date.strftime("%Y%m%d"), self.end_date.strftime("%Y%m%d")))
@@ -356,7 +350,7 @@ class AWSF():
             if self.isops:
                 fp_desc = os.path.join(self.path_od, 'projectDescription.txt')
             else:
-                fp_desc = os.path.join(self.path_proj, 'projectDescription.txt')
+                fp_desc = os.path.join(self.path_wy, 'projectDescription.txt')
 
             if not os.path.isfile(fp_desc):
                 # look for description or prompt for one

@@ -252,7 +252,7 @@ def construct_senario(data, days, resample='3h'):
 
     return DF
 
-def do_knn(myawsf, fpath, sql_user, start_date, end_date, scen_num):
+def do_knn(myawsf, fpath, sql_user, start_date, end_date, scen_num, add_temp, mult_precip):
 
     resample = '1D'
     w = 20
@@ -270,6 +270,13 @@ def do_knn(myawsf, fpath, sql_user, start_date, end_date, scen_num):
 
         # from the data construct the new wether sequence
         s = construct_senario(all_data, dd, '3h')
+
+        s['precip_intensity'] = s['precip_accum'].copy()
+
+        # perturb results
+        s['air_temp'] = s['air_temp'] + add_temp
+        s['precip_intensity'] = s['precip_intensity'] * mult_precip
+
         s['precip_accum'] = s['precip_accum'].cumsum()
         D.append(s)
 
@@ -289,7 +296,7 @@ def do_knn(myawsf, fpath, sql_user, start_date, end_date, scen_num):
             raise ValueError('Path {} exists'.format(dir_out))
 
         for v in model_keys:
-            if v != 'precip_accum':
+            #if v != 'precip_accum':
                 # file for each variable
                 fp_out = os.path.join(dir_out, '{}.csv'.format(v))
                 m = DD[v]

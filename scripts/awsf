@@ -63,7 +63,7 @@ def run():
         if a.do_smrf_ipysnobal:
             a.run_smrf_ipysnobal()
 
-        a._logger.info(datetime.now() - start)
+        a._logger.info('AWSF finished in: {}'.format(datetime.now() - start) )
 
 if __name__ =='__main__':
     run()

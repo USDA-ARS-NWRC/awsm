@@ -310,11 +310,40 @@ class AWSF():
             self.path_wy = os.path.join(self.path_wy, self.proj)
 
         # specific data folder conatining
-        self.pathd = os.path.join(self.path_wy, 'data/data{}_{}'.format(self.start_date.strftime("%Y%m%d"), self.end_date.strftime("%Y%m%d")))
+        self.pathd = os.path.join(self.path_wy, 'data')
+        self.pathr = os.path.join(self.path_wy, 'runs')
 
         # name of temporary smrf file to write out
         self.smrfini = os.path.join(self.path_wy, 'tmp_smrf_config.ini')
         self.wrfini = os.path.join(self.path_wy, 'tmp_smrf_wrf_config.ini')
+
+        if not self.do_wrf:
+            # assign path names for isnobal
+            path_names_att = ['pathdd', 'pathrr', 'pathi', 'pathinit', 'pathro', 'paths', 'path_ppt']
+            #rel_base = ['path_d', 'pathr', 'pathdd', 'pathdd', 'pathrr', 'pathdd', 'pathdd', 'pathdd']
+            self.pathdd = os.path.join(self.path_d, 'data{}_{}'.format(self.start_date.strftime("%Y%m%d"), self.end_date.strftime("%Y%m%d")))
+            self.pathrr =    os.path.join(self.pathr, 'run{}_{}'.format(self.start_date.strftime("%Y%m%d"), self.end_date.strftime("%Y%m%d")))
+            self.pathi =    os.path.join(self.pathdd, 'input/')
+            self.pathinit = os.path.join(self.pathdd, 'init/')
+            self.pathro =   os.path.join(self.pathrr, 'output/')
+            self.paths = os.path.join(self.pathdd,'smrfOutputs')
+            self.ppt_desc = os.path.join(self.pathdd, 'ppt_desc{}.txt'.format(self.end_date.strftime("%Y%m%d")))
+            self.path_ppt = os.path.join(self.pathdd, 'ppt_4b')
+
+            check_if_data = self.pathdd
+        else:
+            path_names_att = ['path_wrf_data', 'path_wrf_run', 'path_wrf_i', 'path_wrf_init', 'path_wrf_ro', 'path_wrf_s', 'path_wrf_ppt']
+            #rel_base = ['pathd', 'pathr', 'path_wrf_data', 'path_wrf_data', 'path_wrf_run', 'path_wrf_data', 'path_wrf_data', 'path_wrf_data']
+            self.path_wrf_data = os.path.join(self.pathd, 'forecast{}_{}'.format(self.start_date.strftime("%Y%m%d"), self.end_date.strftime("%Y%m%d")))
+            self.path_wrf_run = os.path.join(self.pathr, 'forecast{}_{}'.format(self.start_date.strftime("%Y%m%d"), self.end_date.strftime("%Y%m%d")))
+            self.path_wrf_i =    os.path.join(self.path_wrf_data, 'input/')
+            self.path_wrf_init = os.path.join(self.path_wrf_data, 'init/')
+            self.path_wrf_ro =   os.path.join(self.path_wrf_run, 'output/')
+            self.path_wrf_s = os.path.join(self.path_wrf_data,'smrfOutputs')
+            self.wrf_ppt_desc = os.path.join(self.path_wrf_data, 'ppt_desc{}.txt'.format(self.end_date.strftime("%Y%m%d")))
+            self.path_wrf_ppt = os.path.join(self.path_wrf_data, 'ppt_4b')
+
+            check_if_data = self.path_wrf_data
 
         if os.path.exists(self.path_dr):
             if not os.path.exists(self.path_wy):  # if the working path specified in the config file does not exist
@@ -324,35 +353,52 @@ class AWSF():
                 if y_n == 'n':
                     print('Please fix the base directory (path_wy) in your config file.')
                 elif y_n =='y':
-                    os.makedirs(os.path.join(self.pathd, 'smrfOutputs/'))
-                    os.makedirs(os.path.join(self.pathd, 'input/'))
-                    os.makedirs(os.path.join(self.pathd, 'init/'))
-                    os.makedirs(os.path.join(self.pathd, 'ppt_4b/'))
-                    os.makedirs(os.path.join(self.pathd, 'forecast/'))
-                    os.makedirs(os.path.join(self.path_wy, 'runs/'))
+                    self.make_rigid_directories(path_names_att)
+                    # os.makedirs(os.path.join(self.pathdd, 'smrfOutputs/'))
+                    # os.makedirs(os.path.join(self.pathdd, 'input/'))
+                    # os.makedirs(os.path.join(self.pathdd, 'init/'))
+                    # os.makedirs(os.path.join(self.pathdd, 'ppt_4b/'))
+                    # os.makedirs(os.path.join(self.pathdd, 'forecast/'))
+                    # os.makedirs(os.path.join(self.path_wy, 'runs/'))
+                    # os.makedirs(self.pathro)
 
-            elif not os.path.exists(self.pathd):  # if the working path specified in the config file does not exist
+            elif not os.path.exists(check_if_data):  # if the working path specified in the config file does not exist
                 y_n = 'a'                        # set a funny value to y_n
                 while y_n not in ['y','n']:      # while it is not y or n (for yes or no)
-                    y_n = raw_input('Directory %s does not exist. Create base directory and all subdirectories? (y n): '%self.pathd)
+                    y_n = raw_input('Directory %s does not exist. Create base directory and all subdirectories? (y n): '%check_if_data)
                 if y_n == 'n':
                     print('Please fix the base directory (path_wy) in your config file.')
                 elif y_n =='y':
-                    os.makedirs(os.path.join(self.pathd, 'smrfOutputs/'))
-                    os.makedirs(os.path.join(self.pathd, 'input/'))
-                    os.makedirs(os.path.join(self.pathd, 'init/'))
-                    os.makedirs(os.path.join(self.pathd, 'ppt_4b/'))
-
-                if not os.path.exists(os.path.join(self.path_wy, 'runs/')):
-                    os.makedirs(os.path.join(self.path_wy, 'runs/'))
+                    self.make_rigid_directories(path_names_att)
+                    # os.makedirs(os.path.join(self.pathdd, 'smrfOutputs/'))
+                    # os.makedirs(os.path.join(self.pathdd, 'input/'))
+                    # os.makedirs(os.path.join(self.pathdd, 'init/'))
+                    # os.makedirs(os.path.join(self.pathdd, 'ppt_4b/'))
             else:
-                self.tmp_warn.append('This has the potential to overwrite results in {}!!!'.format(self.pathd))
+                self.tmp_warn.append('This has the potential to overwrite results in {}!!!'.format(check_if_data))
+
+            # make directories for wrf
+            # if self.do_wrf:
+            #     if not os.path.exists(self.path_wrf_data):
+            #         os.makedirs(self.path_wrf_data)
+            #         os.makedirs(self.path_wrf_init)
+            #         os.makedirs(self.path_wrf_i)
+            #         os.makedirs(os.path.join(self.path_wrf_i,'ppt_4b/'))
+            #         os.makedirs(self.path_wrf_s)
+            #     if not os.path.exists(self.path_wrf_run):
+            #         os.makedirs(self.path_wrf_run)
+            #         os.makedirs(self.path_wrf_ro)
+
+            # make sure runs exists
+            if not os.path.exists(os.path.join(self.path_wy, 'runs/')):
+                os.makedirs(os.path.join(self.path_wy, 'runs/'))
+
+            if not self.do_wrf:
+                if not os.path.exists(self.pathro):
+                    os.makedirs(self.pathro)
 
             # find where to write file
-            if self.isops:
-                fp_desc = os.path.join(self.path_od, 'projectDescription.txt')
-            else:
-                fp_desc = os.path.join(self.path_wy, 'projectDescription.txt')
+            fp_desc = os.path.join(self.path_wy, 'projectDescription.txt')
 
             if not os.path.isfile(fp_desc):
                 # look for description or prompt for one
@@ -366,40 +412,24 @@ class AWSF():
             else:
                 self.tmp_log.append('Description file aleardy exists\n')
 
-            # assign path names for isnobal
-            self.pathi =    os.path.join(self.pathd, 'input/')
-            self.pathinit = os.path.join(self.pathd, 'init/')
-            self.pathr =    os.path.join(self.path_wy, 'runs/run{}_{}'.format(self.start_date.strftime("%Y%m%d"), self.end_date.strftime("%Y%m%d")))
-            self.pathro =   os.path.join(self.pathr, 'output/')
-            if not os.path.exists(self.pathro):
-                os.makedirs(self.pathro)
-
-            # make directories for wrf
-            if self.do_wrf:
-                self.path_wrf_data = os.path.join(self.path_wy, 'data/', 'forecast{}_{}'.format(self.start_date.strftime("%Y%m%d"), self.end_date.strftime("%Y%m%d")))
-                self.path_wrf_run = os.path.join(self.path_wy, 'runs/', 'forecast{}_{}'.format(self.start_date.strftime("%Y%m%d"), self.end_date.strftime("%Y%m%d")))
-                self.path_wrf_i =    os.path.join(self.path_wrf_data, 'input/')
-                self.path_wrf_init = os.path.join(self.path_wrf_data, 'init/')
-                self.path_wrf_ro =   os.path.join(self.path_wrf_run, 'output/')
-                self.path_wrf_s = os.path.join(self.path_wrf_data,'smrfOutputs')
-                self.wrf_ppt_desc = os.path.join(self.path_wrf_data, 'ppt_desc_forecast_{}.txt'.format(self.end_date.strftime("%Y%m%d")))
-
-                if not os.path.exists(self.path_wrf_data):
-                    os.makedirs(self.path_wrf_data)
-                    os.makedirs(self.path_wrf_init)
-                    os.makedirs(self.path_wrf_i)
-                    os.makedirs(os.path.join(self.path_wrf_i,'ppt_4b/'))
-                    os.makedirs(self.path_wrf_s)
-                if not os.path.exists(self.path_wrf_run):
-                    os.makedirs(self.path_wrf_run)
-                    os.makedirs(self.path_wrf_ro)
-
         else:
             self.tmp_err.append('Base directory did not exist, not safe to conitnue.\
                                 Make sure base directory exists before running.')
 
-        self.paths = os.path.join(self.pathd,'smrfOutputs')
-        self.ppt_desc = os.path.join(self.pathd, 'ppt_desc{}.txt'.format(self.end_date.strftime("%Y%m%d")))
+    def make_rigid_directories(self, path_name):
+        """
+        Creates rigid directory structure from list of relative bases and
+        extensions from the base
+        """
+        # loop through lists
+        for idp, pn in enumerate(path_name):
+            # get attribute of path
+            path = getattr(self,pn)
+
+            if not os.path.exists(path):
+                os.makedirs(path)
+            else:
+                self.tmp_log.append('Directory ---{}--- exists, not creating.\n')
 
 
     def __enter__(self):

@@ -35,8 +35,8 @@ def create_smrf_config(myawsf):
         if key in myawsf.sec_awsf:
             del smrf_cfg[key]
     # set ouput location in smrf config
-    smrf_cfg['output']['out_location'] = os.path.join(myawsf.pathd,'smrfOutputs/')
-    smrf_cfg['system']['temp_dir'] = os.path.join(myawsf.pathd,'smrfOutputs/tmp')
+    smrf_cfg['output']['out_location'] = os.path.join(myawsf.paths)
+    smrf_cfg['system']['temp_dir'] = os.path.join(myawsf.paths,'tmp')
     fp_smrfini = myawsf.smrfini
 
     myawsf._logger.info('Writing the config file for SMRF')
@@ -296,7 +296,7 @@ def run_isnobal(myawsf):
     # make paths absolute if they are not
     cwd = os.getcwd()
 
-    fp_output = os.path.join(myawsf.pathr,'sout{}.txt'.format(myawsf.end_date.strftime("%Y%m%d")))
+    fp_output = os.path.join(myawsf.pathrr,'sout{}.txt'.format(myawsf.end_date.strftime("%Y%m%d")))
     fp_ppt_desc = myawsf.ppt_desc
 
     # run iSnobal
@@ -532,10 +532,10 @@ def restart_crash_image(myawsf):
 
     # make paths absolute if they are not
     cwd = os.getcwd()
-    if os.path.isabs(myawsf.pathr):
-        fp_output = os.path.join(myawsf.pathr,'sout{}.txt'.format(myawsf.end_date.strftime("%Y%m%d")))
+    if os.path.isabs(myawsf.pathrr):
+        fp_output = os.path.join(myawsf.pathrr,'sout{}.txt'.format(myawsf.end_date.strftime("%Y%m%d")))
     else:
-        fp_output = os.path.join(os.path.abspath(myawsf.pathr),'sout_restart{}.txt'.format(myawsf.restart_hr))
+        fp_output = os.path.join(os.path.abspath(myawsf.pathrr),'sout_restart{}.txt'.format(myawsf.restart_hr))
     if os.path.isabs(myawsf.ppt_desc):
         fp_ppt_desc = myawsf.ppt_desc
     else:

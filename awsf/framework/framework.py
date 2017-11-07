@@ -108,10 +108,10 @@ class AWSF():
             if 'forecast' in self.config:
                 self.tmp_log.append('Forecasting set to True')
 
-                if 'forecast_date' in self.config['forecast']:
-                    self.forecast_date = pd.to_datetime(self.config['forecast']['forecast_date'])
-                else:
-                    self.tmp_err.append('Forecast set to true, but no forecast_date given')
+                # if 'forecast_date' in self.config['forecast']:
+                #     self.forecast_date = pd.to_datetime(self.config['forecast']['forecast_date'])
+                # else:
+                #     self.tmp_err.append('Forecast set to true, but no forecast_date given')
                 if 'wrf_data' in self.config['forecast']:
                     self.fp_wrfdata = self.config['forecast']['wrf_data']
                 else:
@@ -199,6 +199,8 @@ class AWSF():
             if self.config['awsf system']['log_to_file'] == True:
                 if self.config['isnobal restart']['restart_crash'] == True:
                     logfile = os.path.join(self.path_wy, 'log_restart_{}.out'.format(self.restart_hr))
+                elif self.do_wrf:
+                    logfile = os.path.join(self.path_wy, 'log_forecast_{}.out'.format(self.start_date.strftime("%Y%m%d"), self.end_date.strftime("%Y%m%d")))
                 else:
                     logfile = os.path.join(self.path_wy, 'log_{}_{}.out'.format(self.start_date.strftime("%Y%m%d"), self.end_date.strftime("%Y%m%d")))
                 # let user know
@@ -374,13 +376,13 @@ class AWSF():
 
             # make directories for wrf
             if self.do_wrf:
-                self.path_wrf_data = os.path.join(self.path_wy, 'data/', 'forecast{}_{}'.format(self.end_date.strftime("%Y%m%d"), self.forecast_date.strftime("%Y%m%d")))
-                self.path_wrf_run = os.path.join(self.path_wy, 'run/', 'forecast{}_{}'.format(self.end_date.strftime("%Y%m%d"), self.forecast_date.strftime("%Y%m%d")))
+                self.path_wrf_data = os.path.join(self.path_wy, 'data/', 'forecast{}_{}'.format(self.start_date.strftime("%Y%m%d"), self.end_date.strftime("%Y%m%d")))
+                self.path_wrf_run = os.path.join(self.path_wy, 'runs/', 'forecast{}_{}'.format(self.start_date.strftime("%Y%m%d"), self.end_date.strftime("%Y%m%d")))
                 self.path_wrf_i =    os.path.join(self.path_wrf_data, 'input/')
                 self.path_wrf_init = os.path.join(self.path_wrf_data, 'init/')
                 self.path_wrf_ro =   os.path.join(self.path_wrf_run, 'output/')
-                self.path_wrf_s = os.path.join(self.path_wrf_i,'smrfOutputs')
-                self.wrf_ppt_desc = os.path.join(self.path_wrf_data, 'ppt_desc{}.txt'.format(self.forecast_date.strftime("%Y%m%d")))
+                self.path_wrf_s = os.path.join(self.path_wrf_data,'smrfOutputs')
+                self.wrf_ppt_desc = os.path.join(self.path_wrf_data, 'ppt_desc_forecast_{}.txt'.format(self.end_date.strftime("%Y%m%d")))
 
                 if not os.path.exists(self.path_wrf_data):
                     os.makedirs(self.path_wrf_data)

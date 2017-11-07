@@ -12,6 +12,7 @@ import faulthandler
 import progressbar
 from datetime import datetime
 import sys
+import glob
 from smrf.utils import io
 import subprocess
 import copy
@@ -94,16 +95,16 @@ def smrf_go_wrf(myawsf):
     # get wrf config
     wrf_cfg = copy.deepcopy(myawsf.config)
     # replace start time with end time
-    wrf_cfg['time']['start_date'] = wrf_cfg['time']['end_date']
+    # wrf_cfg['time']['start_date'] = wrf_cfg['time']['end_date']
     # replace end time with forecast time
-    wrf_cfg['time']['end_date'] = wrf_cfg['forecast']['forecast_date']
+    # wrf_cfg['time']['end_date'] = wrf_cfg['forecast']['forecast_date']
 
     # edit config file to use gridded wrf data
-    if 'stations' in wrf_cfg:
+    if 'stations' in wrf_cfg.keys():
         del wrf_cfg['stations']
-    if 'csv' in wrf_cfg:
+    if 'csv' in wrf_cfg.keys():
         del wrf_cfg['csv']
-    if 'mysql' in wrf_cfg:
+    if 'mysql' in wrf_cfg.keys():
         del wrf_cfg['mysql']
 
     if 'gridded' not in wrf_cfg:
@@ -111,8 +112,8 @@ def smrf_go_wrf(myawsf):
         wrf_cfg['gridded'].clear()
     wrf_cfg['gridded']['file'] = myawsf.fp_wrfdata
     wrf_cfg['gridded']['data_type'] = 'wrf'
-    wrf_cfg['gridded']['zone_number'] = myawsf.zone_number
-    wrf_cfg['gridded']['zone_number'] = myawsf.zone_letter
+    wrf_cfg['gridded']['zone_number'] = int(myawsf.zone_number)
+    wrf_cfg['gridded']['zone_letter'] = str(myawsf.zone_letter)
 
     # delete AWSF sections
     for key in wrf_cfg:
@@ -149,7 +150,7 @@ def smrf_go_wrf(myawsf):
     # del wrf_cfg['precip'][:]
     wrf_cfg['precip'].clear()
     wrf_cfg['precip']['distribution'] = 'grid'
-    wrf_cfg['precip']['method'] = 'cubic'
+    wrf_cfg['precip']['method'] = 'cubic_2-D'
     wrf_cfg['precip']['detrend'] = True
     wrf_cfg['precip']['slope'] = 1
     wrf_cfg['precip']['mask'] = True
@@ -170,22 +171,18 @@ def smrf_go_wrf(myawsf):
     wrf_cfg['solar']['clear_omega'] = myawsf.config['solar']['clear_omega']
     wrf_cfg['solar']['clear_gamma'] = myawsf.config['solar']['clear_gamma']
 
-    # del wrf_cfg['thermal'][:]
+    # del wrf_cfg['thermal']
+    # use default settings for thermal
     wrf_cfg['thermal'].clear()
-    wrf_cfg['thermal']['distribution'] = 'grid'
-    wrf_cfg['thermal']['method'] = 'linear'
-    wrf_cfg['thermal']['detrend'] = False
+    # wrf_cfg['thermal']['distribution'] = 'grid'
+    # wrf_cfg['thermal']['method'] = 'linear'
+    # wrf_cfg['thermal']['detrend'] = False
 
     # replace output directory with forecast data
-    wrf_cfg['output']['out_location'] = os.path.join(myawsf.pathd,'forecast/')
-    wrf_cfg['output']['log_file'] = os.path.join(myawsf.pathd,'forecast','wrf_log.txt')
-    wrf_cfg['system']['temp_dir'] = os.path.join(myawsf.pathd,'forecast/tmp')
+    wrf_cfg['output']['out_location'] = myawsf.path_wrf_s
+    # wrf_cfg['logging']['log_file'] = os.path.join(myawsf.pathd,'forecast','wrf_log.txt')
+    wrf_cfg['system']['temp_dir'] = os.path.join(myawsf.path_wrf_s,'tmp/')
     fp_wrfini = myawsf.wrfini
-
-    for k in wrf_cfg:
-        #print k
-        #print type(wrf_cfg[k])
-        print (wrf_cfg.get(k).items())
 
     # output this config and use to run smrf
     myawsf._logger.info('Writing the config file for SMRF forecast')
@@ -343,8 +340,8 @@ def run_isnobal(myawsf):
 
 def run_isnobal_forecast(myawsf):
 
-    print("calculating time vars")
-    wyh = pd.to_datetime('%s-10-01'%pm.wyb(myawsf.forecast_date))
+    myawsf._logger.info("Getting ready to run iSnobal for WRF forecast!")
+    wyh = pd.to_datetime('%s-10-01'%pm.wyb(myawsf.start_date))
     tt = myawsf.end_date-wyh
     offset = tt.days*24 +  tt.seconds//3600 # start index for the input file
     nbits = myawsf.nbits
@@ -356,7 +353,7 @@ def run_isnobal_forecast(myawsf):
         os.makedirs(myawsf.path_wrf_init)
 
     # making initial conditions file
-    print("making initial conds img")
+    myawsf._logger.info("Making initial conds image")
     i_out = ipw.IPW()
 
     # making dem band
@@ -368,15 +365,15 @@ def run_isnobal_forecast(myawsf):
         i_dem = dem_file['dem'][:]
         i_out.new_band(i_dem)
 
-    # find last snow file from smrf run
-    d = sorted(glob.glob("%s/snow*"%myawsf.path_wrf_ro), key=os.path.getmtime)
-    d.sort(key=lambda f: os.path.splitext(f))
-    prev_mod_file = d[-1]
+    # # find last snow file from smrf run
+    # d = sorted(glob.glob("%s/snow*"%myawsf.path_wrf_ro), key=os.path.getmtime)
+    # d.sort(key=lambda f: os.path.splitext(f))
+    # prev_mod_file = d[-1]
 
-    i_in = ipw.IPW(prev_mod_file)
+    i_in = ipw.IPW(myawsf.prev_mod_file)
     # use given rougness from old init file if given
     if myawsf.roughness_init is not None:
-        i.out.new_band(ipw.IPW(myawsf.roughness_init).bands[1].data)
+        i_out.new_band(ipw.IPW(myawsf.roughness_init).bands[1].data)
     else:
         myawsf._logger.warning('No roughness given from old init, using value of 0.005 m')
         i_out.new_band(0.005*np.ones((myawsf.ny,myawsf.nx)))
@@ -391,29 +388,47 @@ def run_isnobal_forecast(myawsf):
     i_out.write(os.path.join(myawsf.path_wrf_init,'init%04d.ipw'%(offset)), nbits)
 
     # develop the command to run the model
-    print("developing command and running")
+    myawsf._logger.info("Developing command and running")
     nthreads = int(myawsf.ithreads)
 
-    tt = myawsf.forecast_date - myawsf.end_date                              # get a time delta to get hours from water year start
+    tt = myawsf.end_date - myawsf.start_date                              # get a time delta to get hours from water year start
     tmstps = tt.days*24 +  tt.seconds//3600 # start index for the input file
 
     # make paths absolute if they are not
     cwd = os.getcwd()
 
-    fp_output = os.path.join(myawsf.path_wrf_runr,'sout{}.txt'.format(myawsf.forecast_date.strftime("%Y%m%d")))
+    fp_output = os.path.join(myawsf.path_wrf_run,'sout{}.txt'.format(myawsf.end_date.strftime("%Y%m%d")))
     fp_ppt_desc = myawsf.wrf_ppt_desc
+
+    # check length of ppt_desc file to see if there has been precip
+    is_ppt = os.stat(fp_ppt_desc).st_size
 
     # run iSnobal
     if myawsf.mask_isnobal == True:
-        if (offset + tmstps) < 1000:
-            run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %s/init%04d.ipw -p %s -m %s -d 0.15 -i %s/in -O 24 -e em -s snow > %s 2>&1"%(nthreads,offset,myawsf.path_wrf_init,offset,fp_ppt_desc,myawsf.fp_mask,myawsf.path_wrf_i,fp_output)
+        if is_ppt > 0:
+            if (offset + tmstps) < 1000:
+                run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %s/init%04d.ipw -p %s -m %s -d 0.15 -i %s/in -O 24 -e em -s snow  2>&1"%(nthreads,offset,myawsf.path_wrf_init,offset,fp_ppt_desc,myawsf.fp_mask,myawsf.path_wrf_i)
+            else:
+                run_cmd = "time isnobal -v -P %d -r %s -t 60 -n %s -I %s/init%04d.ipw -p %s -m %s -d 0.15 -i %s/in -O 24 -e em -s snow  2>&1"%(nthreads,offset,tmstps,myawsf.path_wrf_init,offset,fp_ppt_desc,myawsf.fp_mask,myawsf.path_wrf_i)
         else:
-            run_cmd = "time isnobal -v -P %d -r %s -t 60 -n %s -I %s/init%04d.ipw -p %s -m %s -d 0.15 -i %s/in -O 24 -e em -s snow > %s 2>&1"%(nthreads,offset,tmstps,myawsf.path_wrf_init,offset,fp_ppt_desc,myawsf.fp_mask,myawsf.path_wrf_i,fp_output)
+            myawsf._logger.warning('Time frame has no precip!')
+            if (offset + tmstps) < 1000:
+                run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %s/init%04d.ipw -m %s -d 0.15 -i %s/in -O 24 -e em -s snow  2>&1"%(nthreads,offset,myawsf.path_wrf_init,offset,myawsf.fp_mask,myawsf.path_wrf_i)
+            else:
+                run_cmd = "time isnobal -v -P %d -r %s -t 60 -n %s -I %s/init%04d.ipw -m %s -d 0.15 -i %s/in -O 24 -e em -s snow  2>&1"%(nthreads,offset,tmstps,myawsf.path_wrf_init,offset,myawsf.fp_mask,myawsf.path_wrf_i)
     else:
-        if (offset + tmstps) < 1000:
-            run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %s/init%04d.ipw -p %s -d 0.15 -i %s/in -O 24 -e em -s snow > %s 2>&1"%(nthreads,offset,myawsf.path_wrf_init,offset,fp_ppt_desc,myawsf.path_wrf_i,fp_output)
+        if is_ppt > 0:
+            if (offset + tmstps) < 1000:
+                run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %s/init%04d.ipw -p %s -d 0.15 -i %s/in -O 24 -e em -s snow  2>&1"%(nthreads,offset,myawsf.path_wrf_init,offset,fp_ppt_desc,myawsf.path_wrf_i)
+            else:
+                run_cmd = "time isnobal -v -P %d -r %s -t 60 -n %s -I %s/init%04d.ipw -p %s -d 0.15 -i %s/in -O 24 -e em -s snow  2>&1"%(nthreads,offset,tmstps,myawsf.path_wrf_init,offset,fp_ppt_desc,myawsf.path_wrf_i)
         else:
-            run_cmd = "time isnobal -v -P %d -r %s -t 60 -n %s -I %s/init%04d.ipw -p %s -d 0.15 -i %s/in -O 24 -e em -s snow > %s 2>&1"%(nthreads,offset,tmstps,myawsf.path_wrf_init,offset,fp_ppt_desc,myawsf.path_wrf_i,fp_output)
+            myawsf._logger.warning('Time frame has no precip!')
+            if (offset + tmstps) < 1000:
+                run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %s/init%04d.ipw -d 0.15 -i %s/in -O 24 -e em -s snow  2>&1"%(nthreads,offset,myawsf.path_wrf_init,offset,myawsf.path_wrf_i)
+            else:
+                run_cmd = "time isnobal -v -P %d -r %s -t 60 -n %s -I %s/init%04d.ipw -d 0.15 -i %s/in -O 24 -e em -s snow  2>&1"%(nthreads,offset,tmstps,myawsf.path_wrf_init,offset,myawsf.path_wrf_i)
+
 
     # change directories, run, and move back
     myawsf._logger.debug("Running {}".format(run_cmd))

@@ -85,9 +85,16 @@ def nc2ipw_mea(myawsf, runtype):
     N = th_file.variables[th_var].shape[0]
     #timeStep = np.arange(0,N)        # timesteps loop through
     timeStep = np.arange(offset,N+offset)        # timesteps loop through
-    pbar = progressbar.ProgressBar(max_value=len(timeStep)).start()
+    # pbar = progressbar.ProgressBar(max_value=len(timeStep)).start()
     j = 0
     for idxt,t in enumerate(timeStep):
+
+        if j == int(len(timeStep)/4):
+            myawsf._logger.info("25 percent finished with making IPW input files!")
+        if j == int(len(timeStep)/2):
+            myawsf._logger.info("50 percent finished with making IPW input files!")
+        if j == int(3*len(timeStep)/4):
+            myawsf._logger.info("75 percent finished with making IPW input files!")
 
         # print('idxt: {} t: {}'.format(idxt, t))
         trad_step = th_file.variables[th_var][idxt,:]
@@ -130,7 +137,7 @@ def nc2ipw_mea(myawsf, runtype):
             f.write('%i %s\n' % (t, in_stepp))
 
         j += 1
-        pbar.update(j)
+        # pbar.update(j)
 
     th_file.close()
     ta_file.close()
@@ -142,7 +149,7 @@ def nc2ipw_mea(myawsf, runtype):
     rho_file.close()
     tp_file.close()
     f.close()
-    pbar.finish()
+    # pbar.finish()
     myawsf._logger.info("finished making the ipw files from NetCDF files for {}".format(runtype))
 
 def ipw2nc_mea(myawsf, runtype):
@@ -154,7 +161,7 @@ def ipw2nc_mea(myawsf, runtype):
     if runtype == 'smrf':
         wyh = pd.to_datetime('%s-10-01'%pm.wyb(myawsf.end_date))
     elif runtype == 'wrf':
-        wyh = pd.to_datetime('%s-10-01'%pm.wyb(myawsf.forecast_date))
+        wyh = pd.to_datetime('%s-10-01'%pm.wyb(myawsf.end_date))
     else:
         myawsf._logger.error('Wrong run type given to ipw2nc. \
                             not smrf or wrf')

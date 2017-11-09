@@ -67,7 +67,9 @@ class AWSF():
         self.mask_isnobal = False
         if 'mask_isnobal' in self.config['awsf master']:
             self.mask_isnobal = self.config['awsf master']['mask_isnobal']
-
+            if self.mask_isnobal:
+                # mask file
+                self.fp_mask = os.path.abspath(self.config['topo']['mask'])
 
         ################# Time information ##################
         self.start_date = pd.to_datetime(self.config['time']['start_date'])
@@ -76,7 +78,7 @@ class AWSF():
         self.tmz = self.config['time']['time_zone']
         self.tzinfo = pytz.timezone(self.config['time']['time_zone'])
         # date to use for finding wy
-        tmp_date = self.end_date.replace(tzinfo=self.tzinfo)
+        tmp_date = self.start_date.replace(tzinfo=self.tzinfo)
 
         ################# Store some paths from config file ##################
         # path to the base drive (i.e. /data/blizzard)
@@ -96,22 +98,10 @@ class AWSF():
         else:
             self.desc = ''
 
-        # path with scripts
-        if 'pathws' in self.config['paths']:
-            self.pathws = os.path.abspath(self.config['paths']['pathws'])
-        # path to topo files
-        if 'pathtp' in self.config['paths']:
-            self.pathtp = os.path.abspath(self.config['paths']['pathtp'])
-
-
         if self.do_wrf:
             if 'forecast' in self.config:
                 self.tmp_log.append('Forecasting set to True')
 
-                # if 'forecast_date' in self.config['forecast']:
-                #     self.forecast_date = pd.to_datetime(self.config['forecast']['forecast_date'])
-                # else:
-                #     self.tmp_err.append('Forecast set to true, but no forecast_date given')
                 if 'wrf_data' in self.config['forecast']:
                     self.fp_wrfdata = self.config['forecast']['wrf_data']
                 else:
@@ -140,14 +130,13 @@ class AWSF():
         elif self.topotype == 'netcdf':
             self.fp_dem = os.path.abspath(self.config['topo']['filename'])
 
-        # mask file
-        self.fp_mask = os.path.abspath(self.config['topo']['mask'])
         # init file just for surface roughness
         if 'roughness_init' in self.config['files']:
             self.roughness_init = os.path.abspath(self.config['files']['roughness_init'])
         else:
             self.roughness_init = None
 
+        # point to snow ipw image for restart of run
         if 'prev_mod_file' in self.config['files']:
             self.prev_mod_file = os.path.abspath(self.config['files']['prev_mod_file'])
 
@@ -167,7 +156,7 @@ class AWSF():
 
         # if we are going to run ipysnobal with smrf
         if 'ipysnobal' in self.config:
-            if self.config['ipysnobal']['smrf_ipysnobal_flag'] == True:
+            if self.do_smrf_ipysnobal:
                 #print('Stuff happening here \n\n\n')
                 self.ipy_threads = self.config['ipysnobal']['nthreads']
                 self.ipy_init_type = self.config['ipysnobal initial conditions']['input_type']
@@ -177,12 +166,17 @@ class AWSF():
                         'isnobal restart', 'ipysnobal', 'ipysnobal initial conditions',
                         'ipysnobal output', 'ipysnobal constants', 'forecast']
 
+        # Make rigid directory structure
         self.mk_directories()
 
         # create log now that directory structure is done
         self.createLog()
 
     def createLog(self):
+        '''
+        Now that the directory structure is done, create log file and print out
+        saved logging statements.
+        '''
         # start logging
         if 'log_level' in self.config['awsf system']:
             loglevel = self.config['awsf system']['log_level'].upper()
@@ -310,13 +304,43 @@ class AWSF():
             self.path_wy = os.path.join(self.path_wy, self.proj)
 
         # specific data folder conatining
-        self.pathd = os.path.join(self.path_wy, 'data/data{}_{}'.format(self.start_date.strftime("%Y%m%d"), self.end_date.strftime("%Y%m%d")))
+        self.pathd = os.path.join(self.path_wy, 'data')
+        self.pathr = os.path.join(self.path_wy, 'runs')
 
         # name of temporary smrf file to write out
         self.smrfini = os.path.join(self.path_wy, 'tmp_smrf_config.ini')
         self.wrfini = os.path.join(self.path_wy, 'tmp_smrf_wrf_config.ini')
 
+        if not self.do_wrf:
+            # assign path names for isnobal, path_names_att will be used
+            # to create necessary directories
+            path_names_att = ['pathdd', 'pathrr', 'pathi', 'pathinit', 'pathro', 'paths', 'path_ppt']
+            self.pathdd = os.path.join(self.pathd, 'data{}_{}'.format(self.start_date.strftime("%Y%m%d"), self.end_date.strftime("%Y%m%d")))
+            self.pathrr =    os.path.join(self.pathr, 'run{}_{}'.format(self.start_date.strftime("%Y%m%d"), self.end_date.strftime("%Y%m%d")))
+            self.pathi =    os.path.join(self.pathdd, 'input/')
+            self.pathinit = os.path.join(self.pathdd, 'init/')
+            self.pathro =   os.path.join(self.pathrr, 'output/')
+            self.paths = os.path.join(self.pathdd,'smrfOutputs')
+            self.ppt_desc = os.path.join(self.pathdd, 'ppt_desc{}.txt'.format(self.end_date.strftime("%Y%m%d")))
+            self.path_ppt = os.path.join(self.pathdd, 'ppt_4b')
+            # used to check if data direcotry exists
+            check_if_data = self.pathdd
+        else:
+            path_names_att = ['path_wrf_data', 'path_wrf_run', 'path_wrf_i', 'path_wrf_init', 'path_wrf_ro', 'path_wrf_s', 'path_wrf_ppt']
+            self.path_wrf_data = os.path.join(self.pathd, 'forecast{}_{}'.format(self.start_date.strftime("%Y%m%d"), self.end_date.strftime("%Y%m%d")))
+            self.path_wrf_run = os.path.join(self.pathr, 'forecast{}_{}'.format(self.start_date.strftime("%Y%m%d"), self.end_date.strftime("%Y%m%d")))
+            self.path_wrf_i =    os.path.join(self.path_wrf_data, 'input/')
+            self.path_wrf_init = os.path.join(self.path_wrf_data, 'init/')
+            self.path_wrf_ro =   os.path.join(self.path_wrf_run, 'output/')
+            self.path_wrf_s = os.path.join(self.path_wrf_data,'smrfOutputs')
+            self.wrf_ppt_desc = os.path.join(self.path_wrf_data, 'ppt_desc{}.txt'.format(self.end_date.strftime("%Y%m%d")))
+            self.path_wrf_ppt = os.path.join(self.path_wrf_data, 'ppt_4b')
+            # used to check if data direcotry exists
+            check_if_data = self.path_wrf_data
+
+        # Only start if your drive exists
         if os.path.exists(self.path_dr):
+            # If the specific path to your WY does not exist, create it and following directories
             if not os.path.exists(self.path_wy):  # if the working path specified in the config file does not exist
                 y_n = 'a'                        # set a funny value to y_n
                 while y_n not in ['y','n']:      # while it is not y or n (for yes or no)
@@ -324,35 +348,32 @@ class AWSF():
                 if y_n == 'n':
                     print('Please fix the base directory (path_wy) in your config file.')
                 elif y_n =='y':
-                    os.makedirs(os.path.join(self.pathd, 'smrfOutputs/'))
-                    os.makedirs(os.path.join(self.pathd, 'input/'))
-                    os.makedirs(os.path.join(self.pathd, 'init/'))
-                    os.makedirs(os.path.join(self.pathd, 'ppt_4b/'))
-                    os.makedirs(os.path.join(self.pathd, 'forecast/'))
-                    os.makedirs(os.path.join(self.path_wy, 'runs/'))
+                    self.make_rigid_directories(path_names_att)
 
-            elif not os.path.exists(self.pathd):  # if the working path specified in the config file does not exist
+            # If WY exists, but not this exact run for the dates, create it
+            elif not os.path.exists(check_if_data):  # if the working path specified in the config file does not exist
                 y_n = 'a'                        # set a funny value to y_n
                 while y_n not in ['y','n']:      # while it is not y or n (for yes or no)
-                    y_n = raw_input('Directory %s does not exist. Create base directory and all subdirectories? (y n): '%self.pathd)
+                    y_n = raw_input('Directory %s does not exist. Create base directory and all subdirectories? (y n): '%check_if_data)
                 if y_n == 'n':
                     print('Please fix the base directory (path_wy) in your config file.')
                 elif y_n =='y':
-                    os.makedirs(os.path.join(self.pathd, 'smrfOutputs/'))
-                    os.makedirs(os.path.join(self.pathd, 'input/'))
-                    os.makedirs(os.path.join(self.pathd, 'init/'))
-                    os.makedirs(os.path.join(self.pathd, 'ppt_4b/'))
+                    self.make_rigid_directories(path_names_att)
 
-                if not os.path.exists(os.path.join(self.path_wy, 'runs/')):
-                    os.makedirs(os.path.join(self.path_wy, 'runs/'))
             else:
-                self.tmp_warn.append('This has the potential to overwrite results in {}!!!'.format(self.pathd))
+                self.tmp_warn.append('This has the potential to overwrite results in {}!!!'.format(check_if_data))
+
+            # make sure runs exists
+            if not os.path.exists(os.path.join(self.path_wy, 'runs/')):
+                os.makedirs(os.path.join(self.path_wy, 'runs/'))
+
+            # if we're not running wrf data, make sure path to outputs exists
+            if not self.do_wrf:
+                if not os.path.exists(self.pathro):
+                    os.makedirs(self.pathro)
 
             # find where to write file
-            if self.isops:
-                fp_desc = os.path.join(self.path_od, 'projectDescription.txt')
-            else:
-                fp_desc = os.path.join(self.path_wy, 'projectDescription.txt')
+            fp_desc = os.path.join(self.path_wy, 'projectDescription.txt')
 
             if not os.path.isfile(fp_desc):
                 # look for description or prompt for one
@@ -366,40 +387,24 @@ class AWSF():
             else:
                 self.tmp_log.append('Description file aleardy exists\n')
 
-            # assign path names for isnobal
-            self.pathi =    os.path.join(self.pathd, 'input/')
-            self.pathinit = os.path.join(self.pathd, 'init/')
-            self.pathr =    os.path.join(self.path_wy, 'runs/run{}_{}'.format(self.start_date.strftime("%Y%m%d"), self.end_date.strftime("%Y%m%d")))
-            self.pathro =   os.path.join(self.pathr, 'output/')
-            if not os.path.exists(self.pathro):
-                os.makedirs(self.pathro)
-
-            # make directories for wrf
-            if self.do_wrf:
-                self.path_wrf_data = os.path.join(self.path_wy, 'data/', 'forecast{}_{}'.format(self.start_date.strftime("%Y%m%d"), self.end_date.strftime("%Y%m%d")))
-                self.path_wrf_run = os.path.join(self.path_wy, 'runs/', 'forecast{}_{}'.format(self.start_date.strftime("%Y%m%d"), self.end_date.strftime("%Y%m%d")))
-                self.path_wrf_i =    os.path.join(self.path_wrf_data, 'input/')
-                self.path_wrf_init = os.path.join(self.path_wrf_data, 'init/')
-                self.path_wrf_ro =   os.path.join(self.path_wrf_run, 'output/')
-                self.path_wrf_s = os.path.join(self.path_wrf_data,'smrfOutputs')
-                self.wrf_ppt_desc = os.path.join(self.path_wrf_data, 'ppt_desc_forecast_{}.txt'.format(self.end_date.strftime("%Y%m%d")))
-
-                if not os.path.exists(self.path_wrf_data):
-                    os.makedirs(self.path_wrf_data)
-                    os.makedirs(self.path_wrf_init)
-                    os.makedirs(self.path_wrf_i)
-                    os.makedirs(os.path.join(self.path_wrf_i,'ppt_4b/'))
-                    os.makedirs(self.path_wrf_s)
-                if not os.path.exists(self.path_wrf_run):
-                    os.makedirs(self.path_wrf_run)
-                    os.makedirs(self.path_wrf_ro)
-
         else:
             self.tmp_err.append('Base directory did not exist, not safe to conitnue.\
                                 Make sure base directory exists before running.')
 
-        self.paths = os.path.join(self.pathd,'smrfOutputs')
-        self.ppt_desc = os.path.join(self.pathd, 'ppt_desc{}.txt'.format(self.end_date.strftime("%Y%m%d")))
+    def make_rigid_directories(self, path_name):
+        """
+        Creates rigid directory structure from list of relative bases and
+        extensions from the base
+        """
+        # loop through lists
+        for idp, pn in enumerate(path_name):
+            # get attribute of path
+            path = getattr(self,pn)
+
+            if not os.path.exists(path):
+                os.makedirs(path)
+            else:
+                self.tmp_log.append('Directory ---{}--- exists, not creating.\n')
 
 
     def __enter__(self):

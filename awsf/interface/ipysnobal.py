@@ -6,7 +6,7 @@ This is not a replica of iSnobal but my interpretation and
 porting to Python.  See pysnobal.exact for more direct
 interpretation
 
-20160118 Scott Havens
+Authors: Scott Havens, Micah Sandusky
 """
 
 try:
@@ -67,37 +67,6 @@ FREEZE = C_TO_K
 K_TO_C = lambda x: x - FREEZE
 
 
-# parse configuration file
-class MyParser(ConfigParser.ConfigParser):
-    def as_dict(self):
-        d = dict(self._sections)
-        for k in d:
-            d[k] = dict(self._defaults, **d[k])
-            d[k].pop('__name__', None)
-        d = self._make_lowercase(d)
-        return d
-
-    def _make_lowercase(self, obj):
-        if hasattr(obj,'iteritems'):
-            # dictionary
-            ret = {}
-            for k,v in obj.iteritems():
-                ret[self._make_lowercase(k)] = v
-            return ret
-        elif isinstance(obj,basestring):
-            # string
-            return obj.lower()
-        elif hasattr(obj,'__iter__'):
-            # list (or the like)
-            ret = []
-            for item in obj:
-                ret.append(self._make_lowercase(item))
-            return ret
-        else:
-            # anything else
-            return obj
-
-
 def check_range(value, min_val, max_val, descrip):
     """
     Check the range of the value
@@ -127,12 +96,12 @@ def date_range(start_date, end_date, increment):
     return np.array(result)
 
 
-def get_args(self):
+def get_args(myawsf):
     """
     Parse the configuration file
 
     Args:
-        configFile: configuration file for ipysnobal
+        myawsf: AWSF instance
 
     Returns:
         options: options structure with defaults if not set
@@ -178,17 +147,17 @@ def get_args(self):
     # make blank config and fill with corresponding sections
     config = {}
     config['time'] = {}
-    config['time']['time_step'] = self.time_step
-    config['time']['start_date'] = self.start_date
-    config['time']['end_date'] = self.end_date
-    config['output'] = self.config['ipysnobal output']
-    config['output']['location'] = self.pathro
-    config['output']['nthreads'] = int(self.ipy_threads)
-    config['constants'] = self.config['ipysnobal constants']
+    config['time']['time_step'] = myawsf.time_step
+    config['time']['start_date'] = myawsf.start_date
+    config['time']['end_date'] = myawsf.end_date
+    config['output'] = myawsf.config['ipysnobal output']
+    config['output']['location'] = myawsf.pathro
+    config['output']['nthreads'] = int(myawsf.ipy_threads)
+    config['constants'] = myawsf.config['ipysnobal constants']
     # read in the constants
     c = {}
-    for v in self.config['ipysnobal constants']:
-        c[v] = float(self.config['ipysnobal constants'][v])
+    for v in myawsf.config['ipysnobal constants']:
+        c[v] = float(myawsf.config['ipysnobal constants'][v])
     options.update(c) # update the defult with any user values
 
     config['constants'] = options
@@ -207,9 +176,9 @@ def get_args(self):
 
 
     # read in the start date and end date
-    start_date = self.start_date
+    start_date = myawsf.start_date
 
-    end_date = self.end_date
+    end_date = myawsf.end_date
     if end_date < start_date:
         raise ValueError('end_date is before start_date')
     nsteps = (end_date-start_date).total_seconds()/60  # elapsed time in minutes
@@ -237,23 +206,28 @@ def get_args(self):
     config['output']['out_filename'] = None
     config['inputs'] = {}
     config['inputs']['point'] = None
-    config['inputs']['input_type'] = self.ipy_init_type
-    config['inputs']['soil_temp'] = self.soil_temp
+    config['inputs']['input_type'] = myawsf.ipy_init_type
+    config['inputs']['soil_temp'] = myawsf.soil_temp
 
 
     config['initial_conditions'] = {}
-    config['initial_conditions']['file'] = os.path.abspath(self.config['ipysnobal initial conditions']['init_file'])
-    config['initial_conditions']['input_type'] = self.config['ipysnobal initial conditions']['input_type'].lower()
-    if 'restart' in self.config['ipysnobal initial conditions']:
-        config['initial_conditions']['restart'] = self.config['ipysnobal initial conditions']['restart']
+    config['initial_conditions']['file'] = os.path.abspath(myawsf.config['ipysnobal initial conditions']['init_file'])
+    config['initial_conditions']['input_type'] = myawsf.config['ipysnobal initial conditions']['input_type'].lower()
+    if 'restart' in myawsf.config['ipysnobal initial conditions']:
+        config['initial_conditions']['restart'] = myawsf.config['ipysnobal initial conditions']['restart']
     else:
         config['initial_conditions']['restart'] = False
 
-    if 'mask_file' in self.config['ipysnobal initial conditions']:
-        if config['initial_conditions']['input_type'] == 'ipw':
-            config['initial_conditions']['mask_file'] = self.config['ipysnobal initial conditions']['mask_file']
-        elif config['initial_conditions']['input_type'] == 'netcdf':
-            self._logger.error('Mask should be in netcdf, not external file')
+    # if 'mask_file' in myawsf.config['ipysnobal initial conditions']:
+    #     if config['initial_conditions']['input_type'] == 'ipw' or config['initial_conditions']['input_type'] == 'ipw_out':
+    #         config['initial_conditions']['mask_file'] = myawsf.config['ipysnobal initial conditions']['mask_file']
+    #     elif config['initial_conditions']['input_type'] == 'netcdf':
+    #         myawsf._logger.error('Mask should be in netcdf, not external file')
+    if myawsf.mask_isnobal:
+        if myawsf.topotype == 'ipw':
+            config['initial_conditions']['mask_file'] = myawsf.fp_mask
+        else:
+            myawsf._logger.error('Mask should be ipw to run iPySnobal')
 
     return config, point_run
 
@@ -527,7 +501,7 @@ def initialize(params, tstep_info, init):
     return s
 
 
-def open_init_files(self, options, dem):
+def open_init_files(myawsf, options, dem):
     """
     Open the netCDF files for initial conditions and inputs
     - Reads in the initial_conditions file
@@ -572,8 +546,8 @@ def open_init_files(self, options, dem):
             imask = ipw.IPW(options['initial_conditions']['mask_file'])
             msk = imask.bands[0].data
 
-        x = self.v + self.dv*np.arange(self.nx)
-        y = self.u + self.du*np.arange(self.ny)
+        x = myawsf.v + myawsf.dv*np.arange(myawsf.nx)
+        y = myawsf.u + myawsf.du*np.arange(myawsf.ny)
 
         # read the required variables in
         init = {}
@@ -606,19 +580,19 @@ def open_init_files(self, options, dem):
             imask = ipw.IPW(options['initial_conditions']['mask_file'])
             msk = imask.bands[0].data
 
-        x = self.v + self.dv*np.arange(self.nx)
-        y = self.u + self.du*np.arange(self.ny)
+        x = myawsf.v + myawsf.dv*np.arange(myawsf.nx)
+        y = myawsf.u + myawsf.du*np.arange(myawsf.ny)
 
         # read the required variables in
         init = {}
         init['x'] = x         # get the x coordinates
         init['y'] = y         # get the y coordinates
         init['elevation'] = dem        # get the elevation
-        if self.roughness_init is not None:
-            init['z_0'] = ipw.IPW(self.roughness_init).bands[1].data[:] # get the roughness length
+        if myawsf.roughness_init is not None:
+            init['z_0'] = ipw.IPW(myawsf.roughness_init).bands[1].data[:] # get the roughness length
         else:
-            init['z_0'] = 0.005*np.ones((self.ny,self.nx))
-            self._logger.warning('No roughness given from old init, using value of 0.005 m')
+            init['z_0'] = 0.005*np.ones((myawsf.ny,myawsf.nx))
+            myawsf._logger.warning('No roughness given from old init, using value of 0.005 m')
 
         # All other variables will be assumed zero if not present
         all_zeros = np.zeros_like(init['elevation'])
@@ -637,7 +611,7 @@ def open_init_files(self, options, dem):
             init['mask'] = np.ones_like(init['elevation'])
 
     else:
-        self._logger.error('Wrong input type for iPySnobal init file')
+        myawsf._logger.error('Wrong input type for iPySnobal init file')
 
     for key in init.keys():
         init[key] = init[key].astype(np.float64)
@@ -656,22 +630,23 @@ def open_init_files(self, options, dem):
 ########### Functions for interfacing with smrf run ############
 ################################################################
 
-def init_from_smrf(self, mysmrf):
+def init_from_smrf(myawsf, mysmrf):
     """
     mimic the main.c from the Snobal model
 
     Args:
-        self: AWSF instance
+        myawsf: AWSF instance
+        mysmrf: SMRF isntance
     """
 
     # parse the input arguments
-    options, point_run = get_args(self)
+    options, point_run = get_args(myawsf)
 
     # get the timestep info
     params, tstep_info = get_tstep_info(options['constants'], options)
 
     # open the files and read in data
-    init = open_init_files(self, options, mysmrf.topo.dem)
+    init = open_init_files(myawsf, options, mysmrf.topo.dem)
 
     output_rec = initialize(params, tstep_info, init)
 
@@ -763,7 +738,7 @@ class QueueIsnobal(threading.Thread):
                 self._logger.error('Value not in keys: {}'.format(v))
 
         # set ground temp
-        input1['T_g'] = -2.5*np.ones((self.ny, self.nx))
+        input1['T_g'] = self.soil_temp*np.ones((self.ny, self.nx))
 
         input1['T_a'] += FREEZE
         input1['T_pp'] += FREEZE
@@ -792,13 +767,13 @@ class QueueIsnobal(threading.Thread):
                     else:
                         input2[map_val[v]] = data
             # set ground temp
-            input2['T_g'] = -2.5*np.ones((self.ny, self.nx))
+            input2['T_g'] = self.soil_temp*np.ones((self.ny, self.nx))
             # convert variables to Kelvin
             input2['T_a'] += FREEZE
             input2['T_pp'] += FREEZE
             input2['T_g'] += FREEZE
 
-            self._logger.info('running timestep: {}'.format(tstep))
+            self._logger.info('running PySnobal for timestep: {}'.format(tstep))
             rt = snobal.do_tstep_grid(input1, input2, self.output_rec,
                                       self.tstep_info, self.options['constants'],
                                       self.params, first_step, nthreads=self.nthreads)
@@ -809,7 +784,7 @@ class QueueIsnobal(threading.Thread):
 
             self._logger.info('Finished timestep: {}'.format(tstep))
             input1 = input2.copy()
-            # print data_tstep/(3600.0)
+
             # output at the frequency and the last time step
             if (j*(data_tstep/3600.0) % self.options['output']['frequency'] == 0) or (j == len(self.options['time']['date_time'])):
                 output_timestep(self.output_rec, tstep, self.options)

@@ -1,19 +1,17 @@
 import logging
 import os
 import coloredlogs
-from datetime import datetime, timedelta
+from datetime import datetime
 import pandas as pd
-# import itertools
-import numpy as np
 import pytz
-# import matplotlib.pyplot as plt
 
 from smrf import data, distribute, output
 from smrf.envphys import radiation
 from smrf.utils import queue, io
-from threading import Thread
+from smrf.utils import utils
 from awsf.convertFiles import convertFiles as cvf
 from awsf.interface import interface as smin
+from awsf.interface import smrf_ipysnobal as smrf_ipy
 
 
 class AWSF():
@@ -45,9 +43,143 @@ class AWSF():
             raise UnicodeDecodeError('''The configuration file is not encoded in
                                     UTF-8, please change and retry''')
 
+        # create blank log and error log because logger is not initialized yet
+        self.tmp_log = []
+        self.tmp_err = []
+        self.tmp_warn = []
+
+        ################### Decide which modules to run ######################
+        self.do_smrf = self.config['awsf master']['run_smrf']
+        self.do_isnobal = self.config['awsf master']['run_isnobal']
+        self.do_wrf = self.config['awsf master']['use_wrf']
+        self.do_smrf_ipysnobal = self.config['awsf master']['run_smrf_ipysnobal']
+
+        # options for converting files
+        self.do_make_in = True
+        self.do_make_nc = True
+
+        if 'make_in' in self.config['awsf master']:
+            self.do_make_in = self.config['awsf master']['make_in']
+        if 'make_nc' in self.config['awsf master']:
+            self.do_make_nc = self.config['awsf master']['make_nc']
+
+        # options for masking with isnobal run
+        self.mask_isnobal = False
+        if 'mask_isnobal' in self.config['awsf master']:
+            self.mask_isnobal = self.config['awsf master']['mask_isnobal']
+            if self.mask_isnobal:
+                # mask file
+                self.fp_mask = os.path.abspath(self.config['topo']['mask'])
+
+        ################# Time information ##################
+        self.start_date = pd.to_datetime(self.config['time']['start_date'])
+        self.end_date = pd.to_datetime(self.config['time']['end_date'])
+        self.time_step = self.config['time']['time_step']
+        self.tmz = self.config['time']['time_zone']
+        self.tzinfo = pytz.timezone(self.config['time']['time_zone'])
+        # date to use for finding wy
+        tmp_date = self.start_date.replace(tzinfo=self.tzinfo)
+
+        ################# Store some paths from config file ##################
+        # path to the base drive (i.e. /data/blizzard)
+        self.path_dr = os.path.abspath(self.config['paths']['path_dr'])
+        # name of your basin (i.e. Tuolumne)
+        self.basin = self.config['paths']['basin']
+        # water year of run
+        self.wy = utils.water_day(tmp_date)[1]
+        # if the run is operational or not
+        self.isops = self.config['paths']['isops']
+        # name of project if not an operational run
+        if 'proj' in self.config['paths']:
+            self.proj = self.config['paths']['proj']
+        # check for project description
+        if 'desc' in self.config['paths']:
+            self.desc = self.config['paths']['desc']
+        else:
+            self.desc = ''
+
+        if self.do_wrf:
+            if 'forecast' in self.config:
+                self.tmp_log.append('Forecasting set to True')
+
+                if 'wrf_data' in self.config['forecast']:
+                    self.fp_wrfdata = self.config['forecast']['wrf_data']
+                else:
+                    self.tmp_err.append('Forecast set to true, but no wrf_data given')
+                self.zone_number = self.config['forecast']['zone_number']
+                self.zone_letter = self.config['forecast']['zone_letter']
+            else:
+                self.tmp_err.append('use_wrf set to True, but no forecast section.')
+
+        ################# Grid data for iSnobal ##################
+        self.u  = int(self.config['grid']['u'])
+        self.v  = int(self.config['grid']['v'])
+        self.du  = int(self.config['grid']['du'])
+        self.dv  = int(self.config['grid']['dv'])
+        self.units = self.config['grid']['units']
+        self.csys = self.config['grid']['csys']
+        self.nx = int(self.config['grid']['nx'])
+        self.ny = int(self.config['grid']['ny'])
+        self.nbits = int(self.config['grid']['nbits'])
+        self.soil_temp = self.config['soil_temp']['temp']
+
+        ################# Topo information ##################
+        self.topotype = self.config['topo']['type']
+        if self.topotype == 'ipw':
+            self.fp_dem = os.path.abspath(self.config['topo']['dem'])  # pull in location of the dem
+        elif self.topotype == 'netcdf':
+            self.fp_dem = os.path.abspath(self.config['topo']['filename'])
+
+        # init file just for surface roughness
+        if 'roughness_init' in self.config['files']:
+            self.roughness_init = os.path.abspath(self.config['files']['roughness_init'])
+        else:
+            self.roughness_init = None
+
+        # point to snow ipw image for restart of run
+        if 'prev_mod_file' in self.config['files']:
+            self.prev_mod_file = os.path.abspath(self.config['files']['prev_mod_file'])
+
+        # threads for running iSnobal
+        if 'ithreads' in self.config['awsf system']:
+            self.ithreads = self.config['awsf system']['ithreads']
+        else:
+            self.ithreads = 1
+
+        # options for restarting iSnobal
+        if 'isnobal restart' in self.config:
+            if 'restart_crash' in self.config['isnobal restart']:
+                if self.config['isnobal restart']['restart_crash'] == True:
+                    #self.new_init = self.config['isnobal restart']['new_init']
+                    self.depth_thresh = self.config['isnobal restart']['depth_thresh']
+                    self.restart_hr = int(self.config['isnobal restart']['wyh_restart_output'])
+
+        # if we are going to run ipysnobal with smrf
+        if 'ipysnobal' in self.config:
+            if self.do_smrf_ipysnobal:
+                #print('Stuff happening here \n\n\n')
+                self.ipy_threads = self.config['ipysnobal']['nthreads']
+                self.ipy_init_type = self.config['ipysnobal initial conditions']['input_type']
+
+        # list of sections releated to AWSF (These will be removed for smrf config)
+        self.sec_awsf = ['awsf master', 'awsf system', 'paths', 'grid', 'files', 'awsf logging',
+                        'isnobal restart', 'ipysnobal', 'ipysnobal initial conditions',
+                        'ipysnobal output', 'ipysnobal constants', 'forecast']
+
+        # Make rigid directory structure
+        self.mk_directories()
+
+        # create log now that directory structure is done
+        self.createLog()
+
+    def createLog(self):
+        '''
+        Now that the directory structure is done, create log file and print out
+        saved logging statements.
+        '''
         # start logging
-        if 'log_level' in self.config['awsf logging']:
-            loglevel = self.config['awsf logging']['log_level'].upper()
+        if 'log_level' in self.config['awsf system']:
+            loglevel = self.config['awsf system']['log_level'].upper()
         else:
             loglevel = 'INFO'
 
@@ -57,8 +189,16 @@ class AWSF():
 
         # setup the logging
         logfile = None
-        if 'log_file' in self.config['awsf logging']:
-            logfile = self.config['awsf logging']['log_file']
+        if 'log_to_file' in self.config['awsf system']:
+            if self.config['awsf system']['log_to_file'] == True:
+                if self.config['isnobal restart']['restart_crash'] == True:
+                    logfile = os.path.join(self.path_wy, 'log_restart_{}.out'.format(self.restart_hr))
+                elif self.do_wrf:
+                    logfile = os.path.join(self.path_wy, 'log_forecast_{}.out'.format(self.start_date.strftime("%Y%m%d"), self.end_date.strftime("%Y%m%d")))
+                else:
+                    logfile = os.path.join(self.path_wy, 'log_{}_{}.out'.format(self.start_date.strftime("%Y%m%d"), self.end_date.strftime("%Y%m%d")))
+                # let user know
+                print('Logging to file: {}'.format(logfile))
 
         fmt = '%(levelname)s:%(name)s:%(message)s'
         if logfile is not None:
@@ -74,120 +214,71 @@ class AWSF():
 
         self._logger = logging.getLogger(__name__)
 
-        self.path_dr = self.config['paths']['path_dr']
-        self.basin = self.config['paths']['basin']
-        if 'wy' in self.config['paths']:
-            self.wy = self.config['paths']['wy']
-        self.isops = self.config['paths']['isops']
-        self.basin = self.config['paths']['basin']
-        if 'proj' in self.config['paths']:
-            self.proj = self.config['paths']['proj']
-        self.isops = self.config['paths']['isops']
-        if 'desc' in self.config['paths']:
-            self.desc = self.config['paths']['desc']
-        else:
-            self.desc = ''
-
-        if 'pathws' in self.config['paths']:
-            self.pathws = self.config['paths']['pathws']
-        if 'pathtp' in self.config['paths']:
-            self.pathtp = self.config['paths']['pathtp']
-
-        self.start_date = pd.to_datetime(self.config['time']['start_date'])
-        self.end_date = pd.to_datetime(self.config['time']['end_date'])
-        self.tmz = self.config['time']['time_zone']
-        self.tzinfo = pytz.timezone(self.config['time']['time_zone'])
-        # self.wyh = pd.to_datetime('%s-10-01'%pm.wyb(self.end_date))
-
-        # grid data for iSnobal
-        self.u  = int(self.config['grid']['u'])
-        self.v  = int(self.config['grid']['v'])
-        self.du  = int(self.config['grid']['du'])
-        self.dv  = int(self.config['grid']['dv'])
-        self.units = self.config['grid']['units']
-        self.csys = self.config['grid']['csys']
-        self.nx = int(self.config['grid']['nx'])
-        self.ny = int(self.config['grid']['ny'])
-        self.nbits = int(self.config['grid']['nbits'])
-
-        if self.config['topo']['type'] == 'ipw':
-            self.fp_dem = self.config['topo']['dem']  # pull in location of the dem
-        elif self.config['topo']['type'] == 'netcdf':
-            self.fp_dem = self.config['topo']['filename']
-
-        self.topotype = self.config['topo']['type']
-        self.fp_mask = os.path.abspath(self.config['topo']['mask'])
-        if 'roughness_init' in self.config['files']:
-            self.roughness_init = os.path.abspath(self.config['files']['roughness_init'])
-        else:
-            self.roughness_init = None
-
-        if 'ppt_desc_file' in self.config['files']:
-            self.ppt_desc = self.config['files']['ppt_desc_file']
-        else:
-            # self.ppt_desc = '%sdata/ppt_desc%s.txt'%(self.path_wy,self.et.strftime("%Y%m%d"))
-            self.ppt_desc = ''
-
-        #self.anyini = self.config['paths']['smrfini']
-        self.forecast_flag = 0
-        # if 'fetime' in self.config['times']:
-        #     self.forecast_flag = 1
-        #     self.ft = pd.to_datetime(self.config['times']['fetime'])
-        if 'prev_mod_file' in self.config['files']:
-            self.prev_mod_file = self.config['files']['prev_mod_file']
-
-        if 'ithreads' in self.config['isystem']:
-            self.ithreads = self.config['isystem']['ithreads']
-        else:
-            self.ithreads = 4
-
-        if 'isnobal restart' in self.config:
-            if 'restart_crash' in self.config['isnobal restart']:
-                if self.config['isnobal restart']['restart_crash'] == True:
-                    self.new_init = self.config['isnobal restart']['new_init']
-                    self.depth_thresh = self.config['isnobal restart']['depth_thresh']
-                    self.restart_hr = int(self.config['isnobal restart']['wyh_restart_output'])
-
-        # list of sections releated to AWSF
-        self.sec_awsf = ['paths', 'grid', 'files', 'awsf logging', 'isystem', 'isnobal restart']
-        # name of smrf file to write out
-        self.smrfini = self.config['paths']['smrfini']
+        # dump saved logs
+        if len(self.tmp_log) > 0:
+            for l in self.tmp_log:
+                self._logger.info(l)
+        if len(self.tmp_warn) > 0:
+            for l in self.tmp_warn:
+                self._logger.warning(l)
+        if len(self.tmp_err) > 0:
+            for l in self.tmp_err:
+                self._logger.error(l)
 
     def runSmrf(self):
         """
-        Run smrf
+        Run smrf. Calls :mod: `awsf.interface.interface.smrfMEAS`
         """
-
         # modify config and run smrf
         smin.smrfMEAS(self)
 
-    def nc2ipw(self):
+    def runSmrf_wrf(self):
+        """
+        Convert ipw smrf output to isnobal inputs. Calls
+        :mod: `awsf.convertFiles.convertFiles.nc2ipw_mea`
+        """
+        # modify config and run smrf
+        smin.smrf_go_wrf(self)
+
+    def nc2ipw(self, runtype):
         """
         Convert ipw smrf output to isnobal inputs
         """
+        cvf.nc2ipw_mea(self, runtype)
 
-        cvf.nc2ipw_mea(self)
-
-    def ipw2nc(self):
+    def ipw2nc(self, runtype):
         """
-        convert ipw output to netcdf files
+        Convert ipw output to netcdf files. Calls
+        :mod: `awsf.convertFiles.convertFiles.ipw2nc_mea`
         """
-
-        cvf.ipw2nc_mea(self)
+        cvf.ipw2nc_mea(self, runtype)
 
     def run_isnobal(self):
         """
-        Run isnobal
+        Run isnobal. Calls :mod: `awsf.interface.interface.run_isnobal`
         """
 
-        # modify config and run smrf
         smin.run_isnobal(self)
+
+    def run_isnobal_forecast(self):
+        """
+        Run isnobal with smrf forecast data
+        """
+        # modify config and run smrf
+        smin.run_isnobal_forecast(self)
+
+    def run_smrf_ipysnobal(self):
+        """
+        Run smrf and pass inputs to ipysnobal in memory.
+        Calls :mod: `awsf.interface.smrf_ipysnobal.run_smrf_ipysnobal`
+        """
+
+        smrf_ipy.run_smrf_ipysnobal(self)
 
     def restart_crash_image(self):
         """
-        Restart isnobal
+        Restart isnobal. Calls :mod: `awsf.interface.interface.restart_crash_image`
         """
-
         # modify config and run smrf
         smin.restart_crash_image(self)
 
@@ -196,7 +287,7 @@ class AWSF():
         Create all needed directories starting from the working drive
         """
         # rigid directory work
-        self._logger.info('AWSF creating directories')
+        self.tmp_log.append('AWSF creating directories')
         # make basin path
         self.path_ba = os.path.join(self.path_dr,self.basin)
 
@@ -204,24 +295,52 @@ class AWSF():
         if self.isops:
             self.path_od = os.path.join(self.path_ba,'ops')
             # check if specified water year
-            if len(str(self.wy)) > 1:
-                self.path_wy = os.path.join(self.path_od,str(self.wy))
-            else:
-                self.path_wy = self.path_od
+            self.path_wy = os.path.join(self.path_od,'wy{}'.format(self.wy))
+            # self.path_proj = self.path_wy
 
         else:
             self.path_od = os.path.join(self.path_ba,'devel')
-            self.path_proj = os.path.join(self.path_od, self.proj)
-
-            if len(str(self.wy)) > 1:
-                self.path_wy = os.path.join(self.path_proj,str(self.wy))
-            else:
-                self.path_wy = self.path_proj
+            self.path_wy = os.path.join(self.path_od,'wy{}'.format(self.wy))
+            self.path_wy = os.path.join(self.path_wy, self.proj)
 
         # specific data folder conatining
-        self.pathd = os.path.join(self.path_wy, 'data/data{}_{}'.format(self.start_date.strftime("%Y%m%d"), self.end_date.strftime("%Y%m%d")))
+        self.pathd = os.path.join(self.path_wy, 'data')
+        self.pathr = os.path.join(self.path_wy, 'runs')
 
+        # name of temporary smrf file to write out
+        self.smrfini = os.path.join(self.path_wy, 'tmp_smrf_config.ini')
+        self.wrfini = os.path.join(self.path_wy, 'tmp_smrf_wrf_config.ini')
+
+        if not self.do_wrf:
+            # assign path names for isnobal, path_names_att will be used
+            # to create necessary directories
+            path_names_att = ['pathdd', 'pathrr', 'pathi', 'pathinit', 'pathro', 'paths', 'path_ppt']
+            self.pathdd = os.path.join(self.pathd, 'data{}_{}'.format(self.start_date.strftime("%Y%m%d"), self.end_date.strftime("%Y%m%d")))
+            self.pathrr =    os.path.join(self.pathr, 'run{}_{}'.format(self.start_date.strftime("%Y%m%d"), self.end_date.strftime("%Y%m%d")))
+            self.pathi =    os.path.join(self.pathdd, 'input/')
+            self.pathinit = os.path.join(self.pathdd, 'init/')
+            self.pathro =   os.path.join(self.pathrr, 'output/')
+            self.paths = os.path.join(self.pathdd,'smrfOutputs')
+            self.ppt_desc = os.path.join(self.pathdd, 'ppt_desc{}.txt'.format(self.end_date.strftime("%Y%m%d")))
+            self.path_ppt = os.path.join(self.pathdd, 'ppt_4b')
+            # used to check if data direcotry exists
+            check_if_data = self.pathdd
+        else:
+            path_names_att = ['path_wrf_data', 'path_wrf_run', 'path_wrf_i', 'path_wrf_init', 'path_wrf_ro', 'path_wrf_s', 'path_wrf_ppt']
+            self.path_wrf_data = os.path.join(self.pathd, 'forecast{}_{}'.format(self.start_date.strftime("%Y%m%d"), self.end_date.strftime("%Y%m%d")))
+            self.path_wrf_run = os.path.join(self.pathr, 'forecast{}_{}'.format(self.start_date.strftime("%Y%m%d"), self.end_date.strftime("%Y%m%d")))
+            self.path_wrf_i =    os.path.join(self.path_wrf_data, 'input/')
+            self.path_wrf_init = os.path.join(self.path_wrf_data, 'init/')
+            self.path_wrf_ro =   os.path.join(self.path_wrf_run, 'output/')
+            self.path_wrf_s = os.path.join(self.path_wrf_data,'smrfOutputs')
+            self.wrf_ppt_desc = os.path.join(self.path_wrf_data, 'ppt_desc{}.txt'.format(self.end_date.strftime("%Y%m%d")))
+            self.path_wrf_ppt = os.path.join(self.path_wrf_data, 'ppt_4b')
+            # used to check if data direcotry exists
+            check_if_data = self.path_wrf_data
+
+        # Only start if your drive exists
         if os.path.exists(self.path_dr):
+            # If the specific path to your WY does not exist, create it and following directories
             if not os.path.exists(self.path_wy):  # if the working path specified in the config file does not exist
                 y_n = 'a'                        # set a funny value to y_n
                 while y_n not in ['y','n']:      # while it is not y or n (for yes or no)
@@ -229,36 +348,32 @@ class AWSF():
                 if y_n == 'n':
                     print('Please fix the base directory (path_wy) in your config file.')
                 elif y_n =='y':
-                    os.makedirs(os.path.join(self.pathd, 'smrfOutputs/'))
-                    os.makedirs(os.path.join(self.pathd, 'input/'))
-                    os.makedirs(os.path.join(self.pathd, 'init/'))
-                    os.makedirs(os.path.join(self.pathd, 'ppt_4b/'))
-                    os.makedirs(os.path.join(self.pathd, 'forecast/'))
-                    os.makedirs(os.path.join(self.path_wy, 'runs/'))
+                    self.make_rigid_directories(path_names_att)
 
-            elif not os.path.exists(self.pathd):  # if the working path specified in the config file does not exist
+            # If WY exists, but not this exact run for the dates, create it
+            elif not os.path.exists(check_if_data):  # if the working path specified in the config file does not exist
                 y_n = 'a'                        # set a funny value to y_n
                 while y_n not in ['y','n']:      # while it is not y or n (for yes or no)
-                    y_n = raw_input('Directory %s does not exist. Create base directory and all subdirectories? (y n): '%self.pathd)
+                    y_n = raw_input('Directory %s does not exist. Create base directory and all subdirectories? (y n): '%check_if_data)
                 if y_n == 'n':
                     print('Please fix the base directory (path_wy) in your config file.')
                 elif y_n =='y':
-                    os.makedirs(os.path.join(self.pathd, 'smrfOutputs/'))
-                    os.makedirs(os.path.join(self.pathd, 'input/'))
-                    os.makedirs(os.path.join(self.pathd, 'init/'))
-                    os.makedirs(os.path.join(self.pathd, 'ppt_4b/'))
-                    os.makedirs(os.path.join(self.pathd, 'forecast/'))
+                    self.make_rigid_directories(path_names_att)
 
-                if not os.path.exists(os.path.join(self.path_wy, 'runs/')):
-                    os.makedirs(os.path.join(self.path_wy, 'runs/'))
             else:
-                self._logger.warning('This has the potential to overwrite results in {}!!!'.format(self.pathd))
+                self.tmp_warn.append('This has the potential to overwrite results in {}!!!'.format(check_if_data))
+
+            # make sure runs exists
+            if not os.path.exists(os.path.join(self.path_wy, 'runs/')):
+                os.makedirs(os.path.join(self.path_wy, 'runs/'))
+
+            # if we're not running wrf data, make sure path to outputs exists
+            if not self.do_wrf:
+                if not os.path.exists(self.pathro):
+                    os.makedirs(self.pathro)
 
             # find where to write file
-            if self.isops:
-                fp_desc = os.path.join(self.path_od, 'projectDescription.txt')
-            else:
-                fp_desc = os.path.join(self.path_proj, 'projectDescription.txt')
+            fp_desc = os.path.join(self.path_wy, 'projectDescription.txt')
 
             if not os.path.isfile(fp_desc):
                 # look for description or prompt for one
@@ -270,19 +385,27 @@ class AWSF():
                 f.write(self.desc)
                 f.close()
             else:
-                self._logger.info('Description file aleardy exists')
-
-            # assign path names for isnobal
-            self.pathi =    os.path.join(self.pathd, 'input/')
-            self.pathinit = os.path.join(self.pathd, 'init/')
-            self.pathr =    os.path.join(self.path_wy, 'runs/run{}_{}'.format(self.start_date.strftime("%Y%m%d"), self.end_date.strftime("%Y%m%d")))
-            self.pathro =   os.path.join(self.pathr, 'output/')
+                self.tmp_log.append('Description file aleardy exists\n')
 
         else:
-            self._logger.error('Base directory did not exist, not safe to conitnue')
+            self.tmp_err.append('Base directory did not exist, not safe to conitnue.\
+                                Make sure base directory exists before running.')
 
-        self.paths = os.path.join(self.pathd,'smrfOutputs')
-        self.ppt_desc = os.path.join(self.pathd, 'ppt_desc{}.txt'.format(self.end_date.strftime("%Y%m%d")))
+    def make_rigid_directories(self, path_name):
+        """
+        Creates rigid directory structure from list of relative bases and
+        extensions from the base
+        """
+        # loop through lists
+        for idp, pn in enumerate(path_name):
+            # get attribute of path
+            path = getattr(self,pn)
+
+            if not os.path.exists(path):
+                os.makedirs(path)
+            else:
+                self.tmp_log.append('Directory ---{}--- exists, not creating.\n')
+
 
     def __enter__(self):
         return self

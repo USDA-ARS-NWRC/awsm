@@ -34,9 +34,13 @@ setup(
     packages=['awsf',
 			  'awsf.convertFiles',
 			  'awsf.interface',
-			  'awsf.framework'
+			  'awsf.framework',
+              'awsf.knn'
 			  ],
+
+
     include_package_data=True,
+    scripts=['./scripts/awsf'],
     install_requires=requirements,
     license="ISC license",
     zip_safe=False,

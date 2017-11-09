@@ -250,6 +250,12 @@ def run_isnobal(myawsf):
         i_dem = dem_file['dem'][:]
         i_out.new_band(i_dem)
 
+    if myawsf.mask_isnobal:
+        i_mask = ipw.IPW(myawsf.fp_mask).bands[0].data
+        myawsf._logger.info('Masking init file')
+    else:
+        i_mask = np.ones((myawsf.ny,myawsf.nx))
+
     if offset > 0:
         i_in = ipw.IPW(myawsf.prev_mod_file)
         # use given rougness from old init file if given
@@ -258,12 +264,15 @@ def run_isnobal(myawsf):
         else:
             myawsf._logger.warning('No roughness given from old init, using value of 0.005 m')
             i_out.new_band(0.005*np.ones((myawsf.ny,myawsf.nx)))
-        i_out.new_band(i_in.bands[0].data) # snow depth
-        i_out.new_band(i_in.bands[1].data) # snow density
-        i_out.new_band(i_in.bands[4].data) # active layer temp
-        i_out.new_band(i_in.bands[5].data) # lower layer temp
-        i_out.new_band(i_in.bands[6].data) # avgerage snow temp
-        i_out.new_band(i_in.bands[8].data) # percent saturation
+
+        i_out.new_band(i_in.bands[0].data*i_mask) # snow depth
+        i_out.new_band(i_in.bands[1].data*i_mask) # snow density
+
+        i_out.new_band(i_in.bands[4].data*i_mask) # active layer temp
+        i_out.new_band(i_in.bands[5].data*i_mask) # lower layer temp
+        i_out.new_band(i_in.bands[6].data*i_mask) # avgerage snow temp
+
+        i_out.new_band(i_in.bands[8].data*i_mask) # percent saturation
         i_out.add_geo_hdr([myawsf.u, myawsf.v], [myawsf.du, myawsf.dv], myawsf.units, myawsf.csys)
         i_out.write(os.path.join(myawsf.pathinit,'init%04d.ipw'%(offset)), nbits)
     else:

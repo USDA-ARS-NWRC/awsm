@@ -218,11 +218,16 @@ def get_args(myawsf):
     else:
         config['initial_conditions']['restart'] = False
 
-    if 'mask_file' in myawsf.config['ipysnobal initial conditions']:
-        if config['initial_conditions']['input_type'] == 'ipw' or config['initial_conditions']['input_type'] == 'ipw_out':
-            config['initial_conditions']['mask_file'] = myawsf.config['ipysnobal initial conditions']['mask_file']
-        elif config['initial_conditions']['input_type'] == 'netcdf':
-            myawsf._logger.error('Mask should be in netcdf, not external file')
+    # if 'mask_file' in myawsf.config['ipysnobal initial conditions']:
+    #     if config['initial_conditions']['input_type'] == 'ipw' or config['initial_conditions']['input_type'] == 'ipw_out':
+    #         config['initial_conditions']['mask_file'] = myawsf.config['ipysnobal initial conditions']['mask_file']
+    #     elif config['initial_conditions']['input_type'] == 'netcdf':
+    #         myawsf._logger.error('Mask should be in netcdf, not external file')
+    if myawsf.mask_isnobal:
+        if myawsf.topotype == 'ipw':
+            config['initial_conditions']['mask_file'] = myawsf.fp_mask
+        else:
+            myawsf._logger.error('Mask should be ipw to run iPySnobal')
 
     return config, point_run
 
@@ -733,7 +738,7 @@ class QueueIsnobal(threading.Thread):
                 self._logger.error('Value not in keys: {}'.format(v))
 
         # set ground temp
-        input1['T_g'] = -2.5*np.ones((self.ny, self.nx))
+        input1['T_g'] = self.soil_temp*np.ones((self.ny, self.nx))
 
         input1['T_a'] += FREEZE
         input1['T_pp'] += FREEZE
@@ -762,7 +767,7 @@ class QueueIsnobal(threading.Thread):
                     else:
                         input2[map_val[v]] = data
             # set ground temp
-            input2['T_g'] = -2.5*np.ones((self.ny, self.nx))
+            input2['T_g'] = self.soil_temp*np.ones((self.ny, self.nx))
             # convert variables to Kelvin
             input2['T_a'] += FREEZE
             input2['T_pp'] += FREEZE

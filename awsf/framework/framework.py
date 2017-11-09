@@ -156,7 +156,7 @@ class AWSF():
 
         # if we are going to run ipysnobal with smrf
         if 'ipysnobal' in self.config:
-            if self.config['ipysnobal']['smrf_ipysnobal_flag'] == True:
+            if self.do_smrf_ipysnobal:
                 #print('Stuff happening here \n\n\n')
                 self.ipy_threads = self.config['ipysnobal']['nthreads']
                 self.ipy_init_type = self.config['ipysnobal initial conditions']['input_type']

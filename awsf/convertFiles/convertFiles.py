@@ -2,7 +2,6 @@ import smrf
 from smrf import ipw
 from smrf.utils import utils
 import ConfigParser as cfp
-from awsf import premodel as pm
 import os
 import pandas as pd
 import numpy as np
@@ -36,7 +35,7 @@ def nc2ipw_mea(myawsf, runtype):
     if runtype == 'smrf':
         tt = myawsf.start_date - wyh
         smrfpath = myawsf.paths
-        datapath = myawsf.pathd
+        datapath = myawsf.pathdd
         f = open(myawsf.ppt_desc,'w')
     elif runtype == 'wrf':
         tt = myawsf.end_date - wyh
@@ -150,7 +149,7 @@ def nc2ipw_mea(myawsf, runtype):
     tp_file.close()
     f.close()
     # pbar.finish()
-    myawsf._logger.info("finished making the ipw files from NetCDF files for {}".format(runtype))
+    myawsf._logger.info("finished making the ipw input and ppt files from NetCDF files")
 
 def ipw2nc_mea(myawsf, runtype):
     '''
@@ -159,9 +158,9 @@ def ipw2nc_mea(myawsf, runtype):
     myawsf._logger.info("making the NetCDF files from ipw files for {}".format(runtype))
 
     if runtype == 'smrf':
-        wyh = pd.to_datetime('%s-10-01'%pm.wyb(myawsf.end_date))
+        wyh = pd.to_datetime('{}-10-01'.format(myawsf.wy))
     elif runtype == 'wrf':
-        wyh = pd.to_datetime('%s-10-01'%pm.wyb(myawsf.end_date))
+        wyh = pd.to_datetime('{}-10-01'.format(myawsf.wy))
     else:
         myawsf._logger.error('Wrong run type given to ipw2nc. \
                             not smrf or wrf')

@@ -9,20 +9,20 @@ import copy
 
 start = datetime.now()
 
-configFile = '../test_data/AWSF_tuol_weather.ini'
+configFile = '/home/micahsandusky/Tuolumne/devel/awsfTesting/AWSF_tuol_weather.ini'
 
 #===============================================================================
 # Initialize and run basin
 #===============================================================================
 #
 
-scen_start = 11
-scen_end = 20
+scen_start = 8
+scen_end = 9
 scen_run = range(scen_start, scen_end)
 #tp = 'regular'
 #tps = ['regular', 'warmwet', 'warmdry', 'coldwet', 'colddry']
 # tps = ['warmwet', 'warmdry', 'coldwet', 'colddry']
-tps = ['regular']
+tps = ['regular_hourly2']
 # 1. initialize
 # try:
 with awsf.framework.framework.AWSF(configFile) as a:

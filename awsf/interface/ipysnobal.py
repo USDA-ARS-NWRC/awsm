@@ -250,7 +250,7 @@ def get_args(self):
         config['initial_conditions']['restart'] = False
 
     if 'mask_file' in self.config['ipysnobal initial conditions']:
-        if config['initial_conditions']['input_type'] == 'ipw':
+        if config['initial_conditions']['input_type'] == 'ipw' or config['initial_conditions']['input_type'] == 'ipw_out':
             config['initial_conditions']['mask_file'] = self.config['ipysnobal initial conditions']['mask_file']
         elif config['initial_conditions']['input_type'] == 'netcdf':
             self._logger.error('Mask should be in netcdf, not external file')
@@ -798,7 +798,7 @@ class QueueIsnobal(threading.Thread):
             input2['T_pp'] += FREEZE
             input2['T_g'] += FREEZE
 
-            self._logger.info('running timestep: {}'.format(tstep))
+            self._logger.info('running PySnobal for timestep: {}'.format(tstep))
             rt = snobal.do_tstep_grid(input1, input2, self.output_rec,
                                       self.tstep_info, self.options['constants'],
                                       self.params, first_step, nthreads=self.nthreads)
@@ -809,7 +809,7 @@ class QueueIsnobal(threading.Thread):
 
             self._logger.info('Finished timestep: {}'.format(tstep))
             input1 = input2.copy()
-            # print data_tstep/(3600.0)
+
             # output at the frequency and the last time step
             if (j*(data_tstep/3600.0) % self.options['output']['frequency'] == 0) or (j == len(self.options['time']['date_time'])):
                 output_timestep(self.output_rec, tstep, self.options)

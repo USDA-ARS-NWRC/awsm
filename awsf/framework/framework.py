@@ -321,7 +321,7 @@ class AWSF():
             # assign path names for isnobal
             path_names_att = ['pathdd', 'pathrr', 'pathi', 'pathinit', 'pathro', 'paths', 'path_ppt']
             #rel_base = ['path_d', 'pathr', 'pathdd', 'pathdd', 'pathrr', 'pathdd', 'pathdd', 'pathdd']
-            self.pathdd = os.path.join(self.path_d, 'data{}_{}'.format(self.start_date.strftime("%Y%m%d"), self.end_date.strftime("%Y%m%d")))
+            self.pathdd = os.path.join(self.pathd, 'data{}_{}'.format(self.start_date.strftime("%Y%m%d"), self.end_date.strftime("%Y%m%d")))
             self.pathrr =    os.path.join(self.pathr, 'run{}_{}'.format(self.start_date.strftime("%Y%m%d"), self.end_date.strftime("%Y%m%d")))
             self.pathi =    os.path.join(self.pathdd, 'input/')
             self.pathinit = os.path.join(self.pathdd, 'init/')

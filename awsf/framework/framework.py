@@ -13,6 +13,9 @@ from awsf.convertFiles import convertFiles as cvf
 from awsf.interface import interface as smin
 from awsf.interface import smrf_ipysnobal as smrf_ipy
 
+from smrf import __core_config__ as __smrf_core_config__
+from awsf import __core_config__ as __awsf_core_config__
+
 
 class AWSF():
     """
@@ -35,18 +38,37 @@ class AWSF():
         if not os.path.isfile(configFile):
             raise Exception('Configuration file does not exist --> {}'
                             .format(configFile))
-
         try:
-            self.config = io.read_config(configFile)
+            # get both master configs
+            smrf_mcfg = io.get_master_config()
+            awsf_mcfg = io.MasterConfig(__awsf__core_config__).cfg
+            # combine master configs
+            combined_mcfg = smrf_mcfg.update(awsf_mcfg)
+            #Read in the original users config
+            self.config = io.get_user_config(configFile, combined_mcfg)
             self.configFile = configFile
         except UnicodeDecodeError:
-            raise UnicodeDecodeError('''The configuration file is not encoded in
-                                    UTF-8, please change and retry''')
+            raise Exception(('The configuration file is not encoded in '
+                                    'UTF-8, please change and retry'))
 
         # create blank log and error log because logger is not initialized yet
         self.tmp_log = []
         self.tmp_err = []
         self.tmp_warn = []
+
+        #Add defaults.
+        self.tmp_log.append("Adding defaults to config...")
+        self.config = io.add_defaults(self.config, combined_mcfg)
+
+        #Check the user config file for errors and report issues if any
+        self.tmp_log.append("Checking config file for issues...")
+        warnings, errors = io.check_config_file(self.config,combined_mcfg,user_cfg_path=configFile)
+        io.print_config_report(warnings, errors)
+
+        #Exit AWSF if config file has errors
+        if len(errors) > 0:
+            Print("Errors in the config file. See configuration status report above.")
+            sys.exit()
 
         ################### Decide which modules to run ######################
         self.do_smrf = self.config['awsf master']['run_smrf']
@@ -55,21 +77,14 @@ class AWSF():
         self.do_smrf_ipysnobal = self.config['awsf master']['run_smrf_ipysnobal']
 
         # options for converting files
-        self.do_make_in = True
-        self.do_make_nc = True
+        self.do_make_in = self.config['awsf master']['make_in']
+        self.do_make_nc = self.config['awsf master']['make_nc']
 
-        if 'make_in' in self.config['awsf master']:
-            self.do_make_in = self.config['awsf master']['make_in']
-        if 'make_nc' in self.config['awsf master']:
-            self.do_make_nc = self.config['awsf master']['make_nc']
-
-        # options for masking with isnobal run
-        self.mask_isnobal = False
-        if 'mask_isnobal' in self.config['awsf master']:
-            self.mask_isnobal = self.config['awsf master']['mask_isnobal']
-            if self.mask_isnobal:
-                # mask file
-                self.fp_mask = os.path.abspath(self.config['topo']['mask'])
+        # options for masking isnobal
+        self.mask_isnobal = self.config['awsf master']['mask_isnobal']
+        if self.mask_isnobal:
+            # mask file
+            self.fp_mask = os.path.abspath(self.config['topo']['mask'])
 
         ################# Time information ##################
         self.start_date = pd.to_datetime(self.config['time']['start_date'])
@@ -90,33 +105,23 @@ class AWSF():
         # if the run is operational or not
         self.isops = self.config['paths']['isops']
         # name of project if not an operational run
-        if 'proj' in self.config['paths']:
-            self.proj = self.config['paths']['proj']
+        self.proj = self.config['paths']['proj']
         # check for project description
-        if 'desc' in self.config['paths']:
-            self.desc = self.config['paths']['desc']
-        else:
-            self.desc = ''
+        self.desc = self.config['paths']['desc']
 
         if self.do_wrf:
-            if 'forecast' in self.config:
-                self.tmp_log.append('Forecasting set to True')
+            self.tmp_log.append('Forecasting set to True')
 
-                if 'wrf_data' in self.config['forecast']:
-                    self.fp_wrfdata = self.config['forecast']['wrf_data']
-                else:
-                    self.tmp_err.append('Forecast set to true, but no wrf_data given')
-                self.zone_number = self.config['forecast']['zone_number']
-                self.zone_letter = self.config['forecast']['zone_letter']
+
+            self.fp_wrfdata = self.config['forecast']['wrf_data']
+            if self.fp_wrfdata == None:
+                self.tmp_err.append('Forecast set to true, but no wrf_data given')
+            self.zone_number = self.config['forecast']['zone_number']
+            self.zone_letter = self.config['forecast']['zone_letter']
+
+            if self.config['system']['threading'] == True:
                 # Can't run threaded smrf if running wrf_data
-                self.tmp_warn.append('Setting threaded to false for running smrf\
-                                      with gridded data!')
-                if 'system' in self.config:
-                    if 'threading' in self.config['system']:
-                        if self.config['system']['threading'] == True:
-                            self.tmp_err.append('Cannot run SMRF threaded with gridded input data'
-            else:
-                self.tmp_err.append('use_wrf set to True, but no forecast section.')
+                self.tmp_err.append('Cannot run SMRF threaded with gridded input data'
 
         ################# Grid data for iSnobal ##################
         self.u  = int(self.config['grid']['u'])
@@ -138,40 +143,33 @@ class AWSF():
             self.fp_dem = os.path.abspath(self.config['topo']['filename'])
 
         # init file just for surface roughness
-        if 'roughness_init' in self.config['files']:
+        if self.config['files']['roughness_init'] != None:
             self.roughness_init = os.path.abspath(self.config['files']['roughness_init'])
-        else:
-            self.roughness_init = None
 
         # point to snow ipw image for restart of run
-        if 'prev_mod_file' in self.config['files']:
+        if self.config['files']['prev_mod_file'] != None:
             self.prev_mod_file = os.path.abspath(self.config['files']['prev_mod_file'])
 
         # threads for running iSnobal
-        if 'ithreads' in self.config['awsf system']:
-            self.ithreads = self.config['awsf system']['ithreads']
-        else:
-            self.ithreads = 1
+        self.ithreads = self.config['awsf system']['ithreads']
 
         # options for restarting iSnobal
-        if 'isnobal restart' in self.config:
-            if 'restart_crash' in self.config['isnobal restart']:
-                if self.config['isnobal restart']['restart_crash'] == True:
-                    #self.new_init = self.config['isnobal restart']['new_init']
-                    self.depth_thresh = self.config['isnobal restart']['depth_thresh']
-                    self.restart_hr = int(self.config['isnobal restart']['wyh_restart_output'])
+        if self.config['isnobal restart']['restart_crash'] == True:
+            #self.new_init = self.config['isnobal restart']['new_init']
+            self.depth_thresh = self.config['isnobal restart']['depth_thresh']
+            self.restart_hr = int(self.config['isnobal restart']['wyh_restart_output'])
 
         # if we are going to run ipysnobal with smrf
-        if 'ipysnobal' in self.config:
-            if self.do_smrf_ipysnobal:
-                #print('Stuff happening here \n\n\n')
-                self.ipy_threads = self.config['ipysnobal']['nthreads']
-                self.ipy_init_type = self.config['ipysnobal initial conditions']['input_type']
+        if self.do_smrf_ipysnobal:
+            #print('Stuff happening here \n\n\n')
+            self.ipy_threads = self.config['ipysnobal']['nthreads']
+            self.ipy_init_type = self.config['ipysnobal initial conditions']['input_type']
 
         # list of sections releated to AWSF (These will be removed for smrf config)
-        self.sec_awsf = ['awsf master', 'awsf system', 'paths', 'grid', 'files', 'awsf logging',
-                        'isnobal restart', 'ipysnobal', 'ipysnobal initial conditions',
-                        'ipysnobal output', 'ipysnobal constants', 'forecast']
+        # self.sec_awsf = ['awsf master', 'awsf system', 'paths', 'grid', 'files', 'awsf logging',
+        #                 'isnobal restart', 'ipysnobal', 'ipysnobal initial conditions',
+        #                 'ipysnobal output', 'ipysnobal constants', 'forecast']
+        self.sec_awsf = awsf_mcfg.keys()
 
         # Make rigid directory structure
         self.mk_directories()
@@ -185,10 +183,7 @@ class AWSF():
         saved logging statements.
         '''
         # start logging
-        if 'log_level' in self.config['awsf system']:
-            loglevel = self.config['awsf system']['log_level'].upper()
-        else:
-            loglevel = 'INFO'
+        loglevel = self.config['awsf system']['log_level'].upper()
 
         numeric_level = getattr(logging, loglevel, None)
         if not isinstance(numeric_level, int):
@@ -196,16 +191,15 @@ class AWSF():
 
         # setup the logging
         logfile = None
-        if 'log_to_file' in self.config['awsf system']:
-            if self.config['awsf system']['log_to_file'] == True:
-                if self.config['isnobal restart']['restart_crash'] == True:
-                    logfile = os.path.join(self.path_wy, 'log_restart_{}.out'.format(self.restart_hr))
-                elif self.do_wrf:
-                    logfile = os.path.join(self.path_wy, 'log_forecast_{}.out'.format(self.start_date.strftime("%Y%m%d"), self.end_date.strftime("%Y%m%d")))
-                else:
-                    logfile = os.path.join(self.path_wy, 'log_{}_{}.out'.format(self.start_date.strftime("%Y%m%d"), self.end_date.strftime("%Y%m%d")))
-                # let user know
-                print('Logging to file: {}'.format(logfile))
+        if self.config['awsf system']['log_to_file'] == True:
+            if self.config['isnobal restart']['restart_crash'] == True:
+                logfile = os.path.join(self.path_wy, 'log_restart_{}.out'.format(self.restart_hr))
+            elif self.do_wrf:
+                logfile = os.path.join(self.path_wy, 'log_forecast_{}.out'.format(self.start_date.strftime("%Y%m%d"), self.end_date.strftime("%Y%m%d")))
+            else:
+                logfile = os.path.join(self.path_wy, 'log_{}_{}.out'.format(self.start_date.strftime("%Y%m%d"), self.end_date.strftime("%Y%m%d")))
+            # let user know
+            print('Logging to file: {}'.format(logfile))
 
         fmt = '%(levelname)s:%(name)s:%(message)s'
         if logfile is not None:
@@ -384,7 +378,7 @@ class AWSF():
 
             if not os.path.isfile(fp_desc):
                 # look for description or prompt for one
-                if len(self.desc) > 1:
+                if self.desc != None:
                     pass
                 else:
                     self.desc = raw_input('\nNo description for project. Enter one now:\n')

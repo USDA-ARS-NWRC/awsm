@@ -4,6 +4,8 @@ include HISTORY.rst
 include LICENSE
 include README.rst
 
+awsf/framework/CoreConfig.ini
+
 recursive-include tests *
 recursive-include scripts *
 recursive-exclude * __pycache__

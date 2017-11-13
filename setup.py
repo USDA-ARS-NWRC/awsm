@@ -40,6 +40,7 @@ setup(
 
 
     include_package_data=True,
+    package_data={'awsf':['./framework/CoreConfig.ini']},
     scripts=['./scripts/awsf'],
     install_requires=requirements,
     license="ISC license",

@@ -108,6 +108,13 @@ class AWSF():
                     self.tmp_err.append('Forecast set to true, but no wrf_data given')
                 self.zone_number = self.config['forecast']['zone_number']
                 self.zone_letter = self.config['forecast']['zone_letter']
+                # Can't run threaded smrf if running wrf_data
+                self.tmp_warn.append('Setting threaded to false for running smrf\
+                                      with gridded data!')
+                if 'system' in self.config:
+                    if 'threading' in self.config['system']:
+                        if self.config['system']['threading'] == True:
+                            self.tmp_err.append('Cannot run SMRF threaded with gridded input data'
             else:
                 self.tmp_err.append('use_wrf set to True, but no forecast section.')
 

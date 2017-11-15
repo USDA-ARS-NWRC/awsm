@@ -17,6 +17,13 @@ from awsf.interface import interface
 
 
 def run_smrf_ipysnobal(myawsf):
+    """
+    Function to run SMRF (threaded) and pass outputs in memory to python wrapped
+    iSnobal. iPySnobal has replaced the output queue in this implimentation.
+
+    Args:
+        myawsf: AWSF instance
+    """
 
     # first create config file to run smrf
     fp_smrfini = interface.create_smrf_config(myawsf)

@@ -48,7 +48,10 @@ def smrfMEAS(myawsf):
     '''
     Run standard SMRF run. Calls :mod: `awsf.interface.interface.creae_smrf_config`
     to make :mod: `smrf` config file and runs :mod: `smrf.framework.SMRF` similar
-    to standard run_smrf.py script
+    to standard run_smrf script
+
+    Args:
+        myawsf: AWSF instance
     '''
 
     ###################################################################################################
@@ -91,6 +94,14 @@ def smrfMEAS(myawsf):
             #     s._logger.error(e)
 
 def smrf_go_wrf(myawsf):
+    '''
+    Run standard SMRF run. Calls :mod: `awsf.interface.interface.creae_smrf_config`
+    to make :mod: `smrf` config file and runs :mod: `smrf.framework.SMRF` similar
+    to standard run_smrf script
+
+    Args:
+        myawsf: AWSF instance
+    '''
 
     # get wrf config
     wrf_cfg = copy.deepcopy(myawsf.config)
@@ -223,6 +234,9 @@ def run_isnobal(myawsf):
     '''
     Run iSnobal from command line. Checks necessary directories, creates
     initialization image and calls iSnobal.
+
+    Args:
+        myawsf: AWSF instance
     '''
 
     myawsf._logger.info('Setting up to run iSnobal')
@@ -373,6 +387,10 @@ def run_isnobal(myawsf):
     os.chdir(cwd)
 
 def run_isnobal_forecast(myawsf):
+    """
+    Args:
+        myawsf: AWSF instance
+    """
 
     myawsf._logger.info("Getting ready to run iSnobal for WRF forecast!")
     wyh = pd.to_datetime('%s-10-01'%pm.wyb(myawsf.start_date))
@@ -482,6 +500,9 @@ def restart_crash_image(myawsf):
     '''
     Restart iSnobal from crash. Read in last output, zero depths smaller than
     a threshold, write new initialization image, and call iSnobal.
+
+    Args:
+        myawsf: AWSF instance
     '''
     nbits = myawsf.nbits
     nthreads = myawsf.ithreads

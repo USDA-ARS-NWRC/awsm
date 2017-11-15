@@ -1,14 +1,13 @@
 import logging
 import os
+import sys
 import coloredlogs
 from datetime import datetime
 import pandas as pd
 import pytz
+import copy
 
-from smrf import data, distribute, output
-from smrf.envphys import radiation
-from smrf.utils import queue, io
-from smrf.utils import utils
+from smrf.utils import utils, io
 from awsf.convertFiles import convertFiles as cvf
 from awsf.interface import interface as smin
 from awsf.interface import smrf_ipysnobal as smrf_ipy
@@ -41,11 +40,12 @@ class AWSF():
         try:
             # get both master configs
             smrf_mcfg = io.get_master_config()
-            awsf_mcfg = io.MasterConfig(__awsf__core_config__).cfg
+            awsf_mcfg = io.MasterConfig(__awsf_core_config__).cfg
             # combine master configs
-            combined_mcfg = smrf_mcfg.update(awsf_mcfg)
+            combined_mcfg = copy.deepcopy(smrf_mcfg)
+            combined_mcfg.update(awsf_mcfg)
             #Read in the original users config
-            self.config = io.get_user_config(configFile, combined_mcfg)
+            self.config = io.get_user_config(configFile, mcfg = combined_mcfg)
             self.configFile = configFile
         except UnicodeDecodeError:
             raise Exception(('The configuration file is not encoded in '
@@ -97,7 +97,12 @@ class AWSF():
 
         ################# Store some paths from config file ##################
         # path to the base drive (i.e. /data/blizzard)
-        self.path_dr = os.path.abspath(self.config['paths']['path_dr'])
+        if self.path_dr != None:
+            self.path_dr = os.path.abspath(self.config['paths']['path_dr'])
+        else:
+            print('No base path to drive given. Exiting now!')
+            sys.exit()
+
         # name of your basin (i.e. Tuolumne)
         self.basin = self.config['paths']['basin']
         # water year of run
@@ -121,7 +126,7 @@ class AWSF():
 
             if self.config['system']['threading'] == True:
                 # Can't run threaded smrf if running wrf_data
-                self.tmp_err.append('Cannot run SMRF threaded with gridded input data'
+                self.tmp_err.append('Cannot run SMRF threaded with gridded input data')
 
         ################# Grid data for iSnobal ##################
         self.u  = int(self.config['grid']['u'])

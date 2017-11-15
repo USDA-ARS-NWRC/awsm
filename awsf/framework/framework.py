@@ -67,7 +67,7 @@ class AWSF():
 
         #Exit AWSF if config file has errors
         if len(errors) > 0:
-            Print("Errors in the config file. See configuration status report above.")
+            print("Errors in the config file. See configuration status report above.")
             sys.exit()
 
         ################### Decide which modules to run ######################
@@ -97,7 +97,7 @@ class AWSF():
 
         ################# Store some paths from config file ##################
         # path to the base drive (i.e. /data/blizzard)
-        if self.path_dr != None:
+        if self.config['paths']['path_dr'] != None:
             self.path_dr = os.path.abspath(self.config['paths']['path_dr'])
         else:
             print('No base path to drive given. Exiting now!')
@@ -121,12 +121,18 @@ class AWSF():
             self.fp_wrfdata = self.config['forecast']['wrf_data']
             if self.fp_wrfdata == None:
                 self.tmp_err.append('Forecast set to true, but no wrf_data given')
+                print("Errors in the config file. See configuration status report above.")
+                print(self.tmp_err)
+                sys.exit()
+
             self.zone_number = self.config['forecast']['zone_number']
             self.zone_letter = self.config['forecast']['zone_letter']
 
             if self.config['system']['threading'] == True:
                 # Can't run threaded smrf if running wrf_data
                 self.tmp_err.append('Cannot run SMRF threaded with gridded input data')
+                print(self.tmp_err)
+                sys.exit()
 
         ################# Grid data for iSnobal ##################
         self.u  = int(self.config['grid']['u'])
@@ -352,7 +358,9 @@ class AWSF():
                 while y_n not in ['y','n']:      # while it is not y or n (for yes or no)
                     y_n = raw_input('Directory %s does not exist. Create base directory and all subdirectories? (y n): '%self.path_wy)
                 if y_n == 'n':
-                    print('Please fix the base directory (path_wy) in your config file.')
+                    self.tmp_err.append('Please fix the base directory (path_wy) in your config file.')
+                    print(self.tmp_err)
+                    sys.exit()
                 elif y_n =='y':
                     self.make_rigid_directories(path_names_att)
 
@@ -362,7 +370,9 @@ class AWSF():
                 while y_n not in ['y','n']:      # while it is not y or n (for yes or no)
                     y_n = raw_input('Directory %s does not exist. Create base directory and all subdirectories? (y n): '%check_if_data)
                 if y_n == 'n':
-                    print('Please fix the base directory (path_wy) in your config file.')
+                    self.tmp_err.append('Please fix the base directory (path_wy) in your config file.')
+                    print(self.tmp_err)
+                    sys.exit()
                 elif y_n =='y':
                     self.make_rigid_directories(path_names_att)
 
@@ -396,6 +406,8 @@ class AWSF():
         else:
             self.tmp_err.append('Base directory did not exist, not safe to conitnue.\
                                 Make sure base directory exists before running.')
+            print(self.tmp_err)
+            sys.exit()
 
     def make_rigid_directories(self, path_name):
         """

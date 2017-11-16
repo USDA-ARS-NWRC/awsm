@@ -70,6 +70,9 @@ class AWSF():
             print("Errors in the config file. See configuration status report above.")
             sys.exit()
 
+        # update config paths to be absolute
+        self.config = io.update_config_paths(self.config, configFile, combined_mcfg)
+
         ################### Decide which modules to run ######################
         self.do_smrf = self.config['awsf master']['run_smrf']
         self.do_isnobal = self.config['awsf master']['run_isnobal']
@@ -156,6 +159,8 @@ class AWSF():
         # init file just for surface roughness
         if self.config['files']['roughness_init'] != None:
             self.roughness_init = os.path.abspath(self.config['files']['roughness_init'])
+        else:
+            self.roughness_init = self.config['files']['roughness_init']
 
         # point to snow ipw image for restart of run
         if self.config['files']['prev_mod_file'] != None:

@@ -172,7 +172,7 @@ def ipw2nc_mea(myawsf, runtype):
         myawsf._logger.error('Wrong run type given to ipw2nc. \
                             not smrf or wrf')
 
-    print("convert all .ipw output files to netcdf files")
+    myawsf._logger.info("convert all .ipw output files to netcdf files")
     ###################################################################################################
     ### convert all .ipw output files to netcdf files #################################################
     ###################################################################################################

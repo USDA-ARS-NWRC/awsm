@@ -522,7 +522,7 @@ def restart_crash_image(myawsf):
     T_s = i_crash.bands[6].data # avgerage snow temp
     h20_sat = i_crash.bands[8].data # percent saturation
 
-    myawsf._logger.info("correcting crash image, deleting depths under {} [m]".format())
+    myawsf._logger.info("correcting crash image, deleting depths under {} [m]".format(myawsf.depth_thresh))
 
     # find pixels that need reset
     idz = z_s < myawsf.depth_thresh

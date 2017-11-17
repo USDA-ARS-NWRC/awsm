@@ -114,7 +114,7 @@ class AWSF():
                 if 'system' in self.config:
                     if 'threading' in self.config['system']:
                         if self.config['system']['threading'] == True:
-                            self.tmp_err.append('Cannot run SMRF threaded with gridded input data'
+                            self.tmp_err.append('Cannot run SMRF threaded with gridded input data')
             else:
                 self.tmp_err.append('use_wrf set to True, but no forecast section.')
 
@@ -161,6 +161,10 @@ class AWSF():
                     self.depth_thresh = self.config['isnobal restart']['depth_thresh']
                     self.restart_hr = int(self.config['isnobal restart']['wyh_restart_output'])
 
+        if 'active_layer' in self.config['awsf system']:
+            self.active_layer = self.config['awsf system']['active_layer']
+        else:
+            self.active_layer = 0.25 # 25 cm
         # if we are going to run ipysnobal with smrf
         if 'ipysnobal' in self.config:
             if self.do_smrf_ipysnobal:

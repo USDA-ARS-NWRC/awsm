@@ -43,7 +43,7 @@ setup(
     package_data={'awsf':['./framework/CoreConfig.ini']},
     scripts=['./scripts/awsf'],
     install_requires=requirements,
-    license="ISC license",
+    license="GPL-3.0",
     zip_safe=False,
     keywords='awsf',
     classifiers=[

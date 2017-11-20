@@ -530,8 +530,9 @@ def restart_crash_image(myawsf):
 
     # find number of pixels reset
     num_pix = len(np.where(idz == True)[0])
+    num_snow = len(np.where(z_s > 0.0)[0])
 
-    myawsf._logger.warning('Zeroing depth in {} pixels!'.format(num_pix))
+    myawsf._logger.warning('Zeroing depth in {} out of {} snow covered pixels'.format(num_pix, num_snow))
 
     z_s[idz] = 0.0
     rho[idz] = 0.0

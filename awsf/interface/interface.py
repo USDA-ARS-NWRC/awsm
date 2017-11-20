@@ -529,7 +529,7 @@ def restart_crash_image(myawsf):
 
 
     # find number of pixels reset
-    num_pix = len(np.where(idz == True))
+    num_pix = len(np.where(idz == True)[0])
 
     myawsf._logger.warning('Zeroing depth in {} pixels!'.format(num_pix))
 

@@ -175,6 +175,10 @@ class AWSF():
             self.depth_thresh = self.config['isnobal restart']['depth_thresh']
             self.restart_hr = int(self.config['isnobal restart']['wyh_restart_output'])
 
+        if 'active_layer' in self.config['awsf system']:
+            self.active_layer = self.config['awsf system']['active_layer']
+        else:
+            self.active_layer = 0.25 # 25 cm
         # if we are going to run ipysnobal with smrf
         if self.do_smrf_ipysnobal:
             #print('Stuff happening here \n\n\n')

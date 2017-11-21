@@ -323,53 +323,36 @@ def run_isnobal(myawsf):
     if is_ppt == 0:
         myawsf._logger.warning('Running iSnobal with no precip')
 
+    # thresholds for iSnobal
+    time_thresh = '{},{},{}'.format(myawsf.time_thresh[0], myawsf.time_thresh[1],myawsf.time_thresh[2])
+
+    # check length of time steps (bug in the way iSnobal reads in input files)
+    if (offset + tmstps) < 1000:
+        tmstps = 1001
+
     # run iSnobal
     if myawsf.mask_isnobal == True:
         if offset>0:
             if is_ppt > 0:
-                if (offset + tmstps) < 1000:
-                    run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %s/init%04d.ipw -p %s -m %s -d %f -i %s/in -O 24 -e em -s snow"%(nthreads,offset,myawsf.pathinit,offset,fp_ppt_desc,myawsf.fp_mask, myawsf.active_layer,myawsf.pathi)
-                else:
-                    run_cmd = "time isnobal -v -P %d -r %s -t 60 -n %s -I %s/init%04d.ipw -p %s -m %s -d %f -i %s/in -O 24 -e em -s snow"%(nthreads,offset,tmstps,myawsf.pathinit,offset,fp_ppt_desc,myawsf.fp_mask, myawsf.active_layer,myawsf.pathi)
+                run_cmd = "time isnobal -v -P %d -r %s -T %s -t 60 -n %s -I %s/init%04d.ipw -p %s -m %s -d %f -i %s/in -O 24 -e em -s snow"%(nthreads,offset,time_thresh,tmstps,myawsf.pathinit,offset,fp_ppt_desc,myawsf.fp_mask, myawsf.active_layer,myawsf.pathi)
             else:
-                if (offset + tmstps) < 1000:
-                    run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %s/init%04d.ipw -m %s -d %f -i %s/in -O 24 -e em -s snow"%(nthreads,offset,myawsf.pathinit,offset,myawsf.fp_mask, myawsf.active_layer,myawsf.pathi)
-                else:
-                    run_cmd = "time isnobal -v -P %d -r %s -t 60 -n %s -I %s/init%04d.ipw -m %s -d %f -i %s/in -O 24 -e em -s snow"%(nthreads,offset,tmstps,myawsf.pathinit,offset,myawsf.fp_mask, myawsf.active_layer,myawsf.pathi)
+                run_cmd = "time isnobal -v -P %d -r %s -T %s -t 60 -n %s -I %s/init%04d.ipw -m %s -d %f -i %s/in -O 24 -e em -s snow"%(nthreads,offset,time_thresh,tmstps,myawsf.pathinit,offset,myawsf.fp_mask, myawsf.active_layer,myawsf.pathi)
         else:
             if is_ppt > 0:
-                if tmstps < 1000:
-                    run_cmd = "time isnobal -v -P %d -t 60 -n 1001 -I %s/init%04d.ipw -p %s -m %s -d %f -i %s/in -O 24 -e em -s snow 2>&1"%(nthreads,myawsf.pathinit,offset,fp_ppt_desc,myawsf.fp_mask, myawsf.active_layer,myawsf.pathi)
-                else:
-                    run_cmd = "time isnobal -v -P %d -t 60 -n %s -I %s/init%04d.ipw -p %s -m %s -d %f -i %s/in -O 24 -e em -s snow"%(nthreads,tmstps,myawsf.pathinit,offset,fp_ppt_desc,myawsf.fp_mask, myawsf.active_layer,myawsf.pathi)
+                run_cmd = "time isnobal -v -P %d -T %s -t 60 -n %s -I %s/init%04d.ipw -p %s -m %s -d %f -i %s/in -O 24 -e em -s snow"%(nthreads,time_thresh,tmstps,myawsf.pathinit,offset,fp_ppt_desc,myawsf.fp_mask, myawsf.active_layer,myawsf.pathi)
             else:
-                if tmstps < 1000:
-                    run_cmd = "time isnobal -v -P %d -t 60 -n 1001 -I %s/init%04d.ipw -m %s -d %f -i %s/in -O 24 -e em -s snow 2>&1"%(nthreads,myawsf.pathinit,offset,myawsf.fp_mask, myawsf.active_layer,myawsf.pathi)
-                else:
-                    run_cmd = "time isnobal -v -P %d -t 60 -n %s -I %s/init%04d.ipw -m %s -d %f -i %s/in -O 24 -e em -s snow"%(nthreads,tmstps,myawsf.pathinit,offset,myawsf.fp_mask, myawsf.active_layer,myawsf.pathi)
+                run_cmd = "time isnobal -v -P %d -T %s -t 60 -n %s -I %s/init%04d.ipw -m %s -d %f -i %s/in -O 24 -e em -s snow"%(nthreads,time_thresh,tmstps,myawsf.pathinit,offset,myawsf.fp_mask, myawsf.active_layer,myawsf.pathi)
     else:
         if offset>0:
             if is_ppt > 0:
-                if (offset + tmstps) < 1000:
-                    run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %s/init%04d.ipw -p %s -d %f -i %s/in -O 24 -e em -s snow"%(nthreads,offset,myawsf.pathinit,offset,fp_ppt_desc, myawsf.active_layer,myawsf.pathi)
-                else:
-                    run_cmd = "time isnobal -v -P %d -r %s -t 60 -n %s -I %s/init%04d.ipw -p %s -d %f -i %s/in -O 24 -e em -s snow"%(nthreads,offset,tmstps,myawsf.pathinit,offset,fp_ppt_desc, myawsf.active_layer,myawsf.pathi)
+                run_cmd = "time isnobal -v -P %d -r %s -T %s -t 60 -n %s -I %s/init%04d.ipw -p %s -d %f -i %s/in -O 24 -e em -s snow"%(nthreads,offset,time_thresh,tmstps,myawsf.pathinit,offset,fp_ppt_desc, myawsf.active_layer,myawsf.pathi)
             else:
-                if (offset + tmstps) < 1000:
-                    run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %s/init%04d.ipw -d %f -i %s/in -O 24 -e em -s snow"%(nthreads,offset,myawsf.pathinit,offset, myawsf.active_layer,myawsf.pathi)
-                else:
-                    run_cmd = "time isnobal -v -P %d -r %s -t 60 -n %s -I %s/init%04d.ipw -d %f -i %s/in -O 24 -e em -s snow"%(nthreads,offset,tmstps,myawsf.pathinit,offset, myawsf.active_layer,myawsf.pathi)
+                run_cmd = "time isnobal -v -P %d -r %s -T %s -t 60 -n %s -I %s/init%04d.ipw -d %f -i %s/in -O 24 -e em -s snow"%(nthreads,offset,time_thresh,tmstps,myawsf.pathinit,offset, myawsf.active_layer,myawsf.pathi)
         else:
             if is_ppt > 0:
-                if tmstps < 1000:
-                    run_cmd = "time isnobal -v -P %d -t 60 -n 1001 -I %s/init%04d.ipw -p %s -d %f -i %s/in -O 24 -e em -s snow 2>&1"%(nthreads,myawsf.pathinit,offset,fp_ppt_desc, myawsf.active_layer,myawsf.pathi)
-                else:
-                    run_cmd = "time isnobal -v -P %d -t 60 -n %s -I %s/init%04d.ipw -p %s -d %f -i %s/in -O 24 -e em -s snow"%(nthreads,tmstps,myawsf.pathinit,offset,fp_ppt_desc, myawsf.active_layer,myawsf.pathi)
+                run_cmd = "time isnobal -v -P %d -T %s -t 60 -n %s -I %s/init%04d.ipw -p %s -d %f -i %s/in -O 24 -e em -s snow"%(nthreads,time_thresh,tmstps,myawsf.pathinit,offset,fp_ppt_desc, myawsf.active_layer,myawsf.pathi)
             else:
-                if tmstps < 1000:
-                    run_cmd = "time isnobal -v -P %d -t 60 -n 1001 -I %s/init%04d.ipw -d %f -i %s/in -O 24 -e em -s snow 2>&1"%(nthreads,myawsf.pathinit,offset, myawsf.active_layer,myawsf.pathi)
-                else:
-                    run_cmd = "time isnobal -v -P %d -t 60 -n %s -I %s/init%04d.ipw -d %f -i %s/in -O 24 -e em -s snow"%(nthreads,tmstps,myawsf.pathinit,offset, myawsf.active_layer,myawsf.pathi)
+                run_cmd = "time isnobal -v -P %d -T %s -t 60 -n %s -I %s/init%04d.ipw -d %f -i %s/in -O 24 -e em -s snow"%(nthreads,time_thresh,tmstps,myawsf.pathinit,offset, myawsf.active_layer,myawsf.pathi)
 
 
     # change directories, run, and move back
@@ -453,31 +436,23 @@ def run_isnobal_forecast(myawsf):
     if is_ppt == 0:
         myawsf._logger.warning('Running iSnobal with no precip')
 
+    # check length of time steps (bug in the way iSnobal reads in input files)
+    if (offset + tmstps) < 1000:
+        tmstps = 1001
+
     # run iSnobal
     if myawsf.mask_isnobal == True:
         if is_ppt > 0:
-            if (offset + tmstps) < 1000:
-                run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %s/init%04d.ipw -p %s -m %s -d %f -i %s/in -O 24 -e em -s snow  2>&1"%(nthreads,offset,myawsf.path_wrf_init,offset,fp_ppt_desc,myawsf.fp_mask, myawsf.active_layer,myawsf.path_wrf_i)
-            else:
-                run_cmd = "time isnobal -v -P %d -r %s -t 60 -n %s -I %s/init%04d.ipw -p %s -m %s -d %f -i %s/in -O 24 -e em -s snow  2>&1"%(nthreads,offset,tmstps,myawsf.path_wrf_init,offset,fp_ppt_desc,myawsf.fp_mask, myawsf.active_layer,myawsf.path_wrf_i)
+            run_cmd = "time isnobal -v -P %d -r %s -t 60 -n %s -I %s/init%04d.ipw -p %s -m %s -d %f -i %s/in -O 24 -e em -s snow  2>&1"%(nthreads,offset,tmstps,myawsf.path_wrf_init,offset,fp_ppt_desc,myawsf.fp_mask, myawsf.active_layer,myawsf.path_wrf_i)
         else:
             myawsf._logger.warning('Time frame has no precip!')
-            if (offset + tmstps) < 1000:
-                run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %s/init%04d.ipw -m %s -d %f -i %s/in -O 24 -e em -s snow  2>&1"%(nthreads,offset,myawsf.path_wrf_init,offset,myawsf.fp_mask, myawsf.active_layer,myawsf.path_wrf_i)
-            else:
-                run_cmd = "time isnobal -v -P %d -r %s -t 60 -n %s -I %s/init%04d.ipw -m %s -d %f -i %s/in -O 24 -e em -s snow  2>&1"%(nthreads,offset,tmstps,myawsf.path_wrf_init,offset,myawsf.fp_mask, myawsf.active_layer,myawsf.path_wrf_i)
+            run_cmd = "time isnobal -v -P %d -r %s -t 60 -n %s -I %s/init%04d.ipw -m %s -d %f -i %s/in -O 24 -e em -s snow  2>&1"%(nthreads,offset,tmstps,myawsf.path_wrf_init,offset,myawsf.fp_mask, myawsf.active_layer,myawsf.path_wrf_i)
     else:
         if is_ppt > 0:
-            if (offset + tmstps) < 1000:
-                run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %s/init%04d.ipw -p %s -d %f -i %s/in -O 24 -e em -s snow  2>&1"%(nthreads,offset,myawsf.path_wrf_init,offset,fp_ppt_desc, myawsf.active_layer,myawsf.path_wrf_i)
-            else:
-                run_cmd = "time isnobal -v -P %d -r %s -t 60 -n %s -I %s/init%04d.ipw -p %s -d %f -i %s/in -O 24 -e em -s snow  2>&1"%(nthreads,offset,tmstps,myawsf.path_wrf_init,offset,fp_ppt_desc, myawsf.active_layer,myawsf.path_wrf_i)
+            run_cmd = "time isnobal -v -P %d -r %s -t 60 -n %s -I %s/init%04d.ipw -p %s -d %f -i %s/in -O 24 -e em -s snow  2>&1"%(nthreads,offset,tmstps,myawsf.path_wrf_init,offset,fp_ppt_desc, myawsf.active_layer,myawsf.path_wrf_i)
         else:
             myawsf._logger.warning('Time frame has no precip!')
-            if (offset + tmstps) < 1000:
-                run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %s/init%04d.ipw -d %f -i %s/in -O 24 -e em -s snow  2>&1"%(nthreads,offset,myawsf.path_wrf_init,offset, myawsf.active_layer,myawsf.path_wrf_i)
-            else:
-                run_cmd = "time isnobal -v -P %d -r %s -t 60 -n %s -I %s/init%04d.ipw -d %f -i %s/in -O 24 -e em -s snow  2>&1"%(nthreads,offset,tmstps,myawsf.path_wrf_init,offset, myawsf.active_layer,myawsf.path_wrf_i)
+            run_cmd = "time isnobal -v -P %d -r %s -t 60 -n %s -I %s/init%04d.ipw -d %f -i %s/in -O 24 -e em -s snow  2>&1"%(nthreads,offset,tmstps,myawsf.path_wrf_init,offset, myawsf.active_layer,myawsf.path_wrf_i)
 
 
     # change directories, run, and move back
@@ -597,29 +572,24 @@ def restart_crash_image(myawsf):
     if is_ppt == 0:
         myawsf._logger.warning('Running iSnobal with no precip')
 
+    # check length of time steps (bug in the way iSnobal reads in input files)
+    if (offset + tmstps) < 1000:
+        tmstps = 1001
+
+    # thresholds for iSnobal
+    time_thresh = '{},{},{}'.format(myawsf.time_thresh[0], myawsf.time_thresh[1],myawsf.time_thresh[2])
+
     # give mask if masking set to treu
     if myawsf.mask_isnobal == True:
         if is_ppt > 0:
-            if (offset + tmstps) < 1000:
-                run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %s -p %s -m %s -d %f -i %s/in -O 24 -e em -s snow 2>&1"%(nthreads,offset,fp_new_init,fp_ppt_desc,myawsf.fp_mask, myawsf.active_layer, myawsf.pathi)
-            else:
-                run_cmd = "time isnobal -v -P %d -r %s -t 60 -n %s -I %s -p %s -m %s -d %f -i %s/in -O 24 -e em -s snow 2>&1"%(nthreads,offset,tmstps,fp_new_init,fp_ppt_desc,myawsf.fp_mask, myawsf.active_layer,myawsf.pathi)
+            run_cmd = "time isnobal -v -P %d -r %s -T %s -t 60 -n %s -I %s -p %s -m %s -d %f -i %s/in -O 24 -e em -s snow 2>&1"%(nthreads,offset,time_thresh,tmstps,fp_new_init,fp_ppt_desc,myawsf.fp_mask, myawsf.active_layer,myawsf.pathi)
         else:
-            if (offset + tmstps) < 1000:
-                run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %s -m %s -d %f -i %s/in -O 24 -e em -s snow 2>&1"%(nthreads,offset,fp_new_init,myawsf.fp_mask, myawsf.active_layer,myawsf.pathi)
-            else:
-                run_cmd = "time isnobal -v -P %d -r %s -t 60 -n %s -I %s -m %s -d %f -i %s/in -O 24 -e em -s snow 2>&1"%(nthreads,offset,tmstps,fp_new_init,myawsf.fp_mask, myawsf.active_layer,myawsf.pathi)
+            run_cmd = "time isnobal -v -P %d -r %s -T %s -t 60 -n %s -I %s -m %s -d %f -i %s/in -O 24 -e em -s snow 2>&1"%(nthreads,offset,time_thresh,tmstps,fp_new_init,myawsf.fp_mask, myawsf.active_layer,myawsf.pathi)
     else:
         if is_ppt > 0:
-            if (offset + tmstps) < 1000:
-                run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %s -p %s -d %f -i %s/in -O 24 -e em -s snow 2>&1"%(nthreads,offset,fp_new_init,fp_ppt_desc, myawsf.active_layer,myawsf.pathi)
-            else:
-                run_cmd = "time isnobal -v -P %d -r %s -t 60 -n %s -I %s -p %s -d %f -i %s/in -O 24 -e em -s snow 2>&1"%(nthreads,offset,tmstps,fp_new_init,fp_ppt_desc, myawsf.active_layer,myawsf.pathi)
+            run_cmd = "time isnobal -v -P %d -r %s -T %s -t 60 -n %s -I %s -p %s -d %f -i %s/in -O 24 -e em -s snow 2>&1"%(nthreads,offset,time_thresh,tmstps,fp_new_init,fp_ppt_desc, myawsf.active_layer,myawsf.pathi)
         else:
-            if (offset + tmstps) < 1000:
-                run_cmd = "time isnobal -v -P %d -r %s -t 60 -n 1001 -I %s -d %f -i %s/in -O 24 -e em -s snow 2>&1"%(nthreads,offset,fp_new_init, myawsf.active_layer,myawsf.pathi)
-            else:
-                run_cmd = "time isnobal -v -P %d -r %s -t 60 -n %s -I %s -d %f -i %s/in -O 24 -e em -s snow 2>&1"%(nthreads,offset,tmstps,fp_new_init, myawsf.active_layer,myawsf.pathi)
+            run_cmd = "time isnobal -v -P %d -r %s -T %s -t 60 -n %s -I %s -d %f -i %s/in -O 24 -e em -s snow 2>&1"%(nthreads,offset,time_thresh,tmstps,fp_new_init, myawsf.active_layer,myawsf.pathi)
 
     # change directories, run, and move back
     myawsf._logger.debug("Running {}".format(run_cmd))

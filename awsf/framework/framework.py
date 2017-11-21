@@ -6,6 +6,7 @@ from datetime import datetime
 import pandas as pd
 import pytz
 import copy
+import numpy as np
 
 from smrf.utils import utils, io
 from awsf.convertFiles import convertFiles as cvf
@@ -148,6 +149,11 @@ class AWSF():
         self.ny = int(self.config['grid']['ny'])
         self.nbits = int(self.config['grid']['nbits'])
         self.soil_temp = self.config['soil_temp']['temp']
+
+        self.time_thresh = np.zeros(shape = (3,1))
+        self.time_thresh[0] = self.config['grid']['thresh_normal']
+        self.time_thresh[1] = self.config['grid']['thresh_medium']
+        self.time_thresh[2] = self.config['grid']['thresh_small']
 
         ################# Topo information ##################
         self.topotype = self.config['topo']['type']

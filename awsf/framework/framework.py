@@ -175,10 +175,9 @@ class AWSF():
             self.depth_thresh = self.config['isnobal restart']['depth_thresh']
             self.restart_hr = int(self.config['isnobal restart']['wyh_restart_output'])
 
-        if 'active_layer' in self.config['awsf system']:
-            self.active_layer = self.config['awsf system']['active_layer']
-        else:
-            self.active_layer = 0.25 # 25 cm
+        # iSnobal active layer
+        self.active_layer = self.config['grid']['active_layer']
+
         # if we are going to run ipysnobal with smrf
         if self.do_smrf_ipysnobal:
             #print('Stuff happening here \n\n\n')
@@ -213,11 +212,11 @@ class AWSF():
         logfile = None
         if self.config['awsf system']['log_to_file'] == True:
             if self.config['isnobal restart']['restart_crash'] == True:
-                logfile = os.path.join(self.path_wy, 'log_restart_{}.out'.format(self.restart_hr))
+                logfile = os.path.join(self.pathll, 'log_restart_{}.out'.format(self.restart_hr))
             elif self.do_wrf:
-                logfile = os.path.join(self.path_wy, 'log_forecast_{}.out'.format(self.start_date.strftime("%Y%m%d"), self.end_date.strftime("%Y%m%d")))
+                logfile = os.path.join(self.pathll, 'log_forecast_{}.out'.format(self.start_date.strftime("%Y%m%d"), self.end_date.strftime("%Y%m%d")))
             else:
-                logfile = os.path.join(self.path_wy, 'log_{}_{}.out'.format(self.start_date.strftime("%Y%m%d"), self.end_date.strftime("%Y%m%d")))
+                logfile = os.path.join(self.pathll, 'log_{}_{}.out'.format(self.start_date.strftime("%Y%m%d"), self.end_date.strftime("%Y%m%d")))
             # let user know
             print('Logging to file: {}'.format(logfile))
 
@@ -327,6 +326,9 @@ class AWSF():
         # specific data folder conatining
         self.pathd = os.path.join(self.path_wy, 'data')
         self.pathr = os.path.join(self.path_wy, 'runs')
+        # log folders
+        self.pathlog = os.path.join(self.path_wy, 'logs')
+        self.pathll = os.path.join(self.pathlog, 'log{}_{}'.format(self.start_date.strftime("%Y%m%d"), self.end_date.strftime("%Y%m%d")))
 
         # name of temporary smrf file to write out
         self.smrfini = os.path.join(self.path_wy, 'tmp_smrf_config.ini')
@@ -358,6 +360,9 @@ class AWSF():
             self.path_wrf_ppt = os.path.join(self.path_wrf_data, 'ppt_4b')
             # used to check if data direcotry exists
             check_if_data = self.path_wrf_data
+
+        # add log path to create directory
+        path_names_att.append('pathll')
 
         # Only start if your drive exists
         if os.path.exists(self.path_dr):

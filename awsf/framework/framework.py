@@ -150,7 +150,7 @@ class AWSF():
         self.nbits = int(self.config['grid']['nbits'])
         self.soil_temp = self.config['soil_temp']['temp']
 
-        # Time step thresholds for iSnobal
+        # Time step mass thresholds for iSnobal
         self.time_thresh = []
         self.time_thresh.append(self.config['grid']['thresh_normal'])
         self.time_thresh.append(self.config['grid']['thresh_medium'])

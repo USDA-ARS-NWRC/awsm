@@ -571,7 +571,7 @@ def restart_crash_image(myawsf):
     # thresholds for iSnobal
     time_thresh = '{},{},{}'.format(myawsf.time_thresh[0], myawsf.time_thresh[1],myawsf.time_thresh[2])
 
-    "time isnobal -v -P %d -r %s -T %s -t 60 -n %s -I %s -d %f -i %s/in"%(nthreads,offset,time_thresh,tmstps,fp_new_init,myawsf.active_layer,myawsf.pathi)
+    run_cmd = "time isnobal -v -P %d -r %s -T %s -t 60 -n %s -I %s -d %f -i %s/in"%(nthreads,offset,time_thresh,tmstps,fp_new_init,myawsf.active_layer,myawsf.pathi)
 
     if is_ppt > 0:
         run_cmd += ' -p %s'%(fp_ppt_desc)

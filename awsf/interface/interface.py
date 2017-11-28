@@ -3,7 +3,7 @@ from smrf import ipw
 from smrf.utils import io
 from smrf.utils import utils
 import ConfigParser as cfp
-from awsf import premodel as pm
+#from awsf import premodel as pm
 import os
 import pandas as pd
 import numpy as np
@@ -13,7 +13,6 @@ import progressbar
 from datetime import datetime
 import sys
 import glob
-from smrf.utils import io
 import subprocess
 import copy
 
@@ -240,8 +239,14 @@ def run_isnobal(myawsf):
     '''
 
     myawsf._logger.info('Setting up to run iSnobal')
-    wyh = pd.to_datetime('%s-10-01'%pm.wyb(myawsf.end_date))
+    # find water year for calculating offset
+    start_date = myawsf.start_date.replace(tzinfo=myawsf.tzinfo)
+    #start of wy
+    tmpwy = utils.water_day(start_date)[1] - 1
+
+    wyh = pd.to_datetime('%d-10-01'%tmpwy)
     tt = myawsf.start_date-wyh
+
     offset = tt.days*24 +  tt.seconds//3600 # start index for the input file
     nbits = myawsf.nbits
 
@@ -365,7 +370,11 @@ def run_isnobal_forecast(myawsf):
     """
 
     myawsf._logger.info("Getting ready to run iSnobal for WRF forecast!")
-    wyh = pd.to_datetime('%s-10-01'%pm.wyb(myawsf.start_date))
+    start_date = myawsf.start_date.replace(tzinfo=myawsf.tzinfo)
+    #start of wy
+    tmpwy = utils.water_day(start_date)[1] - 1
+
+    wyh = pd.to_datetime('%d-10-01'%tmpwy)
     tt = myawsf.end_date-wyh
     offset = tt.days*24 +  tt.seconds//3600 # start index for the input file
     nbits = myawsf.nbits
@@ -548,9 +557,17 @@ def restart_crash_image(myawsf):
     offset = myawsf.restart_hr+1
     start_date = myawsf.start_date.replace(tzinfo=myawsf.tzinfo)
     end_date = myawsf.end_date.replace(tzinfo=myawsf.tzinfo)
-    # calculate timesteps based on water_day function and offset
-    tmstps, tmpwy = utils.water_day(end_date)
-    tmstps = int(tmstps*24 - offset)
+
+    # use start date water year
+    start_date = myawsf.start_date.replace(tzinfo=myawsf.tzinfo)
+    # start of water year
+    tmpwy = utils.water_day(start_date)[1] - 1
+
+    wyh = pd.to_datetime('%d-10-01'%tmpwy)
+    tt = myawsf.end_date-wyh
+
+    tmstps = tt.days*24 +  tt.seconds//3600 # start index for the input file
+    tmstps = int(tmstps - offset)
 
     # make paths absolute if they are not
     cwd = os.getcwd()

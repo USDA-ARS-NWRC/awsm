@@ -21,7 +21,7 @@ awsf
 Automated Water Supply Forecasting
 
 
-* Free software: ISC license
+* Free software: GNU GENERAL PUBLIC LICENSE
 * Documentation: https://awsf.readthedocs.io.
 
 

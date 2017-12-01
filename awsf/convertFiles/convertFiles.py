@@ -13,6 +13,9 @@ import glob
 def nc2ipw_mea(myawsf, runtype):
     '''
     Function to create iSnobal forcing and precip images from smrf ouputs
+    Args:
+        myawsf: AWSF instance
+        runtype: either 'smrf' for standard run or 'wrf' for gridded data run
     '''
     ###################################################################################################
     ### make .ipw input files from netCDF files #######################################################
@@ -154,6 +157,10 @@ def nc2ipw_mea(myawsf, runtype):
 def ipw2nc_mea(myawsf, runtype):
     '''
     Function to create netcdf files from iSnobal output
+
+    Args:
+        myawsf: AWSF instance
+        runtype: either 'smrf' for standard run or 'wrf' for gridded data run
     '''
     myawsf._logger.info("making the NetCDF files from ipw files for {}".format(runtype))
 
@@ -165,7 +172,7 @@ def ipw2nc_mea(myawsf, runtype):
         myawsf._logger.error('Wrong run type given to ipw2nc. \
                             not smrf or wrf')
 
-    print("convert all .ipw output files to netcdf files")
+    myawsf._logger.info("convert all .ipw output files to netcdf files")
     ###################################################################################################
     ### convert all .ipw output files to netcdf files #################################################
     ###################################################################################################

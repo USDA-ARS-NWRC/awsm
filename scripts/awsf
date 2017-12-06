@@ -29,9 +29,10 @@ def run():
                     a.runSmrf()
 
                 # convert smrf output to ipw for iSnobal
+                if a.do_make_in:
+                    a.nc2ipw('smrf')
+
                 if a.do_isnobal:
-                    if a.do_make_in:
-                        a.nc2ipw('smrf')
                     # run iSnobal
                     a.run_isnobal()
 
@@ -51,10 +52,11 @@ def run():
         elif a.do_wrf:
             if a.do_smrf:
                 a.runSmrf_wrf()
-            if a.do_isnobal:
-                if a.do_make_in:
-                    a.nc2ipw('wrf')
 
+            if a.do_make_in:
+                a.nc2ipw('wrf')
+
+            if a.do_isnobal:
                 a.run_isnobal_forecast()
 
             if a.do_make_nc:

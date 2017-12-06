@@ -51,7 +51,7 @@ SMALL_TSTEP = 3
 DEFAULT_NORMAL_THRESHOLD = 60.0
 DEFAULT_MEDIUM_THRESHOLD = 10.0
 DEFAULT_SMALL_THRESHOLD = 1.0
-DEFAULT_MEDIUM_TSTEP = 15.0
+DEFAULT_MEDIUM_TSTEP = 10.0
 DEFAULT_SMALL_TSTEP = 1.0
 
 WHOLE_TSTEP = 0x1 # output when tstep is not divided
@@ -622,7 +622,8 @@ def open_init_files(myawsf, options, dem):
     # init['T_s_l'][init['T_s_l'] <= 75.0] = 0.0
     init['T_s'] += FREEZE
     init['T_s_0'] += FREEZE
-    init['T_s_l'] += FREEZE
+    if 'T_s_l' in init:
+        init['T_s_l'] += FREEZE
 
     return init
 

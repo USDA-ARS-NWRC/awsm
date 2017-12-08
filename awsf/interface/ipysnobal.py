@@ -25,6 +25,7 @@ import progressbar
 from copy import copy
 from smrf import ipw
 from smrf.utils import utils
+import sys
 
 try:
     from Queue import Queue, Empty, Full
@@ -33,9 +34,6 @@ except:
 import threading
 from time import time as _time
 import logging
-# from multiprocessing import Pool
-# from functools import partial
-# import itertools
 
 
 # os.system("taskset -p 0xff %d" % os.getpid())
@@ -751,10 +749,12 @@ class QueueIsnobal(threading.Thread):
 
         #pbar = progressbar.ProgressBar(max_value=len(options['time']['date_time']))
         j = 1
-        first_step = 1;
         for tstep in self.date_time[1:]:
         #for tstep in options['time']['date_time'][953:958]:
         # get the output variables then pass to the function
+            # this parameter zeros the energetics for first timestep
+            first_step = j
+
             input2 = {}
             for v in force_variables:
                 if v in self.queue.keys():
@@ -916,7 +916,7 @@ class PySnobal():
 
         if rt != -1:
             self.logger.error('ipysnobal error on time step {}, pixel {}'.format(tstep, rt))
-            break
+            sys.exit()
 
         self._logger.info('Finished timestep: {}'.format(tstep))
         self.input1 = self.input2.copy()

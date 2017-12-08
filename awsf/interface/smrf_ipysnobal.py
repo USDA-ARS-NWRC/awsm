@@ -50,8 +50,6 @@ def run_smrf_ipysnobal(myawsf):
         else:
             run_smrf_ipysnobal_single(myawsf, s)
 
-
-
         s._logger.debug('DONE!!!!')
 
 def run_smrf_ipysnobal_single(myawsf, s):
@@ -62,17 +60,6 @@ def run_smrf_ipysnobal_single(myawsf, s):
     :func:`~smrf.framework.model_framework.SMRF.loadData`.
     The function distributes over each time step, all the variables below.
 
-    Steps performed:
-        1. Sun angle for the time step
-        2. Illumination angle
-        3. Air temperature
-        4. Vapor pressure
-        5. Wind direction and speed
-        6. Precipitation
-        7. Solar radiation
-        8. Thermal radiation
-        9. Soil temperature
-        10. Output time step if needed
     """
 
     # -------------------------------------
@@ -194,7 +181,7 @@ def run_smrf_ipysnobal_single(myawsf, s):
         # 9. pass info to PySnobal
         if t == s.start_date:
             my_pysnobal.run_single_fist_step()
-        elif t >= s.start_date:
+        elif t > s.start_date:
             my_pysnobal.run_single(t)
         else:
             raise ValueError('Problem with times in run ipysnobal single')

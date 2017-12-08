@@ -751,10 +751,11 @@ class QueueIsnobal(threading.Thread):
 
         #pbar = progressbar.ProgressBar(max_value=len(options['time']['date_time']))
         j = 1
-        first_step = 1;
         for tstep in self.date_time[1:]:
         #for tstep in options['time']['date_time'][953:958]:
         # get the output variables then pass to the function
+            # this avoids zeroing of the energetics every timestep
+            first_step = j
             input2 = {}
             for v in force_variables:
                 if v in self.queue.keys():

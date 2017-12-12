@@ -175,6 +175,8 @@ class AWSF():
 
         # threads for running iSnobal
         self.ithreads = self.config['awsf system']['ithreads']
+        # how often to output form iSnobal
+        self.output_freq = self.config['awsf system']['output_frequency']
 
         # options for restarting iSnobal
         if self.config['isnobal restart']['restart_crash'] == True:

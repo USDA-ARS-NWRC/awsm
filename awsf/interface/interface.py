@@ -346,8 +346,11 @@ def run_isnobal(myawsf):
     if myawsf.mask_isnobal == True:
         run_cmd += ' -m %s'%(myawsf.fp_mask)
 
+    # add output frequency in hours
+    run_cmd += ' -O {}'.format(int(myawsf.output_freq))
+
     # add end to string
-    run_cmd += ' -O 24 -e em -s snow  2>&1'
+    run_cmd += ' -e em -s snow  2>&1'
 
     # change directories, run, and move back
     myawsf._logger.debug("Running {}".format(run_cmd))
@@ -453,8 +456,11 @@ def run_isnobal_forecast(myawsf):
     if myawsf.mask_isnobal == True:
         run_cmd += ' -m %s'%(myawsf.fp_mask)
 
+    # add output frequency in hours
+    run_cmd += ' -O {}'.format(int(myawsf.output_freq))
+
     # add end to string
-    run_cmd += ' -O 24 -e em -s snow  2>&1'
+    run_cmd += ' -e em -s snow  2>&1'
 
     # change directories, run, and move back
     myawsf._logger.debug("Running {}".format(run_cmd))
@@ -598,8 +604,11 @@ def restart_crash_image(myawsf):
     if myawsf.mask_isnobal == True:
         run_cmd += ' -m %s'%(myawsf.fp_mask)
 
+    # add output frequency in hours
+    run_cmd += ' -O {}'.format(int(myawsf.output_freq))
+
     # add end to string
-    run_cmd += ' -O 24 -e em -s snow  2>&1'
+    run_cmd += ' -e em -s snow  2>&1'
 
     # change directories, run, and move back
     myawsf._logger.debug("Running {}".format(run_cmd))

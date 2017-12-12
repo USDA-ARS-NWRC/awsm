@@ -51,7 +51,7 @@ SMALL_TSTEP = 3
 DEFAULT_NORMAL_THRESHOLD = 60.0
 DEFAULT_MEDIUM_THRESHOLD = 10.0
 DEFAULT_SMALL_THRESHOLD = 1.0
-DEFAULT_MEDIUM_TSTEP = 10.0
+DEFAULT_MEDIUM_TSTEP = 15.0
 DEFAULT_SMALL_TSTEP = 1.0
 
 WHOLE_TSTEP = 0x1 # output when tstep is not divided
@@ -147,10 +147,12 @@ def get_args(myawsf):
     # make blank config and fill with corresponding sections
     config = {}
     config['time'] = {}
+    config['output'] = {}
     config['time']['time_step'] = myawsf.time_step
     config['time']['start_date'] = myawsf.start_date
     config['time']['end_date'] = myawsf.end_date
-    config['output'] = myawsf.config['ipysnobal output']
+    config['output']['frequency'] = myawsf.output_freq
+    #config['output'] = myawsf.config['ipysnobal output']
     config['output']['location'] = myawsf.pathro
     config['output']['nthreads'] = int(myawsf.ipy_threads)
     config['constants'] = myawsf.config['ipysnobal constants']
@@ -788,8 +790,8 @@ class QueueIsnobal(threading.Thread):
             input1 = input2.copy()
 
             # output at the frequency and the last time step
-            if (j*(data_tstep/3600.0) % self.options['output']['frequency'] == 0) or (j == len(self.options['time']['date_time'])):
-                output_timestep(self.output_rec, tstep, self.options)
+            if ((j)*(data_tstep/3600.0) % self.options['output']['frequency'] == 0) or (j == len(self.options['time']['date_time'])):
+                output_timestep(self.output_rec, tstep - pd.to_timedelta(1, unit='h'), self.options)
                 self.output_rec['time_since_out'] = np.zeros(self.output_rec['elevation'].shape)
 
             j += 1

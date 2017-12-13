@@ -9,22 +9,22 @@ import copy
 import numpy as np
 
 from smrf.utils import utils, io
-from awsf.convertFiles import convertFiles as cvf
-from awsf.interface import interface as smin
-from awsf.interface import smrf_ipysnobal as smrf_ipy
+from awsm.convertFiles import convertFiles as cvf
+from awsm.interface import interface as smin
+from awsm.interface import smrf_ipysnobal as smrf_ipy
 
 from smrf import __core_config__ as __smrf_core_config__
-from awsf import __core_config__ as __awsf_core_config__
+from awsm import __core_config__ as __awsm_core_config__
 
 
-class AWSF():
+class AWSM():
     """
 
     Args:
         configFile (str):  path to configuration file.
 
     Returns:
-        AWSF class instance.
+        AWSM class instance.
 
     Attributes:
     """
@@ -41,10 +41,10 @@ class AWSF():
         try:
             # get both master configs
             smrf_mcfg = io.get_master_config()
-            awsf_mcfg = io.MasterConfig(__awsf_core_config__).cfg
+            awsm_mcfg = io.MasterConfig(__awsm_core_config__).cfg
             # combine master configs
             combined_mcfg = copy.deepcopy(smrf_mcfg)
-            combined_mcfg.update(awsf_mcfg)
+            combined_mcfg.update(awsm_mcfg)
             #Read in the original users config
             self.config = io.get_user_config(configFile, mcfg = combined_mcfg)
             self.configFile = configFile
@@ -66,7 +66,7 @@ class AWSF():
         warnings, errors = io.check_config_file(self.config,combined_mcfg,user_cfg_path=configFile)
         io.print_config_report(warnings, errors)
 
-        #Exit AWSF if config file has errors
+        #Exit AWSM if config file has errors
         if len(errors) > 0:
             print("Errors in the config file. See configuration status report above.")
             sys.exit()
@@ -75,17 +75,17 @@ class AWSF():
         self.config = io.update_config_paths(self.config, configFile, combined_mcfg)
 
         ################### Decide which modules to run ######################
-        self.do_smrf = self.config['awsf master']['run_smrf']
-        self.do_isnobal = self.config['awsf master']['run_isnobal']
-        self.do_wrf = self.config['awsf master']['use_wrf']
-        self.do_smrf_ipysnobal = self.config['awsf master']['run_smrf_ipysnobal']
+        self.do_smrf = self.config['awsm master']['run_smrf']
+        self.do_isnobal = self.config['awsm master']['run_isnobal']
+        self.do_wrf = self.config['awsm master']['use_wrf']
+        self.do_smrf_ipysnobal = self.config['awsm master']['run_smrf_ipysnobal']
 
         # options for converting files
-        self.do_make_in = self.config['awsf master']['make_in']
-        self.do_make_nc = self.config['awsf master']['make_nc']
+        self.do_make_in = self.config['awsm master']['make_in']
+        self.do_make_nc = self.config['awsm master']['make_nc']
 
         # options for masking isnobal
-        self.mask_isnobal = self.config['awsf master']['mask_isnobal']
+        self.mask_isnobal = self.config['awsm master']['mask_isnobal']
         if self.mask_isnobal:
             # mask file
             self.fp_mask = os.path.abspath(self.config['topo']['mask'])
@@ -174,9 +174,9 @@ class AWSF():
             self.prev_mod_file = os.path.abspath(self.config['files']['prev_mod_file'])
 
         # threads for running iSnobal
-        self.ithreads = self.config['awsf system']['ithreads']
+        self.ithreads = self.config['awsm system']['ithreads']
         # how often to output form iSnobal
-        self.output_freq = self.config['awsf system']['output_frequency']
+        self.output_freq = self.config['awsm system']['output_frequency']
 
         # options for restarting iSnobal
         if self.config['isnobal restart']['restart_crash'] == True:
@@ -193,11 +193,11 @@ class AWSF():
             self.ipy_threads = self.config['ipysnobal']['nthreads']
             self.ipy_init_type = self.config['ipysnobal initial conditions']['input_type']
 
-        # list of sections releated to AWSF (These will be removed for smrf config)
-        # self.sec_awsf = ['awsf master', 'awsf system', 'paths', 'grid', 'files', 'awsf logging',
+        # list of sections releated to AWSM (These will be removed for smrf config)
+        # self.sec_awsm = ['awsm master', 'awsm system', 'paths', 'grid', 'files', 'awsm logging',
         #                 'isnobal restart', 'ipysnobal', 'ipysnobal initial conditions',
         #                 'ipysnobal output', 'ipysnobal constants', 'forecast']
-        self.sec_awsf = awsf_mcfg.keys()
+        self.sec_awsm = awsm_mcfg.keys()
 
         # Make rigid directory structure
         self.mk_directories()
@@ -211,7 +211,7 @@ class AWSF():
         saved logging statements.
         '''
         # start logging
-        loglevel = self.config['awsf system']['log_level'].upper()
+        loglevel = self.config['awsm system']['log_level'].upper()
 
         numeric_level = getattr(logging, loglevel, None)
         if not isinstance(numeric_level, int):
@@ -219,7 +219,7 @@ class AWSF():
 
         # setup the logging
         logfile = None
-        if self.config['awsf system']['log_to_file'] == True:
+        if self.config['awsm system']['log_to_file'] == True:
             if self.config['isnobal restart']['restart_crash'] == True:
                 logfile = os.path.join(self.pathll, 'log_restart_{}.out'.format(self.restart_hr))
             elif self.do_wrf:
@@ -256,7 +256,7 @@ class AWSF():
 
     def runSmrf(self):
         """
-        Run smrf. Calls :mod: `awsf.interface.interface.smrfMEAS`
+        Run smrf. Calls :mod: `awsm.interface.interface.smrfMEAS`
         """
         # modify config and run smrf
         smin.smrfMEAS(self)
@@ -264,7 +264,7 @@ class AWSF():
     def runSmrf_wrf(self):
         """
         Convert ipw smrf output to isnobal inputs. Calls
-        :mod: `awsf.convertFiles.convertFiles.nc2ipw_mea`
+        :mod: `awsm.convertFiles.convertFiles.nc2ipw_mea`
         """
         # modify config and run smrf
         smin.smrf_go_wrf(self)
@@ -278,13 +278,13 @@ class AWSF():
     def ipw2nc(self, runtype):
         """
         Convert ipw output to netcdf files. Calls
-        :mod: `awsf.convertFiles.convertFiles.ipw2nc_mea`
+        :mod: `awsm.convertFiles.convertFiles.ipw2nc_mea`
         """
         cvf.ipw2nc_mea(self, runtype)
 
     def run_isnobal(self):
         """
-        Run isnobal. Calls :mod: `awsf.interface.interface.run_isnobal`
+        Run isnobal. Calls :mod: `awsm.interface.interface.run_isnobal`
         """
 
         smin.run_isnobal(self)
@@ -299,14 +299,14 @@ class AWSF():
     def run_smrf_ipysnobal(self):
         """
         Run smrf and pass inputs to ipysnobal in memory.
-        Calls :mod: `awsf.interface.smrf_ipysnobal.run_smrf_ipysnobal`
+        Calls :mod: `awsm.interface.smrf_ipysnobal.run_smrf_ipysnobal`
         """
 
         smrf_ipy.run_smrf_ipysnobal(self)
 
     def restart_crash_image(self):
         """
-        Restart isnobal. Calls :mod: `awsf.interface.interface.restart_crash_image`
+        Restart isnobal. Calls :mod: `awsm.interface.interface.restart_crash_image`
         """
         # modify config and run smrf
         smin.restart_crash_image(self)
@@ -316,7 +316,7 @@ class AWSF():
         Create all needed directories starting from the working drive
         """
         # rigid directory work
-        self.tmp_log.append('AWSF creating directories')
+        self.tmp_log.append('AWSM creating directories')
         # make basin path
         self.path_ba = os.path.join(self.path_dr,self.basin)
 
@@ -453,7 +453,7 @@ class AWSF():
 
     def __exit__(self, exc_type, exc_value, traceback):
         """
-        Provide some logging info about when AWSF was closed
+        Provide some logging info about when AWSM was closed
         """
 
-        self._logger.info('AWSF closed --> %s' % datetime.now())
+        self._logger.info('AWSM closed --> %s' % datetime.now())

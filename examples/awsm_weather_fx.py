@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import awsf
+import awsm
 from datetime import datetime
 import sys
 import os
@@ -25,14 +25,14 @@ scen_run = range(scen_start, scen_end)
 tps = ['regular_hourly2']
 # 1. initialize
 # try:
-with awsf.framework.framework.AWSF(configFile) as a:
+with awsm.framework.framework.AWSM(configFile) as a:
 
     for tp in tps:
         for sn in scen_run:
             start_temp = datetime.now()
             # replace directory names
             a.proj = '{}_scenario{}'.format(tp, sn)
-            a.desc = 'AWSF run for {} scenario {}'.format(tp, sn)
+            a.desc = 'AWSM run for {} scenario {}'.format(tp, sn)
 
             # replace station data paths
             #csv_p = '/data/blizzard/awsftest/weatherGenerator/scenario_{}/'.format(sn)

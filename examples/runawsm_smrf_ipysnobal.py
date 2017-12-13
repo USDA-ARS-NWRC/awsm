@@ -2,7 +2,7 @@
 
 """Main module."""
 
-import awsf
+import awsm
 from datetime import datetime
 import sys
 #import faulthandler
@@ -16,7 +16,7 @@ start = datetime.now()
 # initialize the model
 # run the model
 
-configFile = '../test_data/AWSF_test_config_ipysnobal.ini'
+configFile = '../test_data/AWSM_test_config_ipysnobal.ini'
 if len(sys.argv) > 1:
     configFile = sys.argv[1]
 
@@ -28,7 +28,7 @@ if len(sys.argv) > 1:
 
 # 1. initialize
 # try:
-with awsf.framework.framework.AWSF(configFile) as a:
+with awsm.framework.framework.AWSM(configFile) as a:
 
     # 2. do everything else
     a.run_smrf_ipysnobal()

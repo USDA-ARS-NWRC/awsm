@@ -46,7 +46,7 @@ else:
         path_wy = path_proj
 
 # rigid directory work
-print('AWSF creating directories')
+print('AWSM creating directories')
 
 if os.path.exists(path_dr):
     if not os.path.exists(path_wy):  # if the working path specified in the config file does not exist

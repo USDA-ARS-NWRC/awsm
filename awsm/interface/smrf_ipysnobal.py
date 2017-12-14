@@ -12,21 +12,21 @@ import sys
 import matplotlib.pyplot as plt
 import numpy as np
 from datetime import datetime
-from awsf.interface import ipysnobal
-from awsf.interface import interface
+from awsm.interface import ipysnobal
+from awsm.interface import interface
 
 
-def run_smrf_ipysnobal(myawsf):
+def run_smrf_ipysnobal(myawsm):
     """
     Function to run SMRF and pass outputs in memory to python wrapped
     iSnobal.
 
     Args:
-        myawsf: AWSF instance
+        myawsm: AWSM instance
     """
 
     # first create config file to run smrf
-    fp_smrfini = interface.create_smrf_config(myawsf)
+    fp_smrfini = interface.create_smrf_config(myawsm)
 
     start = datetime.now()
 
@@ -34,7 +34,7 @@ def run_smrf_ipysnobal(myawsf):
         configFile = sys.argv[1]
 
     # initialize
-    with smrf.framework.SMRF(fp_smrfini, myawsf._logger) as s:
+    with smrf.framework.SMRF(fp_smrfini, myawsm._logger) as s:
         # load topo data
         s.loadTopo()
 

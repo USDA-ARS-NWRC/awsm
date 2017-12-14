@@ -79,4 +79,4 @@ target/
 *.py~
 *.swp
 
-test_data/AWSF_test_config_tuol.ini
+test_data/AWSM_test_config_tuol.ini

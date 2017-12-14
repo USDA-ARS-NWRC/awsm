@@ -24,28 +24,28 @@ test_requirements = [
 ]
 
 setup(
-    name='awsf',
+    name='awsm',
     version='0.1.0',
     description="Automated Water Supply Forecasting",
     long_description=readme + '\n\n' + history,
     author="Micah Sandusky",
     author_email='micah.sandusky@ars.usda.gov',
-    url='https://github.com/micahsandusky5/awsf',
-    packages=['awsf',
-			  'awsf.convertFiles',
-			  'awsf.interface',
-			  'awsf.framework',
-              'awsf.knn'
+    url='https://github.com/micahsandusky5/awsm',
+    packages=['awsm',
+			  'awsm.convertFiles',
+			  'awsm.interface',
+			  'awsm.framework',
+              'awsm.knn'
 			  ],
 
 
     include_package_data=True,
-    package_data={'awsf':['./framework/CoreConfig.ini']},
-    scripts=['./scripts/awsf'],
+    package_data={'awsm':['./framework/CoreConfig.ini']},
+    scripts=['./scripts/awsm'],
     install_requires=requirements,
     license="GPL-3.0",
     zip_safe=False,
-    keywords='awsf',
+    keywords='awsm',
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
         'Intended Audience :: Developers',

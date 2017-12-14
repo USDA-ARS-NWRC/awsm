@@ -14,7 +14,7 @@ import numpy as np
 from datetime import datetime
 from awsm.interface import ipysnobal
 from awsm.interface import interface
-
+import pytz
 
 def run_smrf_ipysnobal(myawsm):
     """
@@ -46,13 +46,14 @@ def run_smrf_ipysnobal(myawsm):
 
         # run threaded or not
         if s.threading:
-            run_smrf_ipysnobal_threaded(myawsf, s)
+            run_smrf_ipysnobal_threaded(myawsm, s)
         else:
-            run_smrf_ipysnobal_single(myawsf, s)
+            run_smrf_ipysnobal_single(myawsm, s)
+            print('Not threading')
 
         s._logger.debug('DONE!!!!')
 
-def run_smrf_ipysnobal_single(myawsf, s):
+def run_smrf_ipysnobal_single(myawsm, s):
     """
     Distribute the measurement point data for all variables in serial. Each
     variable is initialized first using the :func:`smrf.data.loadTopo.topo`
@@ -62,6 +63,9 @@ def run_smrf_ipysnobal_single(myawsf, s):
 
     """
 
+    # tzinfo = pytz.timezone(s.config['time']['time_zone'])
+    # # start date that is tz aware for comparing with datetime array
+    # compare_start = s.start_date.replace(tzinfo=tzinfo)
     # -------------------------------------
     # Initialize the distibution
     for v in s.distribute:
@@ -69,7 +73,7 @@ def run_smrf_ipysnobal_single(myawsf, s):
 
     # -------------------------------------
     # initialize ipysnobal state
-    options, params, tstep_info, init, output_rec = ipysnobal.init_from_smrf(myawsf, s)
+    options, params, tstep_info, init, output_rec = ipysnobal.init_from_smrf(myawsm, s)
 
     # -------------------------------------
     # create variable list
@@ -82,10 +86,12 @@ def run_smrf_ipysnobal_single(myawsf, s):
 
             if m in s.distribute.keys():
 
-                d = {'variable': v,
-                     'module': m
-                     }
-                variable_list[v] = d
+                if v in s.distribute[m].output_variables.keys():
+
+                    d = {'variable': v,
+                         'module': m
+                         }
+                    variable_list[v] = d
 
             elif v == 'soil_temp':
                 pass
@@ -94,7 +100,7 @@ def run_smrf_ipysnobal_single(myawsf, s):
 
     # -------------------------------------
     # initialize pysnobal run class
-    my_pysnobal = ipysnobal.pysnobal(s.date_time,
+    my_pysnobal = ipysnobal.PySnobal(s.date_time,
                                     variable_list,
                                     options,
                                     params,
@@ -103,9 +109,9 @@ def run_smrf_ipysnobal_single(myawsf, s):
                                     output_rec,
                                     s.topo.nx,
                                     s.topo.ny,
-                                    myawsf.soil_temp,
-                                    myawsf._logger,
-                                    myawsf.tzinfo)
+                                    myawsm.soil_temp,
+                                    myawsm._logger,
+                                    myawsm.tzinfo)
 
     # -------------------------------------
     # Distribute the data
@@ -179,10 +185,10 @@ def run_smrf_ipysnobal_single(myawsf, s):
         s.distribute['soil_temp'].distribute()
 
         # 9. pass info to PySnobal
-        if t == s.start_date:
-            my_pysnobal.run_single_fist_step()
-        elif t > s.start_date:
-            my_pysnobal.run_single(t)
+        if output_count == 0:
+            my_pysnobal.run_single_fist_step(s)
+        elif output_count > 0:
+            my_pysnobal.run_single(t, s)
         else:
             raise ValueError('Problem with times in run ipysnobal single')
 
@@ -192,17 +198,17 @@ def run_smrf_ipysnobal_single(myawsf, s):
 
     s.forcing_data = 1
 
-def run_smrf_ipysnobal_threaded(myawsf, s):
+def run_smrf_ipysnobal_threaded(myawsm, s):
     """
     Function to run SMRF (threaded) and pass outputs in memory to python wrapped
     iSnobal. iPySnobal has replaced the output queue in this implimentation.
 
     Args:
-        myawsf: AWSF instance
+        myawsm: AWSM instance
         s:      SMRF instance
     """
     # initialize ipysnobal state
-    options, params, tstep_info, init, output_rec = ipysnobal.init_from_smrf(myawsf, s)
+    options, params, tstep_info, init, output_rec = ipysnobal.init_from_smrf(myawsm, s)
 
     #s.initializeOutput()
     if 'output' in s.thread_variables:
@@ -224,9 +230,9 @@ def run_smrf_ipysnobal_threaded(myawsf, s):
                                output_rec,
                                s.topo.nx,
                                s.topo.ny,
-                               myawsf.soil_temp,
-                               myawsf._logger,
-                               myawsf.tzinfo))
+                               myawsm.soil_temp,
+                               myawsm._logger,
+                               myawsm.tzinfo))
 
     # the cleaner
     t.append(queue.QueueCleaner(s.date_time, q))

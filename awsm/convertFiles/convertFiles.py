@@ -10,25 +10,25 @@ import netCDF4 as nc
 import progressbar
 import glob
 
-def nc2ipw_mea(myawsf, runtype):
+def nc2ipw_mea(myawsm, runtype):
     '''
     Function to create iSnobal forcing and precip images from smrf ouputs
     Args:
-        myawsf: AWSF instance
+        myawsm: AWSM instance
         runtype: either 'smrf' for standard run or 'wrf' for gridded data run
     '''
     ###################################################################################################
     ### make .ipw input files from netCDF files #######################################################
     ###################################################################################################
-    myawsf._logger.info("making the ipw files from NetCDF files for {}".format(runtype))
+    myawsm._logger.info("making the ipw files from NetCDF files for {}".format(runtype))
 
     # check if this is forecast or not
     if runtype == 'smrf':
-        start_date = myawsf.start_date.replace(tzinfo=myawsf.tzinfo)
+        start_date = myawsm.start_date.replace(tzinfo=myawsm.tzinfo)
     elif runtype == 'wrf':
-        start_date = myawsf.end_date.replace(tzinfo=myawsf.tzinfo)
+        start_date = myawsm.end_date.replace(tzinfo=myawsm.tzinfo)
     else:
-        myawsf._logger.error('Wrong run type given to nc2ipw. \
+        myawsm._logger.error('Wrong run type given to nc2ipw. \
                             not smrf or wrf')
 
     tmpday, tmpwy = utils.water_day(start_date)
@@ -36,15 +36,15 @@ def nc2ipw_mea(myawsf, runtype):
     wyh = pd.to_datetime('{}-10-01'.format(tmpwy-1))
 
     if runtype == 'smrf':
-        tt = myawsf.start_date - wyh
-        smrfpath = myawsf.paths
-        datapath = myawsf.pathdd
-        f = open(myawsf.ppt_desc,'w')
+        tt = myawsm.start_date - wyh
+        smrfpath = myawsm.paths
+        datapath = myawsm.pathdd
+        f = open(myawsm.ppt_desc,'w')
     elif runtype == 'wrf':
-        tt = myawsf.end_date - wyh
-        smrfpath = myawsf.path_wrf_s
-        datapath = myawsf.path_wrf_data
-        f = open(myawsf.wrf_ppt_desc,'w')
+        tt = myawsm.end_date - wyh
+        smrfpath = myawsm.path_wrf_s
+        datapath = myawsm.path_wrf_data
+        f = open(myawsm.wrf_ppt_desc,'w')
 
     offset = tt.days*24 +  tt.seconds//3600 # start index for the input file
 
@@ -92,11 +92,11 @@ def nc2ipw_mea(myawsf, runtype):
     for idxt,t in enumerate(timeStep):
 
         if j == int(len(timeStep)/4):
-            myawsf._logger.info("25 percent finished with making IPW input files!")
+            myawsm._logger.info("25 percent finished with making IPW input files!")
         if j == int(len(timeStep)/2):
-            myawsf._logger.info("50 percent finished with making IPW input files!")
+            myawsm._logger.info("50 percent finished with making IPW input files!")
         if j == int(3*len(timeStep)/4):
-            myawsf._logger.info("75 percent finished with making IPW input files!")
+            myawsm._logger.info("75 percent finished with making IPW input files!")
 
         # print('idxt: {} t: {}'.format(idxt, t))
         trad_step = th_file.variables[th_var][idxt,:]
@@ -120,8 +120,8 @@ def nc2ipw_mea(myawsf, runtype):
         if np.sum(sn_step) > 0:
             i.new_band(sn_step)
 
-        i.add_geo_hdr([myawsf.u, myawsf.v], [myawsf.du, myawsf.dv], myawsf.units, myawsf.csys)
-        i.write(in_step, myawsf.nbits)
+        i.add_geo_hdr([myawsm.u, myawsm.v], [myawsm.du, myawsm.dv], myawsm.units, myawsm.csys)
+        i.write(in_step, myawsm.nbits)
 
         # only output if precip
         if np.sum(mp_step) > 0:
@@ -134,8 +134,8 @@ def nc2ipw_mea(myawsf, runtype):
             i.new_band(ps_step)
             i.new_band(rho_step)
             i.new_band(tp_step)
-            i.add_geo_hdr([myawsf.u, myawsf.v], [myawsf.du, myawsf.dv], myawsf.units, myawsf.csys)
-            i.write(in_stepp, myawsf.nbits)
+            i.add_geo_hdr([myawsm.u, myawsm.v], [myawsm.du, myawsm.dv], myawsm.units, myawsm.csys)
+            i.write(in_stepp, myawsm.nbits)
             f.write('%i %s\n' % (t, in_stepp))
 
         j += 1
@@ -152,34 +152,34 @@ def nc2ipw_mea(myawsf, runtype):
     tp_file.close()
     f.close()
     # pbar.finish()
-    myawsf._logger.info("finished making the ipw input and ppt files from NetCDF files")
+    myawsm._logger.info("finished making the ipw input and ppt files from NetCDF files")
 
-def ipw2nc_mea(myawsf, runtype):
+def ipw2nc_mea(myawsm, runtype):
     '''
     Function to create netcdf files from iSnobal output
 
     Args:
-        myawsf: AWSF instance
+        myawsm: AWSM instance
         runtype: either 'smrf' for standard run or 'wrf' for gridded data run
     '''
-    myawsf._logger.info("making the NetCDF files from ipw files for {}".format(runtype))
+    myawsm._logger.info("making the NetCDF files from ipw files for {}".format(runtype))
 
     if runtype == 'smrf':
-        wyh = pd.to_datetime('{}-10-01'.format(myawsf.wy))
+        wyh = pd.to_datetime('{}-10-01'.format(myawsm.wy))
     elif runtype == 'wrf':
-        wyh = pd.to_datetime('{}-10-01'.format(myawsf.wy))
+        wyh = pd.to_datetime('{}-10-01'.format(myawsm.wy))
     else:
-        myawsf._logger.error('Wrong run type given to ipw2nc. \
+        myawsm._logger.error('Wrong run type given to ipw2nc. \
                             not smrf or wrf')
 
-    myawsf._logger.info("convert all .ipw output files to netcdf files")
+    myawsm._logger.info("convert all .ipw output files to netcdf files")
     ###################################################################################################
     ### convert all .ipw output files to netcdf files #################################################
     ###################################################################################################
-    time_zone = myawsf.tmz
+    time_zone = myawsm.tmz
     # create the x,y vectors
-    x = myawsf.v + myawsf.dv*np.arange(myawsf.nx)
-    y = myawsf.u + myawsf.du*np.arange(myawsf.ny)
+    x = myawsm.v + myawsm.dv*np.arange(myawsm.nx)
+    y = myawsm.u + myawsm.du*np.arange(myawsm.ny)
 
     #===============================================================================
     # NetCDF EM image
@@ -192,17 +192,17 @@ def ipw2nc_mea(myawsf, runtype):
                      'Total snowmelt','Total runoff','Snowcover cold content']
 
     if runtype == 'smrf':
-        netcdfFile = os.path.join(myawsf.pathrr, 'em.nc')
+        netcdfFile = os.path.join(myawsm.pathrr, 'em.nc')
     elif runtype == 'wrf':
-        netcdfFile = os.path.join(myawsf.path_wrf_run, 'em.nc')
+        netcdfFile = os.path.join(myawsm.path_wrf_run, 'em.nc')
 
     dimensions = ('time','y','x')
     em = nc.Dataset(netcdfFile, 'w')
 
     # create the dimensions
     em.createDimension('time',None)
-    em.createDimension('y',myawsf.ny)
-    em.createDimension('x',myawsf.nx)
+    em.createDimension('y',myawsm.ny)
+    em.createDimension('x',myawsm.nx)
 
     # create some variables
     em.createVariable('time', 'f', dimensions[0])
@@ -234,17 +234,17 @@ def ipw2nc_mea(myawsf, runtype):
                        'Predicted thickness of the lower layer', 'Predicted percentage of liquid water saturation of the snowcover']
 
     if runtype == 'smrf':
-        netcdfFile = os.path.join(myawsf.pathrr, 'snow.nc')
+        netcdfFile = os.path.join(myawsm.pathrr, 'snow.nc')
     elif runtype == 'wrf':
-        netcdfFile = os.path.join(myawsf.path_wrf_run, 'snow.nc')
+        netcdfFile = os.path.join(myawsm.path_wrf_run, 'snow.nc')
 
     dimensions = ('time','y','x')
     snow = nc.Dataset(netcdfFile, 'w')
 
     # create the dimensions
     snow.createDimension('time',None)
-    snow.createDimension('y',myawsf.ny)
-    snow.createDimension('x',myawsf.nx)
+    snow.createDimension('y',myawsm.ny)
+    snow.createDimension('x',myawsm.nx)
 
     # create some variables
     snow.createVariable('time', 'f', dimensions[0])
@@ -270,9 +270,9 @@ def ipw2nc_mea(myawsf, runtype):
 
     # get all the files in the directory
     if runtype == 'smrf':
-        d = sorted(glob.glob("%s/snow*"%myawsf.pathro), key=os.path.getmtime)
+        d = sorted(glob.glob("%s/snow*"%myawsm.pathro), key=os.path.getmtime)
     elif runtype == 'wrf':
-        d = sorted(glob.glob("%s/snow*"%myawsf.path_wrf_ro), key=os.path.getmtime)
+        d = sorted(glob.glob("%s/snow*"%myawsm.path_wrf_ro), key=os.path.getmtime)
 
     d.sort(key=lambda f: os.path.splitext(f))
     # pbar = progressbar.ProgressBar(max_value=len(d)).start()
@@ -282,11 +282,11 @@ def ipw2nc_mea(myawsf, runtype):
         # print out counter at certain percentages. pbar doesn't play nice
         # with logging
         if j == int(len(d)/4):
-            myawsf._logger.info("25 percent finished with making NetCDF files!")
+            myawsm._logger.info("25 percent finished with making NetCDF files!")
         if j == int(len(d)/2):
-            myawsf._logger.info("50 percent finished with making NetCDF files!")
+            myawsm._logger.info("50 percent finished with making NetCDF files!")
         if j == int(3*len(d)/4):
-            myawsf._logger.info("75 percent finished with making NetCDF files!")
+            myawsm._logger.info("75 percent finished with making NetCDF files!")
 
         # get the hr
         nm = os.path.basename(f)
@@ -319,4 +319,4 @@ def ipw2nc_mea(myawsf, runtype):
     snow.close()
     em.close()
 
-    myawsf._logger.info("Finished making the NetCDF files from iSnobal output!")
+    myawsm._logger.info("Finished making the NetCDF files from iSnobal output!")

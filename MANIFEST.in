@@ -4,7 +4,7 @@ include HISTORY.rst
 include LICENSE
 include README.rst
 
-awsf/framework/CoreConfig.ini
+awsm/framework/CoreConfig.ini
 
 recursive-include tests *
 recursive-include scripts *

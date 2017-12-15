@@ -445,7 +445,7 @@ def output_timestep(s, tstep, options):
 
     # now find the correct index
     # the current time integer
-    times = options['output']['snow'].variables['time']
+    times = options['output']['snow'].variables['time'] #- pd.to_timedelta(1, unit='h')
     t = nc.date2num(tstep.replace(tzinfo=None), times.units, times.calendar)
 
     if len(times) != 0:
@@ -790,8 +790,8 @@ class QueueIsnobal(threading.Thread):
             input1 = input2.copy()
 
             # output at the frequency and the last time step
-            if ((j)*(data_tstep/3600.0) % self.options['output']['frequency'] == 0) or (j == len(self.options['time']['date_time'])):
-                output_timestep(self.output_rec, tstep - pd.to_timedelta(1, unit='h'), self.options)
+            if ((j+1)*(data_tstep/3600.0) % self.options['output']['frequency'] == 0) or (j == len(self.options['time']['date_time'])):
+                output_timestep(self.output_rec, tstep, self.options)
                 self.output_rec['time_since_out'] = np.zeros(self.output_rec['elevation'].shape)
 
             j += 1

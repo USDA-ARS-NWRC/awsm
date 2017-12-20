@@ -7,7 +7,6 @@ import mysql.connector
 import pandas as pd
 pd.options.mode.chained_assignment = None  # default='warn'pd.options.mode.chained_assignment = None  # default='warn'
 import numpy as np
-import ConfigParser as cfp
 from datetime import timedelta
 # import matplotlib.pyplot as plt
 

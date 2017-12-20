@@ -14,7 +14,7 @@ import numpy as np
 from datetime import datetime
 from awsm.interface import ipysnobal
 from awsm.interface import interface
-from awsm.interface import initialize_model as init_mod
+from awsm.interface import initialize_model as initmodel
 from awsm.interface import pysnobal_io as io_mod
 import netCDF4 as nc
 try:
@@ -32,7 +32,7 @@ def run_ipysnobal(myawsm):
     if myawsm.config['topo']['type'] == 'ipw':
         dem = ipw.IPW(myawsm.config['topo']['dem']).bands[0].data
     if myawsm.config['topo']['type'] == 'netcdf':
-        demf = nc.Dataset(myawsm.config['topo']['dem'], 'r')
+        demf = nc.Dataset(myawsm.config['topo']['filename'], 'r')
         dem = demf.variables['dem'][:]
         demf.close()
 
@@ -48,21 +48,21 @@ def run_ipysnobal(myawsm):
     output_rec['time_since_out'] = timeSinceOut * np.ones(output_rec['elevation'].shape)
 
     if myawsm.input_data == 'netcdf':
-        force = io_mod.open_files_nc(options)
-        input1 = io_mod.get_timestep_netcdf(force, options['time']['date_time'][0])
+        force = io_mod.open_files_nc(myawsm)
+        input1 = initmodel.get_timestep_netcdf(force, options['time']['date_time'][0])
     else:
         input_list, ppt_list = io_mod.open_files_ipw(myawsm)
-        input1 = pysnobal_io.get_timestep_ipw(options['time'], input_list, ppt_list)
+        input1 = initmodel.get_timestep_ipw(options['time']['date_time'][0], input_list, ppt_list, myawsm)
 
     j = 1
     first_step = 1;
     for tstep in options['time']['date_time'][1:]:
     #for tstep in options['time']['date_time'][953:958]:
-
+        myawsm._logger.info('running PySnobal for timestep: {}'.format(tstep))
         if myawsm.input_data == 'netcdf':
-            input2 = io_mod.get_timestep_netcdf(force, tstep)
+            input2 = initmodel.get_timestep_netcdf(force, tstep)
         else:
-            input2 = io_mod.get_timestep_ipw(tstep, input_list, ppt_list)
+            input2 = initmodel.get_timestep_ipw(tstep, input_list, ppt_list, myawsm)
         #print output_rec
 
         rt = snobal.do_tstep_grid(input1, input2, output_rec, tstep_info, options['constants'], params, j, nthreads=myawsm.ipy_threads)
@@ -77,6 +77,8 @@ def run_ipysnobal(myawsm):
         if (j % options['output']['frequency'] == 0) or (j == len(options['time']['date_time'])):
             io_mod.output_timestep(output_rec, tstep, options)
             output_rec['time_since_out'] = np.zeros(output_rec['elevation'].shape)
+
+        myawsm._logger.info('Finished timestep: {}'.format(tstep))
 
         j += 1
 

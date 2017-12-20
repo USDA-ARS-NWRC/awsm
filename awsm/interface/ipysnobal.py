@@ -14,7 +14,6 @@ try:
 except:
     print('pysnobal not installed, ignoring')
 
-import ConfigParser
 import sys, os
 import numpy as np
 import pandas as pd
@@ -34,7 +33,8 @@ except:
 import threading
 from time import time as _time
 import logging
-from awsm.interface import initialze_model as initmodel
+from awsm.interface import initialize_model as initmodel
+from awsm.interface import pysnobal_io as io_mod
 
 
 C_TO_K = 273.16
@@ -62,13 +62,13 @@ def init_from_smrf(myawsm, mysmrf = None, dem = None):
     options, point_run = initmodel.get_args(myawsm)
 
     # get the timestep info
-    params, tstep_info = initmodelget_tstep_info(options['constants'], options)
+    params, tstep_info = initmodel.get_tstep_info(options['constants'], options)
 
     if dem is None:
         dem = mysmrf.topo.dem
 
     # open the files and read in data
-    if myasm.config['isnobal restart']['restart_crash'] == False:
+    if myawsm.config['isnobal restart']['restart_crash'] == False:
         init = initmodel.open_init_files(myawsm, options, dem)
     # open restart files and zero small depths
     else:
@@ -302,7 +302,7 @@ class PySnobal():
 
         # get first timestep
         self.input1 = {}
-        for var, v in self.variable_list.iteritems():
+        for var, v in self.variable_list.items():
                 # get the data desired
                 data = getattr(s.distribute[v['module']], v['variable'])
 
@@ -329,7 +329,7 @@ class PySnobal():
         #pbar = progressbar.ProgressBar(max_value=len(options['time']['date_time']))
 
         self.input2 = {}
-        for var, v in self.variable_list.iteritems():
+        for var, v in self.variable_list.items():
             # get the data desired
             data = getattr(s.distribute[v['module']], v['variable'])
             if data is None:

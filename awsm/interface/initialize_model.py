@@ -109,7 +109,7 @@ def open_init_files(myawsm, options, dem):
         i.close()
 
     elif options['initial_conditions']['input_type'] == 'netcdf_out':
-        i = nc.Dataset(os.paht.join(options['initial_conditions']['file']))
+        i = nc.Dataset(os.path.join(options['initial_conditions']['file']))
 
         init['x'] = i.variables['x'][:]         # get the x coordinates
         init['y'] = i.variables['y'][:]         # get the y coordinates
@@ -247,7 +247,7 @@ def open_init_files(myawsm, options, dem):
 
     return init
 
-def open_restart_files(myawsm, options, mysmrf.topo.dem):
+def open_restart_files(myawsm, options, dem):
     # read in correct variables
     init = {}
 
@@ -350,7 +350,6 @@ def get_timestep_netcdf(force, tstep, point=None):
                'percent_snow': 'percent_snow', 'snow_density': 'rho_snow',
                'precip_temp': 'T_pp'}
 
-
     for f in force.keys():
 
 
@@ -413,24 +412,29 @@ def get_timestep_ipw(tstep, input_list, ppt_list, myawsm):
     wyhr = int(utils.water_day(tmp_date)[0]*24)
     # if we have inputs matching this water year hour
     if np.any(input_list == wyhr) == True:
-        i_in = ipw.IPW(os.path.join(myasm.pathi, 'in.%04i'%(wyhr)))
+        i_in = ipw.IPW(os.path.join(myawsm.pathi, 'in.%04i'%(wyhr)))
         for f, v in map_val.items():
             # if no solar data, give it zero
-            if f == 5 and len(i_in.bands) < 5:
-                myawsm._logger.info('No solar data for {}'.format(tstep))
+            if f == 5 and len(i_in.bands) < 6:
+                # myawsm._logger.info('No solar data for {}'.format(tstep))
                 inpt[v] = np.zeros((myawsm.ny, myawsm.nx))
             else:
                 inpt[v] = i_in.bands[f].data
     # assign ppt data if there
+    else:
+        raise ValueError('No input timesteps for {}'.format(tstep))
+
     if np.any(ppt_list == wyhr) == True:
-        i_ppt = ipw.IPW(os.path.join(myasm.pathi, 'ppt.4b_%04i'%(wyhr)))
-        for f, v in map_val.items():
+        i_ppt = ipw.IPW(os.path.join(myawsm.path_ppt, 'ppt.4b_%04i'%(wyhr)))
+        for f, v in map_val_prec.items():
             inpt[v] = i_ppt.bands[f].data
+    else:
+        for f, v in map_val_prec.items():
+            inpt[v] = np.zeros((myawsm.ny, myawsm.nx))
 
 
     # assign soil temp
-    inpt['T_g'] = np.ones((myawsm.soil_temp*np.ones((myawsm.ny, myawsm.nx))))
-
+    inpt['T_g'] = myawsm.soil_temp*np.ones((myawsm.ny, myawsm.nx))
 
     # convert from C to K
     inpt['T_a'] += FREEZE

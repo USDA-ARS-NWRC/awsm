@@ -1,7 +1,6 @@
 import smrf
 from smrf import ipw
 from smrf.utils import utils
-import ConfigParser as cfp
 import os
 import pandas as pd
 import numpy as np

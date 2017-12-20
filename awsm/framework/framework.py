@@ -389,7 +389,7 @@ class AWSM():
             if not os.path.exists(self.path_wy):  # if the working path specified in the config file does not exist
                 y_n = 'a'                        # set a funny value to y_n
                 while y_n not in ['y','n']:      # while it is not y or n (for yes or no)
-                    y_n = raw_input('Directory %s does not exist. Create base directory and all subdirectories? (y n): '%self.path_wy)
+                    y_n = input('Directory %s does not exist. Create base directory and all subdirectories? (y n): '%self.path_wy)
                 if y_n == 'n':
                     self.tmp_err.append('Please fix the base directory (path_wy) in your config file.')
                     print(self.tmp_err)
@@ -401,7 +401,7 @@ class AWSM():
             elif not os.path.exists(check_if_data):  # if the working path specified in the config file does not exist
                 y_n = 'a'                        # set a funny value to y_n
                 while y_n not in ['y','n']:      # while it is not y or n (for yes or no)
-                    y_n = raw_input('Directory %s does not exist. Create base directory and all subdirectories? (y n): '%check_if_data)
+                    y_n = input('Directory %s does not exist. Create base directory and all subdirectories? (y n): '%check_if_data)
                 if y_n == 'n':
                     self.tmp_err.append('Please fix the base directory (path_wy) in your config file.')
                     print(self.tmp_err)
@@ -429,7 +429,7 @@ class AWSM():
                 if self.desc != None:
                     pass
                 else:
-                    self.desc = raw_input('\nNo description for project. Enter one now:\n')
+                    self.desc = input('\nNo description for project. Enter one now:\n')
                 f = open(fp_desc, 'w')
                 f.write(self.desc)
                 f.close()

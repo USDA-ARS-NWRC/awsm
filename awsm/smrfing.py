@@ -17,7 +17,6 @@ import os
 import netCDF4 as nc
 import shutil
 import glob
-import ConfigParser as cfp
 
 def smrf_go_meas(config_file):
 

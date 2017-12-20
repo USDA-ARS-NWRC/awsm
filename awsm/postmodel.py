@@ -6,7 +6,6 @@ Created on Mar 28, 2017
 
 from PBR_tools import premodel as pm
 import pandas as pd
-import ConfigParser as cfp
 import os
 import mysql.connector
 import numpy as np

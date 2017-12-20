@@ -2,7 +2,6 @@ import smrf
 from smrf import ipw
 from smrf.utils import io
 from smrf.utils import utils
-import ConfigParser as cfp
 import os
 import pandas as pd
 import numpy as np
@@ -29,7 +28,7 @@ def create_smrf_config(myawsm):
     # make copy and delete only awsm sections
     # smrf_cfg = copy.deepcopy(myawsm.config)
     smrf_cfg = myawsm.config.copy()
-    for key in smrf_cfg:
+    for key in myawsm.config:
         if key in myawsm.sec_awsm:
             del smrf_cfg[key]
     # set ouput location in smrf config

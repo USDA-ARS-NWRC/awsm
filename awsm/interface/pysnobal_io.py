@@ -1,0 +1,243 @@
+import sys, os
+import numpy as np
+import pandas as pd
+from datetime import timedelta
+import netCDF4 as nc
+from smrf import ipw
+
+C_TO_K = 273.16
+FREEZE = C_TO_K
+# Kelvin to Celcius
+K_TO_C = lambda x: x - FREEZE
+
+def open_files_nc(options):
+    """
+    Open the netCDF files for initial conditions and inputs
+    - Reads in the initial_conditions file
+        Required variables are x,y,z,z_0
+        The others z_s, rho, T_s_0, T_s, h2o_sat, mask can be specified
+        but will be set to default of 0's or 1's for mask
+
+    - Open the files for the inputs and store the file identifier
+
+    """
+    #------------------------------------------------------------------------------
+    # get the forcing data and open the file
+    force = {}
+    force['thermal'] = nc.Dataset(options['inputs']['thermal'], 'r')
+    force['air_temp'] = nc.Dataset(options['inputs']['air_temp'], 'r')
+    force['vapor_pressure'] = nc.Dataset(options['inputs']['vapor_pressure'], 'r')
+    force['wind_speed'] = nc.Dataset(options['inputs']['wind_speed'], 'r')
+    force['net_solar'] = nc.Dataset(options['inputs']['net_solar'], 'r')
+
+    # soil temp can either be distributed for set to a constant
+    try:
+        force['soil_temp'] = nc.Dataset(options['inputs']['soil_temp'], 'r')
+    except:
+        force['soil_temp'] = float(options['inputs']['soil_temp']) * np.ones_like(init['elevation'])
+
+    force['precip_mass'] = nc.Dataset(options['inputs']['precip_mass'], 'r')
+    force['percent_snow'] = nc.Dataset(options['inputs']['percent_snow'], 'r')
+    force['snow_density'] = nc.Dataset(options['inputs']['snow_density'], 'r')
+    force['precip_temp'] = nc.Dataset(options['inputs']['precip_temp'], 'r')
+
+    # print options['inputs']['precip_temp']
+    # print os.stat(options['inputs']['precip_temp']).st_size
+    #print force['precip_mass']['precip_mass'][950:960,:,:]
+
+    return force
+
+def open_files_ipw(myawsm):
+    """
+    - Open the files for the inputs and store the file identifier
+
+    """
+    #------------------------------------------------------------------------------
+    # get the forcing data and open the file
+    # path to snow and em files
+    path_inputs = os.path.join(myawsm.pathi, "in.*")
+    # get precip from ipw
+    header = ['hour', 'path']
+    df_ppt = pd.read_csv(myawsm.ppt_desc, names = header, sep = ' ')
+
+    # get list of isnobal outputs and sort by time step
+    input_files = sorted(glob.glob(path_inputs), key=os.path.getmtime)
+    input_files.sort(key=lambda f: os.path.basename(f).split('in.')[1])
+
+    ppt_list = np.zeros(len(df_ppt['path'].values))
+    input_list = np.zeros(len(input_files))
+
+    # store input and ppt hours in numpy arrays
+    for idx, fl in enumerate(input_files):
+        input_list[idx] = int(os.path.basename(fl).split('in.')[1])
+    for idx, ppt_hr in enumerate(df_ppt['hour'])
+        ppt_list[idx] = int(ppt_hr)
+
+    return input_list, ppt_list
+
+
+def close_files(force):
+
+    for f in force.keys():
+        if not isinstance(force[f], np.ndarray):
+            force[f].close()
+
+def output_files(options, init):
+"""
+Create the snow and em output netCDF file
+"""
+
+# chunk size
+cs = (6,10,10)
+
+#------------------------------------------------------------------------------
+# EM netCDF
+m = {}
+m['name'] = ['net_rad','sensible_heat','latent_heat','snow_soil','precip_advected','sum_EB','evaporation','snowmelt','SWI','cold_content']
+m['units'] = ['W m-2','W m-2','W m-2','W m-2','W m-2','W m-2','kg m-2','kg m-2','kg or mm m-2','J m-2']
+m['description'] =['Average net all-wave radiation','Average sensible heat transfer','Average latent heat exchange','Average snow/soil heat exchange',
+                 'Average advected heat from precipitation','Average sum of EB terms for snowcover','Total evaporation',
+                 'Total snowmelt','Total runoff','Snowcover cold content']
+
+netcdfFile = os.path.join(options['output']['location'], 'em.nc')
+dimensions = ('time','y','x')
+
+em = nc.Dataset(netcdfFile, 'w')
+
+# create the dimensions
+em.createDimension('time',None)
+em.createDimension('y',len(init['y']))
+em.createDimension('x',len(init['x']))
+
+# create some variables
+em.createVariable('time', 'f', dimensions[0])
+em.createVariable('y', 'f', dimensions[1])
+em.createVariable('x', 'f', dimensions[2])
+
+setattr(em.variables['time'], 'units', 'hours since %s' % options['time']['start_date'])
+setattr(em.variables['time'], 'calendar', 'standard')
+#     setattr(em.variables['time'], 'time_zone', time_zone)
+em.variables['x'][:] = init['x']
+em.variables['y'][:] = init['y']
+
+# em image
+for i,v in enumerate(m['name']):
+
+#         em.createVariable(v, 'f', dimensions[:3], chunksizes=(6,10,10))
+    em.createVariable(v, 'f', dimensions[:3], chunksizes=cs)
+    setattr(em.variables[v], 'units', m['units'][i])
+    setattr(em.variables[v], 'description', m['description'][i])
+
+options['output']['em'] = em
+
+#------------------------------------------------------------------------------
+# SNOW netCDF
+
+s = {}
+s['name'] = ['thickness','snow_density','specific_mass','liquid_water','temp_surf','temp_lower','temp_snowcover','thickness_lower','water_saturation']
+s['units'] = ['m','kg m-3','kg m-2','kg m-2','C','C','C','m','percent']
+s['description'] =['Predicted thickness of the snowcover','Predicted average snow density','Predicted specific mass of the snowcover',
+                   'Predicted mass of liquid water in the snowcover','Predicted temperature of the surface layer',
+                   'Predicted temperature of the lower layer','Predicted temperature of the snowcover',
+                   'Predicted thickness of the lower layer', 'Predicted percentage of liquid water saturation of the snowcover']
+
+netcdfFile = os.path.join(options['output']['location'], 'snow.nc')
+dimensions = ('time','y','x')
+
+snow = nc.Dataset(netcdfFile, 'w')
+
+# create the dimensions
+snow.createDimension('time',None)
+snow.createDimension('y',len(init['y']))
+snow.createDimension('x',len(init['x']))
+
+# create some variables
+snow.createVariable('time', 'f', dimensions[0])
+snow.createVariable('y', 'f', dimensions[1])
+snow.createVariable('x', 'f', dimensions[2])
+
+setattr(snow.variables['time'], 'units', 'hours since %s' % options['time']['start_date'])
+setattr(snow.variables['time'], 'calendar', 'standard')
+#     setattr(snow.variables['time'], 'time_zone', time_zone)
+snow.variables['x'][:] = init['x']
+snow.variables['y'][:] = init['y']
+
+# snow image
+for i,v in enumerate(s['name']):
+
+    snow.createVariable(v, 'f', dimensions[:3], chunksizes=cs)
+#         snow.createVariable(v, 'f', dimensions[:3])
+    setattr(snow.variables[v], 'units', s['units'][i])
+    setattr(snow.variables[v], 'description', s['description'][i])
+
+
+options['output']['snow'] = snow
+
+def output_timestep(s, tstep, options):
+    """
+    Output the model results for the current time step
+    """
+
+    em_out = {'net_rad':'R_n_bar', 'sensible_heat':'H_bar', 'latent_heat': 'L_v_E_bar',
+              'snow_soil': 'G_bar', 'precip_advected': 'M_bar',
+              'sum_EB': 'delta_Q_bar', 'evaporation': 'E_s_sum',
+              'snowmelt': 'melt_sum', 'SWI': 'ro_pred_sum',
+              'cold_content': 'cc_s'}
+    snow_out = {'thickness': 'z_s', 'snow_density': 'rho',
+                'specific_mass': 'm_s', 'liquid_water': 'h2o',
+                'temp_surf': 'T_s_0', 'temp_lower': 'T_s_l',
+                'temp_snowcover': 'T_s', 'thickness_lower': 'z_s_l',
+                'water_saturation': 'h2o_sat'}
+
+    # preallocate
+#     all_zeros = np.zeros(s['elevation'].shape)
+#     em = {key: all_zeros for key in em_out.keys()}
+#     snow = {key: all_zeros for key in snow_out.keys()}
+    em = {}
+    snow = {}
+
+
+    # gather all the data together
+#     for index, si in np.ndenumerate(s):
+#
+#         if si is not None:
+    for key,value in em_out.iteritems():
+        em[key] = copy(s[value])
+
+    for key,value in snow_out.iteritems():
+        snow[key] = copy(s[value])
+
+    # convert from K to C
+    snow['temp_snowcover'] -= FREEZE
+    snow['temp_surf'] -= FREEZE
+    snow['temp_lower'] -= FREEZE
+
+
+    # now find the correct index
+    # the current time integer
+    times = options['output']['snow'].variables['time'] #- pd.to_timedelta(1, unit='h')
+    t = nc.date2num(tstep.replace(tzinfo=None), times.units, times.calendar)
+
+    if len(times) != 0:
+        index = np.where(times[:] == t)[0]
+        if index.size == 0:
+            index = len(times)
+        else:
+            index = index[0]
+    else:
+        index = len(times)
+
+
+    # insert the time
+    options['output']['snow'].variables['time'][index] = t
+    options['output']['em'].variables['time'][index] = t
+
+    # insert the data
+    for key in em_out:
+        options['output']['em'].variables[key][index,:] = em[key]
+    for key in snow_out:
+        options['output']['snow'].variables[key][index,:] = snow[key]
+
+    # sync to disk
+    options['output']['snow'].sync()
+    options['output']['em'].sync()

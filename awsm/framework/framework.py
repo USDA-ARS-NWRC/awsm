@@ -79,6 +79,7 @@ class AWSM():
         self.do_isnobal = self.config['awsm master']['run_isnobal']
         self.do_wrf = self.config['awsm master']['use_wrf']
         self.do_smrf_ipysnobal = self.config['awsm master']['run_smrf_ipysnobal']
+        self.do_ipysnobal = self.config['awsm master']['run_ipysnobal']
 
         # options for converting files
         self.do_make_in = self.config['awsm master']['make_in']
@@ -188,10 +189,12 @@ class AWSM():
         self.active_layer = self.config['grid']['active_layer']
 
         # if we are going to run ipysnobal with smrf
-        if self.do_smrf_ipysnobal:
+        if self.do_smrf_ipysnobal or self.do_ipysnobal:
             #print('Stuff happening here \n\n\n')
-            self.ipy_threads = self.config['ipysnobal']['nthreads']
+            self.ipy_threads = self.ithreads
             self.ipy_init_type = self.config['ipysnobal initial conditions']['input_type']
+            # change this
+            self.input_data = self.config['ipysnobal']['input_data']
 
         # list of sections releated to AWSM (These will be removed for smrf config)
         # self.sec_awsm = ['awsm master', 'awsm system', 'paths', 'grid', 'files', 'awsm logging',
@@ -303,6 +306,13 @@ class AWSM():
         """
 
         smrf_ipy.run_smrf_ipysnobal(self)
+
+    def run_ipysnobal(self):
+        """
+        Run PySnobal from previously run smrf forcing data
+        Calls :mod: `awsm.interface.smrf_ipysnobal.run_ipysnobal`
+        """
+        smrf_ipy.run_ipysnobal(self)
 
     def restart_crash_image(self):
         """

@@ -36,6 +36,10 @@ def run():
                     # run iSnobal
                     a.run_isnobal()
 
+                elif a.do_ipysnobal:
+                    # run iPySnobal
+                    a.run_ipysnobal()
+
                     # convert ipw back to netcdf for processing
                 if a.do_make_nc:
                     a.ipw2nc('smrf')
@@ -45,8 +49,8 @@ def run():
                     # restart iSnobal from crash
                     a.restart_crash_image()
                     # convert ipw back to netcdf for processing
-                    if a.do_make_nc:
-                        a.ipw2nc('smrf')
+                if a.do_make_nc:
+                    a.ipw2nc('smrf')
 
         # perform same operations using gridded WRF data
         elif a.do_wrf:

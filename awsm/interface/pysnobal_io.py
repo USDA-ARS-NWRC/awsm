@@ -5,6 +5,7 @@ from datetime import timedelta
 import netCDF4 as nc
 from smrf import ipw
 import glob
+from copy import copy
 
 C_TO_K = 273.16
 FREEZE = C_TO_K
@@ -217,6 +218,7 @@ def output_timestep(s, tstep, options):
     # now find the correct index
     # the current time integer
     times = options['output']['snow'].variables['time'] #- pd.to_timedelta(1, unit='h')
+    tstep -= pd.to_timedelta(1, unit='h')
     t = nc.date2num(tstep.replace(tzinfo=None), times.units, times.calendar)
 
     if len(times) != 0:

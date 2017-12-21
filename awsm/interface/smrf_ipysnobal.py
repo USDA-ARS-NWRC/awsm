@@ -6,6 +6,7 @@ Distribute thermal long wave using only 1 method
 
 import smrf
 from smrf.utils import queue, io
+from smrf import ipw
 from threading import Thread
 from smrf.envphys import radiation
 import sys
@@ -74,7 +75,9 @@ def run_ipysnobal(myawsm):
         input1 = input2.copy()
 
         # output at the frequency and the last time step
-        if (j % options['output']['frequency'] == 0) or (j == len(options['time']['date_time'])):
+        # if (j % options['output']['frequency'] == 0) or (j == len(options['time']['date_time'])):
+        if ((j)*(data_tstep/3600.0) % options['output']['frequency'] == 0) or (j == len(options['time']['date_time'])):
+            myawsm._logger.info('Outputting {}'.format(tstep))
             io_mod.output_timestep(output_rec, tstep, options)
             output_rec['time_since_out'] = np.zeros(output_rec['elevation'].shape)
 
@@ -83,7 +86,7 @@ def run_ipysnobal(myawsm):
         j += 1
 
     # close input files
-    if myawsm.run_from_nc == True:
+    if myawsm.input_data == 'netcdf':
         close_files(force)
 
 def run_smrf_ipysnobal(myawsm):

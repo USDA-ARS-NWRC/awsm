@@ -413,6 +413,10 @@ def get_timestep_ipw(tstep, input_list, ppt_list, myawsm):
     # if we have inputs matching this water year hour
     if np.any(input_list == wyhr) == True:
         i_in = ipw.IPW(os.path.join(myawsm.pathi, 'in.%04i'%(wyhr)))
+        # assign soil temp
+        inpt['T_g'] = myawsm.soil_temp*np.ones((myawsm.ny, myawsm.nx))
+        #myawsm._logger.info('T_g: {}'.format(myawsm.soil_temp))
+        #inpt['T_g'] = -2.5*np.ones((myawsm.ny, myawsm.nx))
         for f, v in map_val.items():
             # if no solar data, give it zero
             if f == 5 and len(i_in.bands) < 6:
@@ -432,9 +436,6 @@ def get_timestep_ipw(tstep, input_list, ppt_list, myawsm):
         for f, v in map_val_prec.items():
             inpt[v] = np.zeros((myawsm.ny, myawsm.nx))
 
-
-    # assign soil temp
-    inpt['T_g'] = myawsm.soil_temp*np.ones((myawsm.ny, myawsm.nx))
 
     # convert from C to K
     inpt['T_a'] += FREEZE

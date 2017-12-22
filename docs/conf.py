@@ -40,7 +40,7 @@ class Mock(MagicMock):
     @classmethod
     def __getattr__(cls, name):
             return Mock()
-MOCK_MODULES = ['netCDF4', 'matplotlib', 'matplotlib.pyplot', 'pandas']
+MOCK_MODULES = ['netCDF4', 'matplotlib', 'matplotlib.pyplot', 'pandas', 'smrf']
 
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 

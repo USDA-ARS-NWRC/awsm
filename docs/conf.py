@@ -23,16 +23,11 @@ import os
 #sys.path.insert(0, os.path.abspath('.'))
 
 # Get the project root dir, which is the parent dir of this
-cwd = os.getcwd()
-project_root = os.path.dirname(cwd)
 
-# Insert the project root dir as the first element in the PYTHONPATH.
-# This lets us ensure that the source package is imported, and that its
-# version is used.
-sys.path.insert(0, project_root)
-
-import awsm
-
+if os.environ.get('READTHEDOCS') == 'True':
+    sys.path.insert(0, os.path.abspath('.'))
+else:
+    sys.path.insert(0, os.path.abspath('../'))
 # -- Have to do a mock install of some modules that RTD doesn't have --------
 from mock import Mock as MagicMock
 
@@ -40,9 +35,13 @@ class Mock(MagicMock):
     @classmethod
     def __getattr__(cls, name):
             return Mock()
-MOCK_MODULES = ['netCDF4', 'matplotlib', 'matplotlib.pyplot', 'pandas', 'smrf']
+MOCK_MODULES = ['netCDF4', 'matplotlib', 'matplotlib.pyplot',
+                'pandas', 'smrf', 'ipw']
 
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
+os.environ['IPW'] = '.' # set a temporary IPW environment variable
+
+#import awsm
 
 # -- General configuration ---------------------------------------------
 
@@ -56,8 +55,8 @@ extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.autodoc',
               'sphinx.ext.todo',
               'sphinx.ext.napoleon',
-              'sphinx.ext.imgmath',
-              'sphinxcontrib.bibtex'
+              'sphinx.ext.imgmath'#,
+              #'sphinxcontrib.bibtex'
 ]
 
 # Add any paths that contain templates here, relative to this directory.

@@ -12,21 +12,21 @@ import sys
 import matplotlib.pyplot as plt
 import numpy as np
 from datetime import datetime
-from awsf.interface import ipysnobal
-from awsf.interface import interface
+from awsm.interface import ipysnobal
+from awsm.interface import interface
 
 
-def run_smrf_ipysnobal(myawsf):
+def run_smrf_ipysnobal(myawsm):
     """
     Function to run SMRF (threaded) and pass outputs in memory to python wrapped
     iSnobal. iPySnobal has replaced the output queue in this implimentation.
 
     Args:
-        myawsf: AWSF instance
+        myawsm: AWSM instance
     """
 
     # first create config file to run smrf
-    fp_smrfini = interface.create_smrf_config(myawsf)
+    fp_smrfini = interface.create_smrf_config(myawsm)
 
     start = datetime.now()
 
@@ -34,7 +34,7 @@ def run_smrf_ipysnobal(myawsf):
         configFile = sys.argv[1]
 
     # initialize
-    with smrf.framework.SMRF(fp_smrfini, myawsf._logger) as s:
+    with smrf.framework.SMRF(fp_smrfini, myawsm._logger) as s:
         # load topo data
         s.loadTopo()
 
@@ -45,7 +45,7 @@ def run_smrf_ipysnobal(myawsf):
         s.loadData()
 
         # initialize ipysnobal state
-        options, params, tstep_info, init, output_rec = ipysnobal.init_from_smrf(myawsf, s)
+        options, params, tstep_info, init, output_rec = ipysnobal.init_from_smrf(myawsm, s)
 
         #s.initializeOutput()
         if 'output' in s.thread_variables:
@@ -67,9 +67,9 @@ def run_smrf_ipysnobal(myawsf):
                                    output_rec,
                                    s.topo.nx,
                                    s.topo.ny,
-                                   myawsf.soil_temp,
-                                   myawsf._logger,
-                                   myawsf.tzinfo))
+                                   myawsm.soil_temp,
+                                   myawsm._logger,
+                                   myawsm.tzinfo))
 
         # the cleaner
         t.append(queue.QueueCleaner(s.date_time, q))

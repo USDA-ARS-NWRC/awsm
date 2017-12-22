@@ -1,20 +1,20 @@
 ====
-awsf
+awsm
 ====
 
 
-.. image:: https://img.shields.io/pypi/v/awsf.svg
-        :target: https://pypi.python.org/pypi/awsf
+.. image:: https://img.shields.io/pypi/v/awsm.svg
+        :target: https://pypi.python.org/pypi/awsm
 
-.. image:: https://img.shields.io/travis/micahsandusky5/awsf.svg
-        :target: https://travis-ci.org/micahsandusky5/awsf
+.. image:: https://img.shields.io/travis/micahsandusky5/awsm.svg
+        :target: https://travis-ci.org/micahsandusky5/awsm
 
-.. image:: https://readthedocs.org/projects/awsf/badge/?version=latest
-        :target: https://awsf.readthedocs.io/en/latest/?badge=latest
+.. image:: https://readthedocs.org/projects/awsm/badge/?version=latest
+        :target: https://awsm.readthedocs.io/en/latest/?badge=latest
         :alt: Documentation Status
 
-.. image:: https://pyup.io/repos/github/micahsandusky5/awsf/shield.svg
-     :target: https://pyup.io/repos/github/micahsandusky5/awsf/
+.. image:: https://pyup.io/repos/github/micahsandusky5/awsm/shield.svg
+     :target: https://pyup.io/repos/github/micahsandusky5/awsm/
      :alt: Updates
 
 
@@ -37,4 +37,3 @@ This package was created with Cookiecutter_ and the `audreyr/cookiecutter-pypack
 
 .. _Cookiecutter: https://github.com/audreyr/cookiecutter
 .. _`audreyr/cookiecutter-pypackage`: https://github.com/audreyr/cookiecutter-pypackage
-

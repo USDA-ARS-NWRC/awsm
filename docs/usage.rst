@@ -2,6 +2,6 @@
 Usage
 =====
 
-To use awsf in a project::
+To use awsm in a project::
 
-    import awsf
+    import awsm

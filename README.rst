@@ -22,7 +22,7 @@ Automated Water Supply Forecasting
 
 
 * Free software: GNU GENERAL PUBLIC LICENSE
-* Documentation: https://awsf.readthedocs.io.
+* Documentation: https://awsm.readthedocs.io.
 
 
 Features

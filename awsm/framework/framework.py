@@ -202,6 +202,26 @@ class AWSM():
         # Make rigid directory structure
         self.mk_directories()
 
+        ################# Generate config backup ##################
+        order_lst= ['awsm master', 'paths', 'forecast', 'grid', 'files',
+                     'awsm system', 'isnobal restart', 'ipysnobal',
+                     'ipysnobal initial conditions', 'ipysnobal constants']
+
+        titles = {'awsm master' : 'Configurations for AWSM Master section',
+                  'paths' : 'Configurations for PATHS section for rigid directory work',
+                  'forecast' : 'Configurations for FORECAST section for running with WRF forecast',
+                  'grid' : 'Configurations for GRID data to run iSnobal',
+                  'files' : 'Input files to run AWSM',
+                  'awsm system' : 'System parameters',
+                  'isnobal restart' : 'Parameters for restarting from crash',
+                  'ipysnobal' : 'Running Pythonm wrapped iSnobal',
+                  'ipysnobal initial conditions' : 'Initial condition parameters for iPySnobal',
+                  'ipysnobal constants' : 'Input constants for iPySnobal'
+                }
+        config_backup_location = os.path.join(self.pathdd, 'awsm_config_backup.ini')
+        io.generate_config(self.config,config_backup_location, order_lst=order_lst, titles=titles)
+
+
         # create log now that directory structure is done
         self.createLog()
 

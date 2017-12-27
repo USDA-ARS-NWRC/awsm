@@ -29,9 +29,10 @@ def run_ipysnobal(myawsm):
     Function to run PySnobal from netcdf of ipw forcing data
     """
     # initialize ipysnobal state
-    # need function to read dem
+    # read dem if ipw file
     if myawsm.config['topo']['type'] == 'ipw':
         dem = ipw.IPW(myawsm.config['topo']['dem']).bands[0].data
+    # read dem if netcdf file
     if myawsm.config['topo']['type'] == 'netcdf':
         demf = nc.Dataset(myawsm.config['topo']['filename'], 'r')
         dem = demf.variables['dem'][:]
@@ -97,7 +98,6 @@ def run_smrf_ipysnobal(myawsm):
     Args:
         myawsm: AWSM instance
     """
-
     # first create config file to run smrf
     fp_smrfini = interface.create_smrf_config(myawsm)
 

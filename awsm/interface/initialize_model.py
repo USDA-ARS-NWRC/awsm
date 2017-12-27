@@ -86,6 +86,7 @@ def open_init_files(myawsm, options, dem):
     # read the required variables in
     init = {}
     # get the initial conditions
+    # if init file is a netcdf init
     if options['initial_conditions']['input_type'] == 'netcdf':
         i = nc.Dataset(options['initial_conditions']['file'])
 
@@ -108,6 +109,7 @@ def open_init_files(myawsm, options, dem):
 
         i.close()
 
+    # if init file is a netcdf output
     elif options['initial_conditions']['input_type'] == 'netcdf_out':
         i = nc.Dataset(os.path.join(options['initial_conditions']['file']))
 
@@ -116,15 +118,21 @@ def open_init_files(myawsm, options, dem):
 
         # find timestep indices to grab
         t_units = i.variables['time'].units
+        # split netcdf time units where it says 'time since '
         t_start = t_units.split('since ')[1]
         t_start = pd.to_datetime(t_start)
         start_wy = pd.to_datetime('{}-10-01'.format(myawsm.wy))
         offset = (t_start - start_wy).astype('timedelta64[h]')
 
+        # add offset to get in wy hours
         time = i.variables['time'][:]
         time = time + offset
-
-        idt = np.where(time == myawsm.restart_hr)[0]
+        # find water year hour of start date (which has been replaced by restart hr)
+        tmp_start_date = myawsm.start_date.replace(tzinfo=myawsm.tzinfo)
+        # start date water year hour
+        tmpwyhr = utils.water_day(start_date)[0]*24
+        # find location that the water year hours equal the restart hr
+        idt = np.where(time == tmpwyhr)[0]
 
         myawsm._logger.warning('Initialzing PySnobal with state from water year hour {}'.format(myawsm.restart_hr))
 
@@ -157,7 +165,7 @@ def open_init_files(myawsm, options, dem):
 
         i.close()
 
-
+    # if init type is an ipw init image
     elif options['initial_conditions']['input_type'] == 'ipw':
 
         i = ipw.IPW(options['initial_conditions']['file'])
@@ -192,6 +200,7 @@ def open_init_files(myawsm, options, dem):
         else:
             init['mask'] = np.ones_like(init['elevation'])
 
+    # if initializing from output ipw image
     elif options['initial_conditions']['input_type'] == 'ipw_out':
         # initialize from output file and roughness init
         i = ipw.IPW(options['initial_conditions']['file'])
@@ -248,61 +257,22 @@ def open_init_files(myawsm, options, dem):
     return init
 
 def open_restart_files(myawsm, options, dem):
-    # read in correct variables
-    init = {}
-
-    i = nc.Dataset(os.paht.join(myawsm.pathro,'snow.nc'))
-
-    init['x'] = i.variables['x'][:]         # get the x coordinates
-    init['y'] = i.variables['y'][:]         # get the y coordinates
-
-    # find timestep indices to grab
-    t_units = i.variables['time'].units
-    t_start = t_units.split('since ')[1]
-    t_start = pd.to_datetime(t_start)
-    start_wy = pd.to_datetime('{}-10-01'.format(myawsm.wy))
-    offset = (t_start - start_wy).astype('timedelta64[h]')
-
-    time = i.variables['time'][:]
-    time = time + offset
-
-    idt = np.where(time == myawsm.restart_hr)[0]
-
-    # sample bands
-    init['elevation'] = dem        # get the elevation
-    if myawsm.roughness_init is not None:
-        init['z_0'] = ipw.IPW(myawsm.roughness_init).bands[1].data[:] # get the roughness length
-    else:
-        init['z_0'] = 0.005*np.ones((myawsm.ny,myawsm.nx))
-        myawsm._logger.warning('No roughness given from old init, using value of 0.005 m')
-
-    init['z_s'] = i.variables['thickness'][idt,:]
-    init['rho'] = i.variables['snow_density'][idt,:]
-    init['T_s_0'] = i.variables['temp_surf'][idt,:]
-    init['T_s'] = i.variables['temp_snowcover'][idt,:]
-    init['T_s_l'] =  i.variables['temp_lower'][idt,:]
-    init['h2o_sat'] = i.variables['water_saturation'][idt,:]
-
-    if 'mask_file' in options['initial_conditions']:
-        imask = ipw.IPW(options['initial_conditions']['mask_file'])
-        msk = imask.bands[0].data
-        init['mask'] = msk
-    else:
-        init['mask'] = np.ones_like(init['elevation'])
-
-    # All other variables will be assumed zero if not present
-    all_zeros = np.zeros_like(init['elevation'])
-    # flds = ['z_s', 'rho', 'T_s_0', 'T_s', 'h2o_sat', 'mask']
-
-    i.close()
-
-    for key in init.keys():
-        init[key] = init[key].astype(np.float64)
-
-    init['T_s'] += FREEZE
-    init['T_s_0'] += FREEZE
-    if 'T_s_l' in init:
-        init['T_s_l'] += FREEZE
+    # restart procedure from failed run
+    options['initial_conditions']['input_type'] == 'netcdf_out'
+    options['initial_conditions']['file'] = os.path.join(myawsm.pathro,'snow.nc')
+    # initialize with parameters
+    init = open_init_files(myawsm, options, dem)
+    # zero depths under specified threshold
+    restart_var = initmodel.zero_crash_depths(myawsm,
+                                            init['z_s'],
+                                            init['rho'],
+                                            init['T_s_0'],
+                                            init['T_s_l'],
+                                            init['T_s'],
+                                            init['h2o_sat'])
+    # put variables back in init dictionary
+    for k, v in restart_var.items():
+        init[k] = v
 
     return init
 

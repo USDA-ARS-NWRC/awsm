@@ -208,6 +208,21 @@ class AWSM():
         # create log now that directory structure is done
         self.createLog()
 
+        # after the directory structure is locked in, do this restart procedure
+        if self.config['isnobal restart']['restart_crash'] == True:
+            tmp_start_date = myawsm.start_date.replace(tzinfo=myawsm.tzinfo)
+            #start of wy
+            tmpwy = utils.water_day(start_date)[1] - 1
+            wy_start = pd.to_datetime('%d-10-01'%tmpwy)
+            # find restart hour datetime
+            reset_offset = pd.to_timedelta(myawsm.restart_hr, unit='h')
+            # set a new start date for this run
+            myawsm.config['time']['start_date'] = myawsm.start_date + reset_offset
+            myaws.start_date = myawsm.config['time']['start_date']
+            myawsm._logger.info('Changing start date for restart procedure.')
+            myawsm._logger.info('New start date is {}'.format(myawsm.start_date))
+
+
     def createLog(self):
         '''
         Now that the directory structure is done, create log file and print out

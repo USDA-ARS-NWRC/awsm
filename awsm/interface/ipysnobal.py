@@ -73,17 +73,6 @@ def init_from_smrf(myawsm, mysmrf = None, dem = None):
     # open restart files and zero small depths
     else:
         init = initmodel.open_restart_files(myawsm, options, dem)
-        # zero depths at correct location
-        restart_var = initmodel.zero_crash_depths(myawsm,
-                                                init['z_s'],
-                                                init['rho'],
-                                                init['T_s_0'],
-                                                init['T_s_l'],
-                                                init['T_s'],
-                                                init['h2o_sat'])
-        # put variables back in init dictionary
-        for k, v in restart_var.items():
-            init[k] = v
 
     output_rec = initmodel.initialize(params, tstep_info, init)
 

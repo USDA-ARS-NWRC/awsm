@@ -38,6 +38,7 @@ def run_ipysnobal(myawsm):
         dem = demf.variables['dem'][:]
         demf.close()
 
+    myawsm._logger.info('Initializing from files')
     options, params, tstep_info, init, output_rec = ipysnobal.init_from_smrf(myawsm, dem = dem)
 
 
@@ -49,6 +50,7 @@ def run_ipysnobal(myawsm):
     output_rec['current_time'] = step_time * np.ones(output_rec['elevation'].shape)
     output_rec['time_since_out'] = timeSinceOut * np.ones(output_rec['elevation'].shape)
 
+    myawsm._logger.info('getting inputs for first timestep')
     if myawsm.input_data == 'netcdf':
         force = io_mod.open_files_nc(myawsm)
         input1 = initmodel.get_timestep_netcdf(force, options['time']['date_time'][0])
@@ -56,6 +58,7 @@ def run_ipysnobal(myawsm):
         input_list, ppt_list = io_mod.open_files_ipw(myawsm)
         input1 = initmodel.get_timestep_ipw(options['time']['date_time'][0], input_list, ppt_list, myawsm)
 
+    myawsm._logger.info('starting PySnobal time series loop')
     j = 1
     first_step = 1;
     for tstep in options['time']['date_time'][1:]:
@@ -88,7 +91,7 @@ def run_ipysnobal(myawsm):
 
     # close input files
     if myawsm.input_data == 'netcdf':
-        close_files(force)
+        io_mod.close_files(force)
 
 def run_smrf_ipysnobal(myawsm):
     """

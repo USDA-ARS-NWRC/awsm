@@ -7,6 +7,11 @@ import pandas as pd
 import pytz
 import copy
 import numpy as np
+# make input the same as raw input if python 2
+try:
+   input = raw_input
+except NameError:
+   pass
 
 from smrf.utils import utils, io
 from awsm.convertFiles import convertFiles as cvf
@@ -210,17 +215,17 @@ class AWSM():
 
         # after the directory structure is locked in, do this restart procedure
         if self.config['isnobal restart']['restart_crash'] == True:
-            tmp_start_date = myawsm.start_date.replace(tzinfo=myawsm.tzinfo)
+            tmp_start_date = self.start_date.replace(tzinfo=self.tzinfo)
             #start of wy
-            tmpwy = utils.water_day(start_date)[1] - 1
+            tmpwy = utils.water_day(tmp_start_date)[1] - 1
             wy_start = pd.to_datetime('%d-10-01'%tmpwy)
             # find restart hour datetime
-            reset_offset = pd.to_timedelta(myawsm.restart_hr, unit='h')
+            reset_offset = pd.to_timedelta(self.restart_hr, unit='h')
             # set a new start date for this run
-            myawsm.config['time']['start_date'] = myawsm.start_date + reset_offset
-            myaws.start_date = myawsm.config['time']['start_date']
-            myawsm._logger.info('Changing start date for restart procedure.')
-            myawsm._logger.info('New start date is {}'.format(myawsm.start_date))
+            self.config['time']['start_date'] = self.start_date + reset_offset
+            self.start_date = self.config['time']['start_date']
+            self._logger.info('Changing start date for restart procedure.')
+            self._logger.info('New start date is {}'.format(self.start_date))
 
 
     def createLog(self):

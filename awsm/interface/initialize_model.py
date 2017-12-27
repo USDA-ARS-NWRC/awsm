@@ -81,7 +81,6 @@ def open_init_files(myawsm, options, dem):
     - Open the files for the inputs and store the file identifier
 
     """
-
     #------------------------------------------------------------------------------
     # read the required variables in
     init = {}
@@ -122,7 +121,7 @@ def open_init_files(myawsm, options, dem):
         t_start = t_units.split('since ')[1]
         t_start = pd.to_datetime(t_start)
         start_wy = pd.to_datetime('{}-10-01'.format(myawsm.wy))
-        offset = (t_start - start_wy).astype('timedelta64[h]')
+        offset = (t_start - start_wy).total_seconds()//3600.0
 
         # add offset to get in wy hours
         time = i.variables['time'][:]
@@ -130,11 +129,13 @@ def open_init_files(myawsm, options, dem):
         # find water year hour of start date (which has been replaced by restart hr)
         tmp_start_date = myawsm.start_date.replace(tzinfo=myawsm.tzinfo)
         # start date water year hour
-        tmpwyhr = utils.water_day(start_date)[0]*24
-        # find location that the water year hours equal the restart hr
-        idt = np.where(time == tmpwyhr)[0]
+        tmpwyhr = utils.water_day(tmp_start_date)[0]*24
+        # find closest location that the water year hours equal the restart hr
+        print(np.absolute(time - tmpwyhr))
+        idt = np.argmin(np.absolute(time - tmpwyhr)) #returns index
 
-        myawsm._logger.warning('Initialzing PySnobal with state from water year hour {}'.format(myawsm.restart_hr))
+        #myawsm._logger.warning('Initialzing PySnobal with state from water year hour {}'.format(myawsm.restart_hr))
+        myawsm._logger.warning('Initialzing PySnobal with state from water year hour {}'.format(time[idt]))
 
         # sample bands
         init['elevation'] = dem        # get the elevation
@@ -258,25 +259,25 @@ def open_init_files(myawsm, options, dem):
 
 def open_restart_files(myawsm, options, dem):
     # restart procedure from failed run
-    options['initial_conditions']['input_type'] == 'netcdf_out'
+    options['initial_conditions']['input_type'] = 'netcdf_out'
     options['initial_conditions']['file'] = os.path.join(myawsm.pathro,'snow.nc')
     # initialize with parameters
     init = open_init_files(myawsm, options, dem)
     # zero depths under specified threshold
-    restart_var = initmodel.zero_crash_depths(myawsm,
-                                            init['z_s'],
-                                            init['rho'],
-                                            init['T_s_0'],
-                                            init['T_s_l'],
-                                            init['T_s'],
-                                            init['h2o_sat'])
+    restart_var = zero_crash_depths(myawsm,
+                                    init['z_s'],
+                                    init['rho'],
+                                    init['T_s_0'],
+                                    init['T_s_l'],
+                                    init['T_s'],
+                                    init['h2o_sat'])
     # put variables back in init dictionary
     for k, v in restart_var.items():
         init[k] = v
 
     return init
 
-def zero_crash_depths(myawsm, z_s, rho, T_s_0, T_s_l, T_s, h20_sat):
+def zero_crash_depths(myawsm, z_s, rho, T_s_0, T_s_l, T_s, h2o_sat):
 
     # find pixels that need reset
     idz = z_s < myawsm.depth_thresh
@@ -293,7 +294,7 @@ def zero_crash_depths(myawsm, z_s, rho, T_s_0, T_s_l, T_s, h20_sat):
     T_s_0[idz] = -75.0
     T_s_l[idz] = -75.0
     T_s[idz] = -75.0
-    h20_sat[idz] = 0.0
+    h2o_sat[idz] = 0.0
 
     restrat_var = {}
     restrat_var['z_s'] = z_s

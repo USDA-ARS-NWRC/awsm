@@ -49,6 +49,10 @@ def run():
                     # restart iSnobal from crash
                     a.restart_crash_image()
                     # convert ipw back to netcdf for processing
+                elif a.do_ipysnobal:
+                    # run iPySnobal
+                    a.run_ipysnobal()
+
                 if a.do_make_nc:
                     a.ipw2nc('smrf')
 

@@ -104,6 +104,11 @@ class AWSM():
         self.tzinfo = pytz.timezone(self.config['time']['time_zone'])
         # date to use for finding wy
         tmp_date = self.start_date.replace(tzinfo=self.tzinfo)
+        tmp_end_date = self.end_date.replace(tzinfo=self.tzinfo)
+
+        # find water year hour of start and end date
+        self.start_wyhr = int(utils.water_day(tmp_date)[0]*24)
+        self.end_wyhr = int(utils.water_day(tmp_end_date)[0]*24)
 
         # find start of water year
         tmpwy = utils.water_day(tmp_start_date)[1] - 1
@@ -223,6 +228,26 @@ class AWSM():
         # Make rigid directory structure
         self.mk_directories()
 
+        ################# Generate config backup ##################
+        order_lst= ['awsm master', 'paths', 'forecast', 'grid', 'files',
+                     'awsm system', 'isnobal restart', 'ipysnobal',
+                     'ipysnobal initial conditions', 'ipysnobal constants']
+
+        titles = {'awsm master' : 'Configurations for AWSM Master section',
+                  'paths' : 'Configurations for PATHS section for rigid directory work',
+                  'forecast' : 'Configurations for FORECAST section for running with WRF forecast',
+                  'grid' : 'Configurations for GRID data to run iSnobal',
+                  'files' : 'Input files to run AWSM',
+                  'awsm system' : 'System parameters',
+                  'isnobal restart' : 'Parameters for restarting from crash',
+                  'ipysnobal' : 'Running Pythonm wrapped iSnobal',
+                  'ipysnobal initial conditions' : 'Initial condition parameters for iPySnobal',
+                  'ipysnobal constants' : 'Input constants for iPySnobal'
+                }
+        config_backup_location = os.path.join(self.pathdd, 'awsm_config_backup.ini')
+        io.generate_config(self.config,config_backup_location, order_lst=order_lst, titles=titles)
+
+
         # create log now that directory structure is done
         self.createLog()
 
@@ -240,14 +265,15 @@ class AWSM():
             raise ValueError('Invalid log level: %s' % loglevel)
 
         # setup the logging
+        folder_date_stamp = '{:04d}_{:04d}'.format(self.start_wyhr, self.end_wyhr)
         logfile = None
         if self.config['awsm system']['log_to_file'] == True:
             if self.config['isnobal restart']['restart_crash'] == True:
                 logfile = os.path.join(self.pathll, 'log_restart_{}.out'.format(self.restart_hr))
             elif self.do_wrf:
-                logfile = os.path.join(self.pathll, 'log_forecast_{}.out'.format(self.start_date.strftime("%Y%m%d"), self.end_date.strftime("%Y%m%d")))
+                logfile = os.path.join(self.pathll, 'log_forecast_{}.out'.format(folder_date_stamp))
             else:
-                logfile = os.path.join(self.pathll, 'log_{}_{}.out'.format(self.start_date.strftime("%Y%m%d"), self.end_date.strftime("%Y%m%d")))
+                logfile = os.path.join(self.pathll, 'log_{}.out'.format(folder_date_stamp))
             # let user know
             print('Logging to file: {}'.format(logfile))
 
@@ -346,55 +372,58 @@ class AWSM():
         """
         # rigid directory work
         self.tmp_log.append('AWSM creating directories')
+
+        # string to append to folders indicatiing run start and end
+        folder_date_stamp = '{:04d}_{:04d}'.format(self.start_wyhr, self.end_wyhr)
+
         # make basin path
         self.path_ba = os.path.join(self.path_dr,self.basin)
 
         # check if ops or dev
         if self.isops:
-            self.path_od = os.path.join(self.path_ba,'ops')
-            # check if specified water year
-            self.path_wy = os.path.join(self.path_od,'wy{}'.format(self.wy))
-            # self.path_proj = self.path_wy
-
+            opsdev = 'ops'
         else:
-            self.path_od = os.path.join(self.path_ba,'devel')
-            self.path_wy = os.path.join(self.path_od,'wy{}'.format(self.wy))
-            self.path_wy = os.path.join(self.path_wy, self.proj)
+            opsdev = 'devel'
+        # assign paths accordinly
+        self.path_od = os.path.join(self.path_ba, opsdev)
+        self.path_wy = os.path.join(self.path_od,'wy{}'.format(self.wy))
+        self.path_wy = os.path.join(self.path_wy, self.proj)
 
         # specific data folder conatining
         self.pathd = os.path.join(self.path_wy, 'data')
         self.pathr = os.path.join(self.path_wy, 'runs')
         # log folders
         self.pathlog = os.path.join(self.path_wy, 'logs')
-        self.pathll = os.path.join(self.pathlog, 'log{}_{}'.format(self.start_date.strftime("%Y%m%d"), self.end_date.strftime("%Y%m%d")))
+        self.pathll = os.path.join(self.pathlog, 'log{}'.format(folder_date_stamp))
 
         # name of temporary smrf file to write out
         self.smrfini = os.path.join(self.path_wy, 'tmp_smrf_config.ini')
         self.wrfini = os.path.join(self.path_wy, 'tmp_smrf_wrf_config.ini')
 
+
         if not self.do_wrf:
             # assign path names for isnobal, path_names_att will be used
             # to create necessary directories
             path_names_att = ['pathdd', 'pathrr', 'pathi', 'pathinit', 'pathro', 'paths', 'path_ppt']
-            self.pathdd = os.path.join(self.pathd, 'data{}_{}'.format(self.start_date.strftime("%Y%m%d"), self.end_date.strftime("%Y%m%d")))
-            self.pathrr =    os.path.join(self.pathr, 'run{}_{}'.format(self.start_date.strftime("%Y%m%d"), self.end_date.strftime("%Y%m%d")))
+            self.pathdd = os.path.join(self.pathd, 'data{}'.format(folder_date_stamp))
+            self.pathrr =    os.path.join(self.pathr, 'run{}'.format(folder_date_stamp))
             self.pathi =    os.path.join(self.pathdd, 'input/')
             self.pathinit = os.path.join(self.pathdd, 'init/')
             self.pathro =   os.path.join(self.pathrr, 'output/')
             self.paths = os.path.join(self.pathdd,'smrfOutputs')
-            self.ppt_desc = os.path.join(self.pathdd, 'ppt_desc{}.txt'.format(self.end_date.strftime("%Y%m%d")))
+            self.ppt_desc = os.path.join(self.pathdd, 'ppt_desc{}.txt'.format(folder_date_stamp))
             self.path_ppt = os.path.join(self.pathdd, 'ppt_4b')
             # used to check if data direcotry exists
             check_if_data = self.pathdd
         else:
             path_names_att = ['path_wrf_data', 'path_wrf_run', 'path_wrf_i', 'path_wrf_init', 'path_wrf_ro', 'path_wrf_s', 'path_wrf_ppt']
-            self.path_wrf_data = os.path.join(self.pathd, 'forecast{}_{}'.format(self.start_date.strftime("%Y%m%d"), self.end_date.strftime("%Y%m%d")))
-            self.path_wrf_run = os.path.join(self.pathr, 'forecast{}_{}'.format(self.start_date.strftime("%Y%m%d"), self.end_date.strftime("%Y%m%d")))
+            self.path_wrf_data = os.path.join(self.pathd, 'forecast{}'.format(folder_date_stamp))
+            self.path_wrf_run = os.path.join(self.pathr, 'forecast{}'.format(folder_date_stamp))
             self.path_wrf_i =    os.path.join(self.path_wrf_data, 'input/')
             self.path_wrf_init = os.path.join(self.path_wrf_data, 'init/')
             self.path_wrf_ro =   os.path.join(self.path_wrf_run, 'output/')
             self.path_wrf_s = os.path.join(self.path_wrf_data,'smrfOutputs')
-            self.wrf_ppt_desc = os.path.join(self.path_wrf_data, 'ppt_desc{}.txt'.format(self.end_date.strftime("%Y%m%d")))
+            self.wrf_ppt_desc = os.path.join(self.path_wrf_data, 'ppt_desc{}.txt'.format(folder_date_stamp))
             self.path_wrf_ppt = os.path.join(self.path_wrf_data, 'ppt_4b')
             # used to check if data direcotry exists
             check_if_data = self.path_wrf_data

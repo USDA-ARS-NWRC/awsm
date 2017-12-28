@@ -2,6 +2,7 @@ import smrf
 from smrf import ipw
 from smrf.utils import utils
 import os
+import sys
 import pandas as pd
 import numpy as np
 import netCDF4 as nc
@@ -21,26 +22,19 @@ def nc2ipw_mea(myawsm, runtype):
     ###################################################################################################
     myawsm._logger.info("making the ipw files from NetCDF files for {}".format(runtype))
 
-    # check if this is forecast or not
-    if runtype == 'smrf':
-        start_date = myawsm.start_date.replace(tzinfo=myawsm.tzinfo)
-    elif runtype == 'wrf':
-        start_date = myawsm.end_date.replace(tzinfo=myawsm.tzinfo)
-    else:
+    if runtype != 'smrf' and runtype != 'wrf':
         myawsm._logger.error('Wrong run type given to nc2ipw. \
                             not smrf or wrf')
+        sys.exit()
 
-    tmpday, tmpwy = utils.water_day(start_date)
-    # find start of wy
-    wyh = pd.to_datetime('{}-10-01'.format(tmpwy-1))
+    start_date = myawsm.start_date.replace(tzinfo=myawsm.tzinfo)
 
+    tt = myawsm.start_date - myawsm.wy_start
     if runtype == 'smrf':
-        tt = myawsm.start_date - wyh
         smrfpath = myawsm.paths
         datapath = myawsm.pathdd
         f = open(myawsm.ppt_desc,'w')
     elif runtype == 'wrf':
-        tt = myawsm.end_date - wyh
         smrfpath = myawsm.path_wrf_s
         datapath = myawsm.path_wrf_data
         f = open(myawsm.wrf_ppt_desc,'w')
@@ -163,13 +157,10 @@ def ipw2nc_mea(myawsm, runtype):
     '''
     myawsm._logger.info("making the NetCDF files from ipw files for {}".format(runtype))
 
-    if runtype == 'smrf':
-        wyh = pd.to_datetime('{}-10-01'.format(myawsm.wy))
-    elif runtype == 'wrf':
-        wyh = pd.to_datetime('{}-10-01'.format(myawsm.wy))
-    else:
+    if runtype != 'smrf' and runtype != 'wrf':
         myawsm._logger.error('Wrong run type given to ipw2nc. \
                             not smrf or wrf')
+        sys.exit()
 
     myawsm._logger.info("convert all .ipw output files to netcdf files")
     ###################################################################################################
@@ -208,7 +199,7 @@ def ipw2nc_mea(myawsm, runtype):
     em.createVariable('y', 'f', dimensions[1])
     em.createVariable('x', 'f', dimensions[2])
 
-    setattr(em.variables['time'], 'units', 'hours since %s' % wyh)
+    setattr(em.variables['time'], 'units', 'hours since %s' % myawsm.wy_start)
     setattr(em.variables['time'], 'calendar', 'standard')
     setattr(em.variables['time'], 'time_zone', time_zone)
     em.variables['x'][:] = x
@@ -250,7 +241,7 @@ def ipw2nc_mea(myawsm, runtype):
     snow.createVariable('y', 'f', dimensions[1])
     snow.createVariable('x', 'f', dimensions[2])
 
-    setattr(snow.variables['time'], 'units', 'hours since %s' % wyh)
+    setattr(snow.variables['time'], 'units', 'hours since %s' % myawsm.wy_start)
     setattr(snow.variables['time'], 'calendar', 'standard')
     setattr(snow.variables['time'], 'time_zone', time_zone)
     snow.variables['x'][:] = x

@@ -238,12 +238,7 @@ def run_isnobal(myawsm):
 
     myawsm._logger.info('Setting up to run iSnobal')
     # find water year for calculating offset
-    start_date = myawsm.start_date.replace(tzinfo=myawsm.tzinfo)
-    #start of wy
-    tmpwy = utils.water_day(start_date)[1] - 1
-
-    wyh = pd.to_datetime('%d-10-01'%tmpwy)
-    tt = myawsm.start_date-wyh
+    tt = myawsm.start_date - myawsm.wy_start
 
     offset = tt.days*24 +  tt.seconds//3600 # start index for the input file
     nbits = myawsm.nbits
@@ -371,12 +366,8 @@ def run_isnobal_forecast(myawsm):
     """
 
     myawsm._logger.info("Getting ready to run iSnobal for WRF forecast!")
-    start_date = myawsm.start_date.replace(tzinfo=myawsm.tzinfo)
-    #start of wy
-    tmpwy = utils.water_day(start_date)[1] - 1
 
-    wyh = pd.to_datetime('%d-10-01'%tmpwy)
-    tt = myawsm.end_date-wyh
+    tt = myawsm.end_date - myawsm.wy_start
     offset = tt.days*24 +  tt.seconds//3600 # start index for the input file
     nbits = myawsm.nbits
 
@@ -563,12 +554,7 @@ def restart_crash_image(myawsm):
     end_date = myawsm.end_date.replace(tzinfo=myawsm.tzinfo)
 
     # use start date water year
-    start_date = myawsm.start_date.replace(tzinfo=myawsm.tzinfo)
-    # start of water year
-    tmpwy = utils.water_day(start_date)[1] - 1
-
-    wyh = pd.to_datetime('%d-10-01'%tmpwy)
-    tt = myawsm.end_date-wyh
+    tt = myawsm.end_date - myawsm.wy_start
 
     tmstps = tt.days*24 +  tt.seconds//3600 # start index for the input file
     tmstps = int(tmstps - offset)

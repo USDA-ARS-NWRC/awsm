@@ -111,17 +111,8 @@ class AWSM():
         self.end_wyhr = int(utils.water_day(tmp_end_date)[0]*24)
 
         # find start of water year
-        tmpwy = utils.water_day(tmp_start_date)[1] - 1
-        self.wy_start = pd.to_datetime('%d-10-01'%tmpwy)
-
-        # parameters needed for restart procedure
-        if self.config['isnobal restart']['restart_crash'] == True:
-            self.restart_run = True
-            # find restart hour datetime
-            reset_offset = pd.to_timedelta(self.restart_hr, unit='h')
-            # set a new start date for this run
-            self.restart_date = self.start_date + reset_offset
-            self._logger.info('Restart date is {}'.format(self.start_date))
+        tmpwy = utils.water_day(tmp_date)[1] - 1
+        self.wy_start = pd.to_datetime('{:d}-10-01'.format(tmpwy))
 
         ################# Store some paths from config file ##################
         # path to the base drive (i.e. /data/blizzard)
@@ -218,6 +209,16 @@ class AWSM():
             self.ipy_init_type = self.config['ipysnobal initial conditions']['input_type']
             # change this
             self.forcing_data_type = self.config['ipysnobal']['forcing_data_type']
+
+        # parameters needed for restart procedure
+        self.restart_run = False
+        if self.config['isnobal restart']['restart_crash'] == True:
+            self.restart_run = True
+            # find restart hour datetime
+            reset_offset = pd.to_timedelta(self.restart_hr, unit='h')
+            # set a new start date for this run
+            self.restart_date = self.start_date + reset_offset
+            self.tmp_log.append('Restart date is {}'.format(self.start_date))
 
         # list of sections releated to AWSM (These will be removed for smrf config)
         # self.sec_awsm = ['awsm master', 'awsm system', 'paths', 'grid', 'files', 'awsm logging',

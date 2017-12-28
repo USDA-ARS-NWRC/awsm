@@ -116,15 +116,14 @@ def open_init_files(myawsm, options, dem):
         init['y'] = i.variables['y'][:]         # get the y coordinates
 
         # find timestep indices to grab
+        time = i.variables['time'][:]
         t_units = i.variables['time'].units
-        # split netcdf time units where it says 'time since '
-        t_start = t_units.split('since ')[1]
-        t_start = pd.to_datetime(t_start)
-        start_wy = pd.to_datetime('{}-10-01'.format(myawsm.wy))
-        offset = (t_start - start_wy).total_seconds()//3600.0
+        nc_calendar = i.variables['time'].calendar
+        nc_dates = nc.num2date(time, t_units, nc_calendar)
+        # find offset of netcdf start
+        offset = (nc_dates[0] - myawsm.wy_start).total_seconds()//3600.0
 
         # add offset to get in wy hours
-        time = i.variables['time'][:]
         time = time + offset
 
         if myawsm.restart_run == True:
@@ -134,8 +133,9 @@ def open_init_files(myawsm, options, dem):
             tmpwyhr = myawsm.start_wyhr
 
         # find closest location that the water year hours equal the restart hr
-        print(np.absolute(time - tmpwyhr))
         idt = np.argmin(np.absolute(time - tmpwyhr)) #returns index
+        if np.min(np.absolute(time - tmpwyhr)) > 24.0:
+            raise ValueError('No time in resatrt file that is within a day of restart time')
 
         #myawsm._logger.warning('Initialzing PySnobal with state from water year hour {}'.format(myawsm.restart_hr))
         myawsm._logger.warning('Initialzing PySnobal with state from water year hour {}'.format(time[idt]))
@@ -548,7 +548,7 @@ def get_args(myawsm):
     config['time'] = {}
     config['output'] = {}
     config['time']['time_step'] = myawsm.time_step
-    if myawsm.restart_run == True
+    if myawsm.restart_run == True:
         config['time']['start_date'] = myawsm.restart_date
     else:
         config['time']['start_date'] = myawsm.start_date

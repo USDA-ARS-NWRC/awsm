@@ -78,7 +78,7 @@ def init_from_smrf(myawsm, mysmrf = None, dem = None):
     output_rec = initmodel.initialize(params, tstep_info, init)
 
     # create the output files
-    io_mod.output_files(options, init, myawsm.start_date)
+    io_mod.output_files(options, init, myawsm.start_date, myawsm)
 
     return options, params, tstep_info, init, output_rec
 

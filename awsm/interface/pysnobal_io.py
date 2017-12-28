@@ -1,7 +1,7 @@
 import sys, os
 import numpy as np
 import pandas as pd
-from datetime import timedelta
+from datetime import timedelta, datetime
 import netCDF4 as nc
 from smrf import ipw
 import glob
@@ -84,11 +84,11 @@ def close_files(force):
         if not isinstance(force[f], np.ndarray):
             force[f].close()
 
-def output_files(options, init, start_date):
+def output_files(options, init, start_date, myawsm):
     """
     Create the snow and em output netCDF file
     """
-
+    fmt = '%Y-%m-%d %H:%M:%S'
     # chunk size
     cs = (6,10,10)
 
@@ -102,34 +102,44 @@ def output_files(options, init, start_date):
                      'Total snowmelt','Total runoff','Snowcover cold content']
 
     netcdfFile = os.path.join(options['output']['location'], 'em.nc')
-    dimensions = ('time','y','x')
 
-    em = nc.Dataset(netcdfFile, 'w')
+    if os.path.isfile(netcdfFile):
+        myawsm._logger.warning(
+                'Opening {}, data may be overwritten!'.format(netcdfFile))
+        em = nc.Dataset(netcdfFile, 'a')
+        h = '[{}] Data added or updated'.format(
+            datetime.now().strftime(fmt))
+        setattr(em, 'last_modified', h)
 
-    # create the dimensions
-    em.createDimension('time',None)
-    em.createDimension('y',len(init['y']))
-    em.createDimension('x',len(init['x']))
+    else:
+        em = nc.Dataset(netcdfFile, 'w')
 
-    # create some variables
-    em.createVariable('time', 'f', dimensions[0])
-    em.createVariable('y', 'f', dimensions[1])
-    em.createVariable('x', 'f', dimensions[2])
+        dimensions = ('time','y','x')
 
-    #setattr(em.variables['time'], 'units', 'hours since %s' % options['time']['start_date'])
-    setattr(em.variables['time'], 'units', 'hours since %s' % start_date)
-    setattr(em.variables['time'], 'calendar', 'standard')
-    #     setattr(em.variables['time'], 'time_zone', time_zone)
-    em.variables['x'][:] = init['x']
-    em.variables['y'][:] = init['y']
+        # create the dimensions
+        em.createDimension('time',None)
+        em.createDimension('y',len(init['y']))
+        em.createDimension('x',len(init['x']))
 
-    # em image
-    for i,v in enumerate(m['name']):
+        # create some variables
+        em.createVariable('time', 'f', dimensions[0])
+        em.createVariable('y', 'f', dimensions[1])
+        em.createVariable('x', 'f', dimensions[2])
 
-    #         em.createVariable(v, 'f', dimensions[:3], chunksizes=(6,10,10))
-        em.createVariable(v, 'f', dimensions[:3], chunksizes=cs)
-        setattr(em.variables[v], 'units', m['units'][i])
-        setattr(em.variables[v], 'description', m['description'][i])
+        #setattr(em.variables['time'], 'units', 'hours since %s' % options['time']['start_date'])
+        setattr(em.variables['time'], 'units', 'hours since %s' % start_date)
+        setattr(em.variables['time'], 'calendar', 'standard')
+        #     setattr(em.variables['time'], 'time_zone', time_zone)
+        em.variables['x'][:] = init['x']
+        em.variables['y'][:] = init['y']
+
+        # em image
+        for i,v in enumerate(m['name']):
+
+        #         em.createVariable(v, 'f', dimensions[:3], chunksizes=(6,10,10))
+            em.createVariable(v, 'f', dimensions[:3], chunksizes=cs)
+            setattr(em.variables[v], 'units', m['units'][i])
+            setattr(em.variables[v], 'description', m['description'][i])
 
     options['output']['em'] = em
 
@@ -145,33 +155,43 @@ def output_files(options, init, start_date):
                        'Predicted thickness of the lower layer', 'Predicted percentage of liquid water saturation of the snowcover']
 
     netcdfFile = os.path.join(options['output']['location'], 'snow.nc')
-    dimensions = ('time','y','x')
 
-    snow = nc.Dataset(netcdfFile, 'w')
+    if os.path.isfile(netcdfFile):
+        myawsm._logger.warning(
+                'Opening {}, data may be overwritten!'.format(netcdfFile))
+        snow = nc.Dataset(netcdfFile, 'a')
+        h = '[{}] Data added or updated'.format(
+            datetime.now().strftime(fmt))
+        setattr(snow, 'last_modified', h)
 
-    # create the dimensions
-    snow.createDimension('time',None)
-    snow.createDimension('y',len(init['y']))
-    snow.createDimension('x',len(init['x']))
+    else:
+        dimensions = ('time','y','x')
 
-    # create some variables
-    snow.createVariable('time', 'f', dimensions[0])
-    snow.createVariable('y', 'f', dimensions[1])
-    snow.createVariable('x', 'f', dimensions[2])
+        snow = nc.Dataset(netcdfFile, 'w')
 
-    setattr(snow.variables['time'], 'units', 'hours since %s' % start_date)
-    setattr(snow.variables['time'], 'calendar', 'standard')
-    #     setattr(snow.variables['time'], 'time_zone', time_zone)
-    snow.variables['x'][:] = init['x']
-    snow.variables['y'][:] = init['y']
+        # create the dimensions
+        snow.createDimension('time',None)
+        snow.createDimension('y',len(init['y']))
+        snow.createDimension('x',len(init['x']))
 
-    # snow image
-    for i,v in enumerate(s['name']):
+        # create some variables
+        snow.createVariable('time', 'f', dimensions[0])
+        snow.createVariable('y', 'f', dimensions[1])
+        snow.createVariable('x', 'f', dimensions[2])
 
-        snow.createVariable(v, 'f', dimensions[:3], chunksizes=cs)
-    #         snow.createVariable(v, 'f', dimensions[:3])
-        setattr(snow.variables[v], 'units', s['units'][i])
-        setattr(snow.variables[v], 'description', s['description'][i])
+        setattr(snow.variables['time'], 'units', 'hours since %s' % start_date)
+        setattr(snow.variables['time'], 'calendar', 'standard')
+        #     setattr(snow.variables['time'], 'time_zone', time_zone)
+        snow.variables['x'][:] = init['x']
+        snow.variables['y'][:] = init['y']
+
+        # snow image
+        for i,v in enumerate(s['name']):
+
+            snow.createVariable(v, 'f', dimensions[:3], chunksizes=cs)
+        #         snow.createVariable(v, 'f', dimensions[:3])
+            setattr(snow.variables[v], 'units', s['units'][i])
+            setattr(snow.variables[v], 'description', s['description'][i])
 
 
     options['output']['snow'] = snow
@@ -218,7 +238,7 @@ def output_timestep(s, tstep, options):
 
     # now find the correct index
     # the current time integer
-    times = options['output']['snow'].variables['time'] 
+    times = options['output']['snow'].variables['time']
     #offset to match same convention as iSnobal
     tstep -= pd.to_timedelta(1, unit='h')
     t = nc.date2num(tstep.replace(tzinfo=None), times.units, times.calendar)

@@ -69,7 +69,7 @@ def init_from_smrf(myawsm, mysmrf = None, dem = None):
         dem = mysmrf.topo.dem
 
     # open the files and read in data
-    if myawsm.config['isnobal restart']['restart_crash'] == False:
+    if myawsm.restart_run == False:
         init = initmodel.open_init_files(myawsm, options, dem)
     # open restart files and zero small depths
     else:
@@ -78,7 +78,7 @@ def init_from_smrf(myawsm, mysmrf = None, dem = None):
     output_rec = initmodel.initialize(params, tstep_info, init)
 
     # create the output files
-    io_mod.output_files(options, init)
+    io_mod.output_files(options, init, myawsm.start_date)
 
     return options, params, tstep_info, init, output_rec
 

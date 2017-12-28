@@ -84,7 +84,7 @@ def close_files(force):
         if not isinstance(force[f], np.ndarray):
             force[f].close()
 
-def output_files(options, init):
+def output_files(options, init, start_date):
     """
     Create the snow and em output netCDF file
     """
@@ -116,7 +116,8 @@ def output_files(options, init):
     em.createVariable('y', 'f', dimensions[1])
     em.createVariable('x', 'f', dimensions[2])
 
-    setattr(em.variables['time'], 'units', 'hours since %s' % options['time']['start_date'])
+    #setattr(em.variables['time'], 'units', 'hours since %s' % options['time']['start_date'])
+    setattr(em.variables['time'], 'units', 'hours since %s' % start_date)
     setattr(em.variables['time'], 'calendar', 'standard')
     #     setattr(em.variables['time'], 'time_zone', time_zone)
     em.variables['x'][:] = init['x']
@@ -158,7 +159,7 @@ def output_files(options, init):
     snow.createVariable('y', 'f', dimensions[1])
     snow.createVariable('x', 'f', dimensions[2])
 
-    setattr(snow.variables['time'], 'units', 'hours since %s' % options['time']['start_date'])
+    setattr(snow.variables['time'], 'units', 'hours since %s' % start_date)
     setattr(snow.variables['time'], 'calendar', 'standard')
     #     setattr(snow.variables['time'], 'time_zone', time_zone)
     snow.variables['x'][:] = init['x']
@@ -217,7 +218,8 @@ def output_timestep(s, tstep, options):
 
     # now find the correct index
     # the current time integer
-    times = options['output']['snow'].variables['time'] #- pd.to_timedelta(1, unit='h')
+    times = options['output']['snow'].variables['time'] 
+    #offset to match same convention as iSnobal
     tstep -= pd.to_timedelta(1, unit='h')
     t = nc.date2num(tstep.replace(tzinfo=None), times.units, times.calendar)
 

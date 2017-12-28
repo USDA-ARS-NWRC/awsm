@@ -126,10 +126,13 @@ def open_init_files(myawsm, options, dem):
         # add offset to get in wy hours
         time = i.variables['time'][:]
         time = time + offset
-        # find water year hour of start date (which has been replaced by restart hr)
-        tmp_start_date = myawsm.start_date.replace(tzinfo=myawsm.tzinfo)
-        # start date water year hour
-        tmpwyhr = utils.water_day(tmp_start_date)[0]*24
+
+        if myawsm.restart_run == True:
+            tmpwyhr = myawsm.restart_hr
+        else:
+            # start date water year hour
+            tmpwyhr = myawsm.start_wyhr
+
         # find closest location that the water year hours equal the restart hr
         print(np.absolute(time - tmpwyhr))
         idt = np.argmin(np.absolute(time - tmpwyhr)) #returns index
@@ -545,7 +548,11 @@ def get_args(myawsm):
     config['time'] = {}
     config['output'] = {}
     config['time']['time_step'] = myawsm.time_step
-    config['time']['start_date'] = myawsm.start_date
+    if myawsm.restart_run == True
+        config['time']['start_date'] = myawsm.restart_date
+    else:
+        config['time']['start_date'] = myawsm.start_date
+
     config['time']['end_date'] = myawsm.end_date
     config['output']['frequency'] = myawsm.output_freq
     #config['output'] = myawsm.config['ipysnobal output']
@@ -574,9 +581,9 @@ def get_args(myawsm):
 
 
     # read in the start date and end date
-    start_date = myawsm.start_date
+    start_date = config['time']['start_date']
 
-    end_date = myawsm.end_date
+    end_date = config['time']['end_date']
     if end_date < start_date:
         raise ValueError('end_date is before start_date')
     nsteps = (end_date-start_date).total_seconds()/60  # elapsed time in minutes

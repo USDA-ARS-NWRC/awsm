@@ -105,6 +105,19 @@ class AWSM():
         # date to use for finding wy
         tmp_date = self.start_date.replace(tzinfo=self.tzinfo)
 
+        # find start of water year
+        tmpwy = utils.water_day(tmp_start_date)[1] - 1
+        self.wy_start = pd.to_datetime('%d-10-01'%tmpwy)
+
+        # parameters needed for restart procedure
+        if self.config['isnobal restart']['restart_crash'] == True:
+            self.restart_run = True
+            # find restart hour datetime
+            reset_offset = pd.to_timedelta(self.restart_hr, unit='h')
+            # set a new start date for this run
+            self.restart_date = self.start_date + reset_offset
+            self._logger.info('Restart date is {}'.format(self.start_date))
+
         ################# Store some paths from config file ##################
         # path to the base drive (i.e. /data/blizzard)
         if self.config['paths']['path_dr'] != None:
@@ -212,20 +225,6 @@ class AWSM():
 
         # create log now that directory structure is done
         self.createLog()
-
-        # after the directory structure is locked in, do this restart procedure
-        if self.config['isnobal restart']['restart_crash'] == True:
-            tmp_start_date = self.start_date.replace(tzinfo=self.tzinfo)
-            #start of wy
-            tmpwy = utils.water_day(tmp_start_date)[1] - 1
-            wy_start = pd.to_datetime('%d-10-01'%tmpwy)
-            # find restart hour datetime
-            reset_offset = pd.to_timedelta(self.restart_hr, unit='h')
-            # set a new start date for this run
-            self.config['time']['start_date'] = self.start_date + reset_offset
-            self.start_date = self.config['time']['start_date']
-            self._logger.info('Changing start date for restart procedure.')
-            self._logger.info('New start date is {}'.format(self.start_date))
 
 
     def createLog(self):

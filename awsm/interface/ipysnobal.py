@@ -62,7 +62,8 @@ def init_from_smrf(myawsm, mysmrf = None, dem = None):
     options, point_run = initmodel.get_args(myawsm)
 
     # get the timestep info
-    params, tstep_info = initmodel.get_tstep_info(options['constants'], options)
+    params, tstep_info = initmodel.get_tstep_info(options['constants'], options,
+                                                  myawsm.mass_thresh)
 
     if dem is None:
         dem = mysmrf.topo.dem

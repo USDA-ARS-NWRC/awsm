@@ -327,13 +327,13 @@ def run_isnobal(myawsm):
         myawsm._logger.warning('Running iSnobal with no precip')
 
     # thresholds for iSnobal
-    time_thresh = '{},{},{}'.format(myawsm.time_thresh[0], myawsm.time_thresh[1],myawsm.time_thresh[2])
+    mass_thresh = '{},{},{}'.format(myawsm.mass_thresh[0], myawsm.mass_thresh[1],myawsm.mass_thresh[2])
 
     # check length of time steps (bug in the way iSnobal reads in input files)
     if (offset + tmstps) < 1000:
         tmstps = 1001
 
-    run_cmd = 'time isnobal -v -P %d -t 60 -T %s -n %d -I %s/init%04d.ipw -d %f -i %s/in'%(nthreads,time_thresh,tmstps,myawsm.pathinit,offset,myawsm.active_layer,myawsm.pathi)
+    run_cmd = 'time isnobal -v -P %d -t 60 -T %s -n %d -I %s/init%04d.ipw -d %f -i %s/in'%(nthreads,mass_thresh,tmstps,myawsm.pathinit,offset,myawsm.active_layer,myawsm.pathi)
     if offset > 0:
         run_cmd += ' -r %s'%(offset)
     if is_ppt > 0:
@@ -440,10 +440,10 @@ def run_isnobal_forecast(myawsm):
         tmstps = 1001
 
     # thresholds for iSnobal
-    time_thresh = '{},{},{}'.format(myawsm.time_thresh[0], myawsm.time_thresh[1],myawsm.time_thresh[2])
+    mass_thresh = '{},{},{}'.format(myawsm.mass_thresh[0], myawsm.mass_thresh[1],myawsm.mass_thresh[2])
 
     # develop run command string
-    run_cmd = 'time isnobal -v -P %d -t 60 -T %s -n %d -I %s/init%04d.ipw -d %f -i %s/in'%(nthreads,time_thresh,tmstps,myawsm.path_wrf_init,offset, myawsm.active_layer,myawsm.path_wrf_i)
+    run_cmd = 'time isnobal -v -P %d -t 60 -T %s -n %d -I %s/init%04d.ipw -d %f -i %s/in'%(nthreads,mass_thresh,tmstps,myawsm.path_wrf_init,offset, myawsm.active_layer,myawsm.path_wrf_i)
     if offset > 0:
         run_cmd += ' -r %s'%(offset)
     if is_ppt > 0:
@@ -590,9 +590,9 @@ def restart_crash_image(myawsm):
         tmstps = 1001
 
     # thresholds for iSnobal
-    time_thresh = '{},{},{}'.format(myawsm.time_thresh[0], myawsm.time_thresh[1],myawsm.time_thresh[2])
+    mass_thresh = '{},{},{}'.format(myawsm.mass_thresh[0], myawsm.mass_thresh[1],myawsm.mass_thresh[2])
 
-    run_cmd = "time isnobal -v -P %d -r %s -T %s -t 60 -n %s -I %s -d %f -i %s/in"%(nthreads,offset,time_thresh,tmstps,fp_new_init,myawsm.active_layer,myawsm.pathi)
+    run_cmd = "time isnobal -v -P %d -r %s -T %s -t 60 -n %s -I %s -d %f -i %s/in"%(nthreads,offset,mass_thresh,tmstps,fp_new_init,myawsm.active_layer,myawsm.pathi)
 
     if is_ppt > 0:
         run_cmd += ' -p %s'%(fp_ppt_desc)

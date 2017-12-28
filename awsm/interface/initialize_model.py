@@ -15,7 +15,7 @@ from smrf.utils import utils
 import logging
 
 
-DEFAULT_MAX_Z_S_0 = 0.25
+#DEFAULT_MAX_Z_S_0 = 0.25
 DEFAULT_MAX_H2O_VOL = 0.01
 
 DATA_TSTEP = 0
@@ -23,9 +23,9 @@ NORMAL_TSTEP = 1
 MEDIUM_TSTEP = 2
 SMALL_TSTEP = 3
 
-DEFAULT_NORMAL_THRESHOLD = 60.0
-DEFAULT_MEDIUM_THRESHOLD = 10.0
-DEFAULT_SMALL_THRESHOLD = 1.0
+#DEFAULT_NORMAL_THRESHOLD = 60.0
+#DEFAULT_MEDIUM_THRESHOLD = 10.0
+#DEFAULT_SMALL_THRESHOLD = 1.0
 DEFAULT_MEDIUM_TSTEP = 15.0
 DEFAULT_SMALL_TSTEP = 1.0
 
@@ -415,7 +415,7 @@ def get_timestep_ipw(tstep, input_list, ppt_list, myawsm):
 
     return inpt
 
-def get_tstep_info(options, config):
+def get_tstep_info(options, config, thresh):
     """
     Parse the options dict, set the default values if not specified
     May need to divide tstep_info and params up into different
@@ -467,9 +467,9 @@ def get_tstep_info(options, config):
 #     tstep_info[DATA_TSTEP]['output'] = DIVIDED_TSTEP
 
     # mass thresholds for run timesteps
-    tstep_info[NORMAL_TSTEP]['threshold'] = DEFAULT_NORMAL_THRESHOLD
-    tstep_info[MEDIUM_TSTEP]['threshold'] = DEFAULT_MEDIUM_THRESHOLD
-    tstep_info[SMALL_TSTEP]['threshold'] = DEFAULT_SMALL_THRESHOLD
+    tstep_info[NORMAL_TSTEP]['threshold'] = thresh[0] #DEFAULT_NORMAL_THRESHOLD
+    tstep_info[MEDIUM_TSTEP]['threshold'] = thresh[1] #DEFAULT_MEDIUM_THRESHOLD
+    tstep_info[SMALL_TSTEP]['threshold'] = thresh[2] #DEFAULT_SMALL_THRESHOLD
 
 
     # get the rest of the parameters
@@ -531,9 +531,9 @@ def get_args(myawsm):
 #         'max_z0': DEFAULT_MAX_Z_S_0,
         'c': True,
         'K': True,
-        'mass_threshold': DEFAULT_NORMAL_THRESHOLD,
+        'mass_threshold': myawsm.mass_thresh[0],
         'time_z': 0,
-        'max_z_s_0': DEFAULT_MAX_Z_S_0,
+        'max_z_s_0': myawsm.active_layer, #DEFAULT_MAX_Z_S_0,
         'z_u': 5.0,
         'z_t': 5.0,
         'z_g': 0.5,

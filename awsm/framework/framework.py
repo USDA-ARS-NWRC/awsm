@@ -157,10 +157,10 @@ class AWSM():
         self.soil_temp = self.config['soil_temp']['temp']
 
         # Time step mass thresholds for iSnobal
-        self.time_thresh = []
-        self.time_thresh.append(self.config['grid']['thresh_normal'])
-        self.time_thresh.append(self.config['grid']['thresh_medium'])
-        self.time_thresh.append(self.config['grid']['thresh_small'])
+        self.mass_thresh = []
+        self.mass_thresh.append(self.config['grid']['thresh_normal'])
+        self.mass_thresh.append(self.config['grid']['thresh_medium'])
+        self.mass_thresh.append(self.config['grid']['thresh_small'])
 
         ################# Topo information ##################
         self.topotype = self.config['topo']['type']
@@ -199,7 +199,7 @@ class AWSM():
             self.ipy_threads = self.ithreads
             self.ipy_init_type = self.config['ipysnobal initial conditions']['input_type']
             # change this
-            self.input_data = self.config['ipysnobal']['input_data']
+            self.forcing_data_type = self.config['ipysnobal']['forcing_data_type']
 
         # list of sections releated to AWSM (These will be removed for smrf config)
         # self.sec_awsm = ['awsm master', 'awsm system', 'paths', 'grid', 'files', 'awsm logging',

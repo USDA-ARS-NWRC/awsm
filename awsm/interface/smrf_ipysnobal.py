@@ -51,7 +51,7 @@ def run_ipysnobal(myawsm):
     output_rec['time_since_out'] = timeSinceOut * np.ones(output_rec['elevation'].shape)
 
     myawsm._logger.info('getting inputs for first timestep')
-    if myawsm.input_data == 'netcdf':
+    if myawsm.forcing_data_type == 'netcdf':
         force = io_mod.open_files_nc(myawsm)
         input1 = initmodel.get_timestep_netcdf(force, options['time']['date_time'][0])
     else:
@@ -64,7 +64,7 @@ def run_ipysnobal(myawsm):
     for tstep in options['time']['date_time'][1:]:
     #for tstep in options['time']['date_time'][953:958]:
         myawsm._logger.info('running PySnobal for timestep: {}'.format(tstep))
-        if myawsm.input_data == 'netcdf':
+        if myawsm.forcing_data_type == 'netcdf':
             input2 = initmodel.get_timestep_netcdf(force, tstep)
         else:
             input2 = initmodel.get_timestep_ipw(tstep, input_list, ppt_list, myawsm)
@@ -90,7 +90,7 @@ def run_ipysnobal(myawsm):
         j += 1
 
     # close input files
-    if myawsm.input_data == 'netcdf':
+    if myawsm.forcing_data_type == 'netcdf':
         io_mod.close_files(force)
 
 def run_smrf_ipysnobal(myawsm):

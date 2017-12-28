@@ -101,7 +101,12 @@ def output_files(options, init, start_date, myawsm):
                      'Average advected heat from precipitation','Average sum of EB terms for snowcover','Total evaporation',
                      'Total snowmelt','Total runoff','Snowcover cold content']
 
-    netcdfFile = os.path.join(options['output']['location'], 'em.nc')
+    emname = 'em.nc'
+    if myawsm.restart_run:
+        emname = 'em_restart_{}.nc'.format(myawsm.restart_hr)
+        start_date = myawsm.restart_date
+
+    netcdfFile = os.path.join(options['output']['location'], emname)
 
     if os.path.isfile(netcdfFile):
         myawsm._logger.warning(
@@ -154,7 +159,11 @@ def output_files(options, init, start_date, myawsm):
                        'Predicted temperature of the lower layer','Predicted temperature of the snowcover',
                        'Predicted thickness of the lower layer', 'Predicted percentage of liquid water saturation of the snowcover']
 
-    netcdfFile = os.path.join(options['output']['location'], 'snow.nc')
+    snowname = 'snow.nc'
+    if myawsm.restart_run:
+        snowname = 'snow_restart_{}.nc'.format(myawsm.restart_hr)
+
+    netcdfFile = os.path.join(options['output']['location'], snowname)
 
     if os.path.isfile(netcdfFile):
         myawsm._logger.warning(

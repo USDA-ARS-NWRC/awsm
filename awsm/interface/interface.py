@@ -31,6 +31,11 @@ def create_smrf_config(myawsm):
     for key in myawsm.config:
         if key in myawsm.sec_awsm:
             del smrf_cfg[key]
+
+    # change start date if using smrf_ipysnobal and restarting
+    if myawsm.restart_run == True and myawsm.run_smrf_ipysnobal == True:
+        smrf_cfg['time']['start_date'] = myawsm.restart_date
+
     # set ouput location in smrf config
     smrf_cfg['output']['out_location'] = os.path.join(myawsm.paths)
     smrf_cfg['system']['temp_dir'] = os.path.join(myawsm.paths,'tmp')

@@ -70,7 +70,8 @@ def run_ipysnobal(myawsm):
             input2 = initmodel.get_timestep_ipw(tstep, input_list, ppt_list, myawsm)
         #print output_rec
 
-        rt = snobal.do_tstep_grid(input1, input2, output_rec, tstep_info, options['constants'], params, j, nthreads=myawsm.ipy_threads)
+        #rt = snobal.do_tstep_grid(input1, input2, output_rec, tstep_info, options['constants'], params, j, nthreads=myawsm.ipy_threads)
+        rt = snobal.do_tstep_grid(input1, input2, output_rec, tstep_info, options['constants'], params, first_step=j, nthreads=myawsm.ipy_threads)
 
         if rt != -1:
             print('ipysnobal error on time step %s, pixel %i' % (tstep, rt))

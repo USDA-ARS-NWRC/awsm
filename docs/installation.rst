@@ -5,47 +5,52 @@ Installation
 ============
 
 
-Stable release
---------------
+Installing AWSM
+---------------
 
-To install awsm, run this command in your terminal:
+Once the dependencies have been installed for your respective system, the
+following will install awsm. It is preferable to use a Python
+`virtual environment`_  to reduce the possibility of a dependency issue.
 
-.. code-block:: console
+.. _virtual environment: https://virtualenv.pypa.io
 
-    $ pip install awsm
+1. Create a virtualenv and activate it.
 
-This is the preferred method to install awsm, as it will always install the most recent stable release.
+  .. code:: bash
 
-If you don't have `pip`_ installed, this `Python installation guide`_ can guide
-you through the process.
+    virtualenv awsmenv
+    source awsmenv/bin/activate
 
-.. _pip: https://pip.pypa.io
-.. _Python installation guide: http://docs.python-guide.org/en/latest/starting/installation/
-
-
-From sources
-------------
-
-The sources for awsm can be downloaded from the `Github repo`_.
-
-You can either clone the public repository:
-
-.. code-block:: console
-
-    $ git clone git://github.com/micahsandusky5/awsm
-
-Or download the `tarball`_:
-
-.. code-block:: console
-
-    $ curl  -OL https://github.com/micahsandusky5/awsm/tarball/master
-
-Once you have a copy of the source, you can install it with:
-
-.. code-block:: console
-
-    $ python setup.py install
+**Tip:** The developers recommend using an alias to quickly turn on
+and off your virtual environment.
 
 
-.. _Github repo: https://github.com/micahsandusky5/awsm
-.. _tarball: https://github.com/micahsandusky5/awsm/tarball/master
+2. Clone AWSM source code from the ARS-NWRC github.
+
+  .. code:: bash
+
+    git clone https://github.com/USDA-ARS-NWRC/AWSM.git
+
+3. Change directories into the AWSM directory. Install the python requirements.
+   After the requirements are done, install AWSM.
+
+  .. code:: bash
+
+    cd AWSM
+    pip install -r requirements-dev.txt
+    python setup.py install
+
+4. (Optional) Generate a local copy of the documentation.
+
+  .. code:: bash
+
+    cd docs
+    make html
+
+  To view the documentation use the preferred browser to open up the files.
+  This can be done from the browser by opening the index.rst file directly or
+  by the commandline like the following:
+
+  .. code:: bash
+
+    google-chrome _build/html/index.html

@@ -30,7 +30,7 @@ setup(
     long_description=readme + '\n\n' + history,
     author="Micah Sandusky",
     author_email='micah.sandusky@ars.usda.gov',
-    url='https://github.com/micahsandusky5/awsm',
+    url='https://github.com/USDA-ARS-NWRC/AWSM',
     packages=['awsm',
 			  'awsm.convertFiles',
 			  'awsm.interface',

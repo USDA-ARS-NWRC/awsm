@@ -1,39 +1,15 @@
-====
-awsm
-====
+# Automated Water Supply Forecasting
+
+[![DOI](https://readthedocs.org/projects/awsm/badge/)](https://awsm.readthedocs.io)
 
 
-.. image:: https://img.shields.io/pypi/v/awsm.svg
-        :target: https://pypi.python.org/pypi/awsm
+Automated Water Supply Forecasting (AWSM) was developed at
+the USDA Agricultural Research Service (ARS) in Boise, ID. AWSM was designed to
+streamline the workflow used by the ARS to forecast the water supply of multiple
+water basins. AWSM standardizes the steps needed to distribute met. data with
+SMRF, run an energy and mass balance with iSnobal, and process the results,
+while maintaining the flexibility of each program.
 
-.. image:: https://img.shields.io/travis/micahsandusky5/awsm.svg
-        :target: https://travis-ci.org/micahsandusky5/awsm
-
-.. image:: https://readthedocs.org/projects/awsm/badge/?version=latest
-        :target: https://awsm.readthedocs.io/en/latest/?badge=latest
-        :alt: Documentation Status
-
-.. image:: https://pyup.io/repos/github/micahsandusky5/awsm/shield.svg
-     :target: https://pyup.io/repos/github/micahsandusky5/awsm/
-     :alt: Updates
-
-
-Automated Water Supply Forecasting
-
-
-* Free software: GNU GENERAL PUBLIC LICENSE
-* Documentation: https://awsm.readthedocs.io.
-
-
-Features
---------
-
-* TODO
-
-Credits
----------
-
-This package was created with Cookiecutter_ and the `audreyr/cookiecutter-pypackage`_ project template.
-
-.. _Cookiecutter: https://github.com/audreyr/cookiecutter
-.. _`audreyr/cookiecutter-pypackage`: https://github.com/audreyr/cookiecutter-pypackage
+#### Usage
+Read the full documentation for [SMRF](https://awsm.readthedocs.io) including up to
+date installation instructions.

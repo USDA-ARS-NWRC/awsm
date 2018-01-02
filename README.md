@@ -11,5 +11,5 @@ SMRF, run an energy and mass balance with iSnobal, and process the results,
 while maintaining the flexibility of each program.
 
 #### Usage
-Read the full documentation for [SMRF](https://awsm.readthedocs.io) including up to
+Read the full documentation for [AWSM](https://awsm.readthedocs.io) including up to
 date installation instructions.

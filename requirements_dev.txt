@@ -2,9 +2,22 @@ pip==8.1.2
 bumpversion==0.5.3
 wheel==0.29.0
 watchdog==0.8.3
-flake8==2.6.0
 tox==2.3.1
 coverage==4.1
 Sphinx==1.4.8
 matplotlib
 faulthandler
+Cython == 0.23.4
+setuptools == 1.1.6
+numpy == 1.13.1
+scipy == 0.17.0
+pytz == 2013.7
+utm == 0.4.0
+netCDF4 == 1.2.9
+pandas == 0.20.3
+PyYAML == 3.11
+sphinxcontrib-bibtex == 0.3.5
+sphinx_rtd_theme == 0.2.5b1
+coloredlogs == 6.1
+mock == 2.0.0
+flake8 == 3.3.0

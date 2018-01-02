@@ -22,6 +22,11 @@ def open_files_nc(myawsm):
 
     - Open the files for the inputs and store the file identifier
 
+    Args:
+        myawsm: awsm class
+    Returns:
+        force:  dictionary of opened netCDF forcing data files
+
     """
     #------------------------------------------------------------------------------
     # get the forcing data and open the file
@@ -43,15 +48,20 @@ def open_files_nc(myawsm):
     force['snow_density'] = nc.Dataset(os.path.join(myawsm.paths, 'snow_density.nc'), 'r')
     force['precip_temp'] = nc.Dataset(os.path.join(myawsm.paths, 'dew_point.nc'), 'r')
 
-    # print options['inputs']['precip_temp']
-    # print os.stat(options['inputs']['precip_temp']).st_size
-    #print force['precip_mass']['precip_mass'][950:960,:,:]
-
     return force
 
 def open_files_ipw(myawsm):
     """
-    - Open the files for the inputs and store the file identifier
+    - Compile list of input data hours from ipw files stored in standard AWSM
+    file structure. These are only list of integer water year hours, the actual
+    reading of ipw files happens from the standard directory structure.
+
+    Args:
+        myawsm:     awsm class
+
+    Returns:
+        ppt_list:   list of hours for reference from the ppt_desc file
+        input_list: list of input hours to read in from the data directory
 
     """
     #------------------------------------------------------------------------------
@@ -79,6 +89,9 @@ def open_files_ipw(myawsm):
 
 
 def close_files(force):
+    """
+    Close input netCDF forcing files
+    """
 
     for f in force.keys():
         if not isinstance(force[f], np.ndarray):
@@ -87,6 +100,13 @@ def close_files(force):
 def output_files(options, init, start_date, myawsm):
     """
     Create the snow and em output netCDF file
+
+    Args:
+        options:     dictionary of Snobal options
+        init:        dictionary of Snobal initialization images
+        start_date:  date for time units in files
+        myawsm:      awsm class
+
     """
     fmt = '%Y-%m-%d %H:%M:%S'
     # chunk size
@@ -208,6 +228,12 @@ def output_files(options, init, start_date, myawsm):
 def output_timestep(s, tstep, options):
     """
     Output the model results for the current time step
+
+    Args:
+        s:       dictionary of output variable numpy arrays
+        tstep:   datetime time step
+        options: dictionary of Snobal options
+
     """
 
     em_out = {'net_rad':'R_n_bar', 'sensible_heat':'H_bar', 'latent_heat': 'L_v_E_bar',

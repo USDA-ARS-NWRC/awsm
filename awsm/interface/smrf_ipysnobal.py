@@ -26,7 +26,11 @@ except:
 
 def run_ipysnobal(myawsm):
     """
-    Function to run PySnobal from netcdf of ipw forcing data
+    Function to run PySnobal from netcdf of ipw forcing data, not from SMRF instance.
+
+    Args:
+        myawsm:  awsm class
+
     """
     # initialize ipysnobal state
     # read dem if ipw file
@@ -126,17 +130,16 @@ def run_smrf_ipysnobal(myawsm):
             run_smrf_ipysnobal_threaded(myawsm, s)
         else:
             run_smrf_ipysnobal_single(myawsm, s)
-            print('Not threading')
 
         s._logger.debug('DONE!!!!')
 
 def run_smrf_ipysnobal_single(myawsm, s):
     """
-    Distribute the measurement point data for all variables in serial. Each
-    variable is initialized first using the :func:`smrf.data.loadTopo.topo`
-    instance and the metadata loaded from
-    :func:`~smrf.framework.model_framework.SMRF.loadData`.
-    The function distributes over each time step, all the variables below.
+    Running smrf and PySnobal in non-threaded application.
+
+    Args:
+        myawsm:  awsm class
+        s:       smrf class
 
     """
 
@@ -281,8 +284,9 @@ def run_smrf_ipysnobal_threaded(myawsm, s):
     iSnobal. iPySnobal has replaced the output queue in this implimentation.
 
     Args:
-        myawsm: AWSM instance
-        s:      SMRF instance
+        myawsm:  AWSM instance
+        s:       SMRF instance
+
     """
     # initialize ipysnobal state
     options, params, tstep_info, init, output_rec = ipysnobal.init_from_smrf(myawsm, s)

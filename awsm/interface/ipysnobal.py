@@ -56,6 +56,7 @@ def init_from_smrf(myawsm, mysmrf = None, dem = None):
     Args:
         myawsm: AWSM instance
         mysmrf: SMRF isntance
+        dem:    digital elevation data
     """
 
     # parse the input arguments
@@ -92,8 +93,19 @@ class QueueIsnobal(threading.Thread):
                  output_rec, nx, ny, soil_temp, logger, tzi):
         """
         Args:
-            date_time: array of date_time
-            queue: dict of the queue
+            queue:      dictionary of the queue
+            date_time:  array of date_time
+            thread_variables: list of threaded variables
+            options:    dictionary of Snobal options
+            params:     dictionary of Snobal params
+            tstep_info: dictionary of info for Snobal timesteps
+            init:       dictionary of init info for Snobal
+            output_rec: dictionary to store Snobal variables between timesteps
+            nx:         number of points in X direction
+            ny:         number of points in y direction
+            soil_temp:  uniform soil temperature (float)
+            logger:     initialized AWSM logger
+            tzi:        time zone information
         """
 
         threading.Thread.__init__(self, name='isnobal')
@@ -117,10 +129,9 @@ class QueueIsnobal(threading.Thread):
 
     def run(self):
         """
-        mimic the main.c from the Snobal model
+        mimic the main.c from the Snobal model. Runs Pysnobal while recieving
+        forcing data from SMRF queue.
 
-        Args:
-            configFile: path to configuration file
         """
         force_variables = ['thermal', 'air_temp', 'vapor_pressure', 'wind_speed',
                            'net_solar', 'soil_temp', 'precip', 'percent_snow',
@@ -230,7 +241,8 @@ class QueueIsnobal(threading.Thread):
 
 class PySnobal():
     """
-    Takes values from the SMRF and uses them to run iPySnobal
+    Takes values from the SMRF and uses them to run iPySnobal in non-threaded
+    implimentation
     """
 
     def __init__(self, date_time, variable_list,
@@ -238,7 +250,18 @@ class PySnobal():
                  output_rec, nx, ny, soil_temp, logger, tzi):
         """
         Args:
-            date_time: array of date_time
+            date_time:  array of date_time
+            variable_list: list of forcing variables to recieve from smrf
+            options:    dictionary of Snobal options
+            params:     dictionary of Snobal params
+            tstep_info: dictionary of info for Snobal timesteps
+            init:       dictionary of init info for Snobal
+            output_rec: dictionary to store Snobal variables between timesteps
+            nx:         number of points in X direction
+            ny:         number of points in y direction
+            soil_temp:  uniform soil temperature (float)
+            logger:     initialized AWSM logger
+            tzi:        time zone information
         """
 
         self.date_time = date_time
@@ -268,10 +291,12 @@ class PySnobal():
 
     def run_single_fist_step(self, s):
         """
-        mimic the main.c from the Snobal model
+        mimic the main.c from the Snobal model. Recieves forcing data from SMRF
+        in non-threaded application and initializes very first step.
 
         Args:
-            configFile: path to configuration file
+            s:  smrf class instance
+
         """
 
         # loop through the input
@@ -316,6 +341,15 @@ class PySnobal():
         self._logger.info('Finished initializing first timestep for iPySnobal')
 
     def run_single(self, tstep, s):
+        """
+        Runs each timestep of Pysnobal when running with SMRF in non-threaded
+        application.
+
+        Args:
+            tstep: datetime timestep
+            s:     smrf class instance
+
+        """
         #pbar = progressbar.ProgressBar(max_value=len(options['time']['date_time']))
 
         self.input2 = {}

@@ -45,7 +45,7 @@ def check_range(value, min_val, max_val, descrip):
     """
     Check the range of the value
     Args:
-        value: value to check
+        value:  value to check
         min_val: minimum value
         max_val: maximum value
         descrip: short description of input
@@ -72,13 +72,18 @@ def date_range(start_date, end_date, increment):
 
 def open_init_files(myawsm, options, dem):
     """
-    Open the netCDF files for initial conditions and inputs
-    - Reads in the initial_conditions file
+    Reads in the initial_conditions file
         Required variables are x,y,z,z_0
         The others z_s, rho, T_s_0, T_s, h2o_sat, mask can be specified
         but will be set to default of 0's or 1's for mask
 
-    - Open the files for the inputs and store the file identifier
+    Args:
+        myawsm:  awsm Class
+        options: dictionary of settings for pysnobal runs
+        dem:     digital elevation model image
+
+    Returns:
+        init:   dictionary of initialized variables
 
     """
     #------------------------------------------------------------------------------
@@ -261,6 +266,19 @@ def open_init_files(myawsm, options, dem):
     return init
 
 def open_restart_files(myawsm, options, dem):
+    """
+    Initializes simulation variables for special case when restarting a crashed
+    run. Zeros depth under specified threshold and zeros other snow parameters
+    that must be dealt with when depth is set to zero.
+
+    Args:
+        myawsm:  awsm Class
+        options: dictionary of settings for pysnobal runs
+        dem:     digital elevation model image
+
+    Returns:
+        init:    dictionary of initialized variables
+    """
     # restart procedure from failed run
     options['initial_conditions']['input_type'] = 'netcdf_out'
     options['initial_conditions']['file'] = os.path.join(myawsm.pathro,'snow.nc')
@@ -281,6 +299,21 @@ def open_restart_files(myawsm, options, dem):
     return init
 
 def zero_crash_depths(myawsm, z_s, rho, T_s_0, T_s_l, T_s, h2o_sat):
+    """
+    Zero snow depth under certain threshold and deal with associated variables.
+
+    Args:
+        myawsm: awsm class
+        z_s:    snow depth (Numpy array)
+        rho:    snow density (Numpy array)
+        T_s_0:  surface layer temperature (Numpy array)
+        T_s_l:  lower layer temperature (Numpy array)
+        T_s:    average snow cover temperature (Numpy array)
+        h2o_sat: percent liquid h2o saturation (Numpy array)
+
+    Returns:
+        restart_var: dictionary of input variables after correction
+    """
 
     # find pixels that need reset
     idz = z_s < myawsm.depth_thresh
@@ -313,6 +346,13 @@ def get_timestep_netcdf(force, tstep, point=None):
     """
     Pull out a time step from the forcing files and
     place that time step into a dict
+
+    Args:
+        force:   input array of forcing variables
+        tstep:   datetime timestep
+
+    Returns:
+        inpt:    dictionary of forcing variable images
     """
 
     inpt = {}
@@ -363,13 +403,18 @@ def get_timestep_netcdf(force, tstep, point=None):
 
 def get_timestep_ipw(tstep, input_list, ppt_list, myawsm):
     """
-    Pull out a time step from the forcing files and
+    Pull out a time step from the forcing files (IPW) and
     place that time step into a dict
 
-    tstep - datetime of timestep
-    input_list - numpy array (1D) of integer timesteps given
-    ppt_list - numpy array(1D) of integer timesteps for ppt_list
-    myawsm - AWSM instance for current run
+    Args:
+        tstep:      datetime of timestep
+        input_list: numpy array (1D) of integer timesteps given
+        ppt_list:   numpy array(1D) of integer timesteps for ppt_list
+        myawsm:     AWSM instance for current run
+
+    Returns:
+        inpt:       dictionary of forcing variable images
+
     """
 
     inpt = {}
@@ -423,6 +468,16 @@ def get_tstep_info(options, config, thresh):
     Parse the options dict, set the default values if not specified
     May need to divide tstep_info and params up into different
     functions
+
+    Args:
+        options:    dictionary of input settings for running program
+        config:     Snobal config
+        thresh:     list of mass thresholds for Snobal
+
+    Returns:
+        params:     Snobal parameters
+        tstep_info: setting for Snobal timesteps
+
     """
 
     # intialize the time step info
@@ -639,13 +694,21 @@ def get_args(myawsm):
 
 def initialize(params, tstep_info, init):
     """
-    initialize
+    Create the OUTPUT_REC with additional fields and fill
+    There are a lot of additional terms that the original output_rec does not
+    have due to the output function being outside the C code which doesn't
+    have access to those variables.
+
+    Args:
+        params:      Snobal parameters
+        tstep_info:  setting for Snobal timesteps
+        init:        initialization dictionary
+
+    Returns:
+        s:           OUTPUT_REC dictionary
+
     """
 
-    # create the OUTPUT_REC with additional fields and fill
-    # There are a lot of additional terms that the original output_rec does not
-    # have due to the output function being outside the C code which doesn't
-    # have access to those variables
     sz = init['elevation'].shape
     flds = ['mask', 'elevation', 'z_0', 'rho', 'T_s_0', 'T_s_l', 'T_s', \
             'cc_s_0', 'cc_s_l', 'cc_s', 'm_s', 'm_s_0', 'm_s_l', 'z_s', 'z_s_0', 'z_s_l',\

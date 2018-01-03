@@ -4,13 +4,33 @@
 Installation
 ============
 
+Installing Dependencies
+-----------------------
+
+AWSM utilizes many of the utilities within SMRF. The first step to installing
+AWSM is to follow the installation instructions for SMRF, which can be found
+here:
+
+https://smrf.readthedocs.io/en/develop/install.html
+
+Make sure to follow all instructions, including installing IPW. The source code
+for SMRF can be found here:
+
+https://github.com/USDA-ARS-NWRC/smrf
+
+If you would like to use the PySnobal functions within AWSM, you can download
+and install PySnobal from the link below. This is optional.
+
+https://github.com/USDA-ARS-NWRC/pysnobal
 
 Installing AWSM
 ---------------
 
 Once the dependencies have been installed for your respective system, the
-following will install awsm. It is preferable to use a Python
-`virtual environment`_  to reduce the possibility of a dependency issue.
+following will install AWSM. It is preferable to use a Python
+`virtual environment`_  to reduce the possibility of a dependency issue. You should
+use the same virtual environment in which you installed SMRF. You can just
+source your smrfenv instead of step number 1.
 
 .. _virtual environment: https://virtualenv.pypa.io
 

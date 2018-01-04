@@ -80,4 +80,4 @@ target/
 *.swp
 
 test_data/AWSM_test_config_tuol.ini
-test_data/RME_run/output/*
+test_data/RME_run/output/rme

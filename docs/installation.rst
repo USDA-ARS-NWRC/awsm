@@ -57,7 +57,7 @@ and off your virtual environment.
   .. code:: bash
 
     cd AWSM
-    pip install -r requirements-dev.txt
+    pip install -r requirements_dev.txt
     python setup.py install
 
 4. (Optional) Generate a local copy of the documentation.

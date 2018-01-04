@@ -74,3 +74,29 @@ and off your virtual environment.
   .. code:: bash
 
     google-chrome _build/html/index.html
+
+Testing AWSM
+---------------
+
+Once everything is installed, you can run a quick test case over a small
+catchment in Idaho called Reynolds Mountain East (RME).
+
+1. Move to config file and run case. Start in your AWSM directory
+
+  .. code:: bash
+
+    cd test_data/RME_run/
+    awsm config.ini
+
+2. Wait for the test run to finish and then view the results.
+
+  .. code:: bash
+
+    cd output/rme/devel/wy1998/rme_test/
+
+The iSnobal model outputs will be in the "runs" folder and the distributed
+SMRF data will be in the "data" folder. Navigate around and see what the
+outputs look like. You can visualize the .nc (netCDF) files with
+the `Ncview`_ utility.
+
+.. _Ncview: http://meteora.ucsd.edu/~pierce/ncview_home_page.html

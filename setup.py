@@ -5,7 +5,7 @@
 
 from setuptools import setup, find_packages
 
-with open('README.rst') as readme_file:
+with open('README.md') as readme_file:
     readme = readme_file.read()
 
 with open('HISTORY.rst') as history_file:
@@ -25,12 +25,12 @@ test_requirements = [
 
 setup(
     name='awsm',
-    version='0.1.0',
+    version='0.2.0',
     description="Automated Water Supply Forecasting",
     long_description=readme + '\n\n' + history,
     author="Micah Sandusky",
     author_email='micah.sandusky@ars.usda.gov',
-    url='https://github.com/micahsandusky5/awsm',
+    url='https://github.com/USDA-ARS-NWRC/AWSM',
     packages=['awsm',
 			  'awsm.convertFiles',
 			  'awsm.interface',

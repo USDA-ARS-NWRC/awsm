@@ -25,7 +25,7 @@ test_requirements = [
 
 setup(
     name='awsm',
-    version='0.2.0',
+    version='0.3.0',
     description="Automated Water Supply Forecasting",
     long_description=readme + '\n\n' + history,
     author="Micah Sandusky",

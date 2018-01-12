@@ -375,7 +375,7 @@ class PySnobal():
         self._logger.info('running PySnobal for timestep: {}'.format(tstep))
         rt = snobal.do_tstep_grid(self.input1, self.input2, self.output_rec,
                                   self.tstep_info, self.options['constants'],
-                                  self.params,first_step=j, nthreads=self.nthreads)
+                                  self.params,first_step=first_step, nthreads=self.nthreads)
 
         if rt != -1:
             self.logger.error('ipysnobal error on time step {}, pixel {}'.format(tstep, rt))

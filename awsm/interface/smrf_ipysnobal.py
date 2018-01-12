@@ -17,6 +17,7 @@ from awsm.interface import ipysnobal
 from awsm.interface import interface
 from awsm.interface import initialize_model as initmodel
 from awsm.interface import pysnobal_io as io_mod
+import pytz
 import netCDF4 as nc
 try:
     from pysnobal import snobal

@@ -9,13 +9,17 @@ Scott Havens 20171016
 import pandas as pd
 import numpy as np
 from scipy import linalg
-import matplotlib.pyplot as plt
 import mysql.connector
 import os
 
+
 def wind_dir_resampler(array):
-    """Wind direction resample from componenents"""
+    """
+    Wind direction resample from componenents
+    """
+
     return np.mean(array)
+
 
 conversion = {
         'air_temp': np.mean,
@@ -35,9 +39,12 @@ conversion = {
         'cloud_factor': np.mean
     }
 
-model_keys = ['air_temp', 'cloud_factor', 'precip_intensity', 'vapor_pressure', 'wind_speed', 'wind_direction',
+model_keys = ['air_temp', 'cloud_factor', 'precip_intensity',
+              'vapor_pressure', 'wind_speed', 'wind_direction',
               'solar_radiation', 'precip_accum']
-#model_keys = ['air_temp', 'precip_accum', 'vapor_pressure'] # for a quick comparison
+# for a quick comparison
+# model_keys = ['air_temp', 'precip_accum', 'vapor_pressure']
+
 
 def organize_data(df, resample=None, smooth=False):
     """
@@ -49,7 +56,7 @@ def organize_data(df, resample=None, smooth=False):
     DF = {}
     station_ids = df.station_id.unique()
     for v in model_keys:
-#         print('    Creating dataframe for {}'.format(v))
+        # print('    Creating dataframe for {}'.format(v))
 
         # create an empty dataframe
         dp = pd.DataFrame(index=df.index.unique(), columns=station_ids)
@@ -71,6 +78,7 @@ def organize_data(df, resample=None, smooth=False):
 
     return DF
 
+
 def get_data(start_date, end_date, sql_user, w=14, resample='1D'):
 
     cnx = mysql.connector.connect(user=sql_user['user'],
@@ -80,7 +88,11 @@ def get_data(start_date, end_date, sql_user, w=14, resample='1D'):
                                   port=sql_user['port'])
 
     # get the station id's
-    qry = "SELECT tbl_metadata.* FROM tbl_metadata INNER JOIN tbl_stations_view ON tbl_metadata.primary_id=tbl_stations_view.primary_id WHERE client='TUOL_2017'"
+    qry = "SELECT tbl_metadata.* FROM tbl_metadata INNER JOIN"
+    " tbl_stations_view ON"
+    " tbl_metadata.primary_id=tbl_stations_view.primary_id"
+    " WHERE client='TUOL_2017'"
+
     d = pd.read_sql(qry, cnx, index_col='primary_id')
 
     # select the data from tbl_level2
@@ -126,8 +138,10 @@ def get_data(start_date, end_date, sql_user, w=14, resample='1D'):
         df['air_temp_max'] = dp['air_temp'].resample(resample).max()
         df['air_temp_min'] = dp['air_temp'].resample(resample).min()
         df['precip_accum'] = dp['precip_accum'].resample(resample).sum()
-        df['vapor_pressure_max'] = dp['vapor_pressure'].resample(resample).max()
-        df['vapor_pressure_min'] = dp['vapor_pressure'].resample(resample).min()
+        df['vapor_pressure_max'] = \
+            dp['vapor_pressure'].resample(resample).max()
+        df['vapor_pressure_min'] = \
+            dp['vapor_pressure'].resample(resample).min()
 
         df.dropna(axis=1, how='all', inplace=True)
         df.dropna(axis=0, how='all', inplace=True)
@@ -158,7 +172,7 @@ def create_weather(data, t, w=14):
 
     ww = '{}day'.format(np.ceil(w/2))
 
-    # Step 5: Get the intial date to start which will be the basis of the weather
+    # Step 5: Get the intial date which will be the basis of the weather
     xbar = data.loc[data.index == t[0], :]
     F_t = {}
     F_t[t[0]] = t[0]
@@ -170,16 +184,17 @@ def create_weather(data, t, w=14):
     data['dt'] = data.index.strftime('%m-%d')
 
     for i, ti in enumerate(t[1:], 1):
-#         print(ti)
+        # print(ti)
 
-        # Step 1: get all the measurements for the given time and get the regional min
+        # Step 1: get all the measurements for given time, find regional min
         xbar_t = xbar.mean()
 
-        # Step 2: Retrieve all days within the time window to get the potential t+1 day
+        # Step 2: Retrieve all days within time window to get potential t+1 day
         sd = ti - pd.to_timedelta(ww)
         ed = ti + pd.to_timedelta(ww)
 
-        ind = (data.dt >= sd.strftime('%m-%d')) & (data.dt <= ed.strftime('%m-%d'))
+        ind = (data.dt >= sd.strftime('%m-%d')) \
+            & (data.dt <= ed.strftime('%m-%d'))
         step2 = data.loc[ind, :]
 
         # Step 3: Get the regional mean for all potential days
@@ -189,10 +204,12 @@ def create_weather(data, t, w=14):
         for twi in tw:
             xbar_i.loc[twi, :] = data.loc[data.index == twi, :].mean()
 
-        # Step 4: Compute the covariance matrix from all the data within the window from Step 2
+        # Step 4: Compute the covariance matrix from
+        # all the data within the window from Step 2
         S_t = step2.cov()
 
-        # Step 6: Mahalanobis distances between the mean vector of current F_t[t] and xbar_i
+        # Step 6: Mahalanobis distances between
+        # the mean vector of current F_t[t] and xbar_i
         # The calculation of d_i was adapted from scikit-learn
         S_t_inv = linalg.pinvh(S_t)
         centered_obs = (xbar_t - xbar_i).as_matrix().astype(float)
@@ -214,8 +231,8 @@ def create_weather(data, t, w=14):
 
         xbar = data.loc[data.index == tp1, :]
 
-
     return F_t
+
 
 def construct_senario(data, days, resample='3h'):
     """
@@ -227,14 +244,15 @@ def construct_senario(data, days, resample='3h'):
     data['time'] = data.index.time
 
     df = None
-    for ti,di in days.items():
+    for ti, di in days.items():
 
         # find the random day di in the data
         d_org = data.loc[data['date'] == di.date(), :].copy()
 
         # Change the date to the new date ti
         d_org['date'] = ti.date()
-        d_org['date_time'] = d_org.apply(lambda r: pd.datetime.combine(r['date'], r['time']),1)
+        d_org['date_time'] = \
+            d_org.apply(lambda r: pd.datetime.combine(r['date'], r['time']), 1)
         d_org.set_index('date_time', inplace=True)
 
         # create a new dataframe that contains all the random data
@@ -252,15 +270,18 @@ def construct_senario(data, days, resample='3h'):
 
     return DF
 
-def do_knn(myawsm, fpath, sql_user, start_date, end_date, scen_num, add_temp, mult_precip):
+
+def do_knn(myawsm, fpath, sql_user, start_date,
+           end_date, scen_num, add_temp, mult_precip):
 
     resample = '1D'
     w = 20
 
     t = pd.date_range(start_date, end_date, freq=resample)
 
-    data, all_data, d_meta = get_data(start_date, end_date, sql_user, w, resample)
-    org_data = organize_data(all_data)
+    data, all_data, d_meta = get_data(start_date, end_date,
+                                      sql_user, w, resample)
+    # org_data = organize_data(all_data)
 
     # loop through and create a bunch of random weather senarios
     D = []
@@ -283,7 +304,7 @@ def do_knn(myawsm, fpath, sql_user, start_date, end_date, scen_num, add_temp, mu
     # make directory for each scenario and output station data to csv
     for j, DD in enumerate(D):
         # '/data/blizzard/awsmtest/tuolumne/devel'
-        #fpath = './weatherdata/scenario'
+        # fpath = './weatherdata/scenario'
         # output directory
         dir_out = os.path.join(fpath, 'scenario_{}'.format(j))
         # metadata name
@@ -296,7 +317,7 @@ def do_knn(myawsm, fpath, sql_user, start_date, end_date, scen_num, add_temp, mu
             raise ValueError('Path {} exists'.format(dir_out))
 
         for v in model_keys:
-            #if v != 'precip_accum':
+            # if v != 'precip_accum':
                 # file for each variable
                 fp_out = os.path.join(dir_out, '{}.csv'.format(v))
                 m = DD[v]

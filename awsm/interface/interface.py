@@ -1,18 +1,13 @@
 import smrf
 from smrf import ipw
 from smrf.utils import io
-from smrf.utils import utils
 import os
-import pandas as pd
 import numpy as np
 import netCDF4 as nc
-import faulthandler
-import progressbar
 from datetime import datetime
-import sys
-import glob
 import subprocess
 import copy
+
 
 def create_smrf_config(myawsm):
     """
@@ -33,12 +28,12 @@ def create_smrf_config(myawsm):
             del smrf_cfg[key]
 
     # change start date if using smrf_ipysnobal and restarting
-    if myawsm.restart_run == True and myawsm.run_smrf_ipysnobal == True:
+    if myawsm.restart_run and myawsm.run_smrf_ipysnobal:
         smrf_cfg['time']['start_date'] = myawsm.restart_date
 
     # set ouput location in smrf config
     smrf_cfg['output']['out_location'] = os.path.join(myawsm.paths)
-    smrf_cfg['system']['temp_dir'] = os.path.join(myawsm.paths,'tmp')
+    smrf_cfg['system']['temp_dir'] = os.path.join(myawsm.paths, 'tmp')
     fp_smrfini = myawsm.smrfini
 
     myawsm._logger.info('Writing the config file for SMRF')
@@ -46,60 +41,58 @@ def create_smrf_config(myawsm):
 
     return fp_smrfini
 
+
 def smrfMEAS(myawsm):
     '''
-    Run standard SMRF run. Calls :mod: `awsm.interface.interface.creae_smrf_config`
-    to make :mod: `smrf` config file and runs :mod: `smrf.framework.SMRF` similar
-    to standard run_smrf script
+    Run standard SMRF run. Calls
+    :mod: `awsm.interface.interface.creae_smrf_config`
+    to make :mod: `smrf` config file and runs
+    :mod: `smrf.framework.SMRF` similar to standard run_smrf script
 
     Args:
         myawsm: AWSM instance
     '''
 
-    ###################################################################################################
-    ### run smrf with the config file we just made ####################################################
-    ###################################################################################################
+    # #####################################################################
+    # ### run smrf with the config file we just made ######################
+    # #####################################################################
     if myawsm.end_date > myawsm.start_date:
         myawsm._logger.info('Running SMRF')
         # first create config file to run smrf
         fp_smrfini = create_smrf_config(myawsm)
 
-        faulthandler.enable()
         start = datetime.now()
 
         # with smrf.framework.SMRF(meas_ini_file) as s:
         with smrf.framework.SMRF(fp_smrfini, myawsm._logger) as s:
-            #try:
-                # 2. load topo data
-                s.loadTopo()
+            # 2. load topo data
+            s.loadTopo()
 
-                # 3. initialize the distribution
-                s.initializeDistribution()
+            # 3. initialize the distribution
+            s.initializeDistribution()
 
-                # initialize the outputs if desired
-                s.initializeOutput()
+            # initialize the outputs if desired
+            s.initializeOutput()
 
-                #===============================================================================
-                # Distribute data
-                #===============================================================================
+            # ==============================================================
+            # Distribute data
+            # ==============================================================
 
-                # 5. load weather data  and station metadata
-                s.loadData()
+            # 5. load weather data  and station metadata
+            s.loadData()
 
-                # 6. distribute
-                s.distributeData()
+            # 6. distribute
+            s.distributeData()
 
-                s._logger.info(datetime.now() - start)
+            s._logger.info(datetime.now() - start)
 
-            # except Exception as e:
-            #     print 'Error: %s' % e
-            #     s._logger.error(e)
 
 def smrf_go_wrf(myawsm):
     '''
-    Run standard SMRF run. Calls :mod: `awsm.interface.interface.creae_smrf_config`
-    to make :mod: `smrf` config file and runs :mod: `smrf.framework.SMRF` similar
-    to standard run_smrf script
+    Run standard SMRF run. Calls
+    :mod: `awsm.interface.interface.creae_smrf_config`
+    to make :mod: `smrf` config file and runs
+    :mod: `smrf.framework.SMRF` similar to standard run_smrf script
 
     Args:
         myawsm: AWSM instance
@@ -129,9 +122,9 @@ def smrf_go_wrf(myawsm):
         if key in myawsm.sec_awsm:
             del wrf_cfg[key]
 
-    ###################################################################################################
-    ### serious config edits to run wrf  ##############################################################
-    ###################################################################################################
+    # ####################################################################
+    # ### serious config edits to run wrf  ###############################
+    # ####################################################################
     # del wrf_cfg['air_temp'][:]
     wrf_cfg['air_temp'].clear()
     wrf_cfg['air_temp']['distribution'] = 'grid'
@@ -147,8 +140,10 @@ def smrf_go_wrf(myawsm):
     wrf_cfg['vapor_pressure']['detrend'] = True
     wrf_cfg['vapor_pressure']['slope'] = -1
     wrf_cfg['vapor_pressure']['mask'] = True
-    wrf_cfg['vapor_pressure']['tolerance'] = myawsm.config['vapor_pressure']['tolerance']
-    wrf_cfg['vapor_pressure']['nthreads'] = myawsm.config['vapor_pressure']['nthreads']
+    wrf_cfg['vapor_pressure']['tolerance'] = \
+        myawsm.config['vapor_pressure']['tolerance']
+    wrf_cfg['vapor_pressure']['nthreads'] = \
+        myawsm.config['vapor_pressure']['nthreads']
 
     # del wrf_cfg['wind'][:]
     wrf_cfg['wind'].clear()
@@ -163,8 +158,10 @@ def smrf_go_wrf(myawsm):
     wrf_cfg['precip']['detrend'] = True
     wrf_cfg['precip']['slope'] = 1
     wrf_cfg['precip']['mask'] = True
-    wrf_cfg['precip']['storm_mass_threshold'] = myawsm.config['precip']['storm_mass_threshold']
-    wrf_cfg['precip']['time_steps_to_end_storms'] = myawsm.config['precip']['time_steps_to_end_storms']
+    wrf_cfg['precip']['storm_mass_threshold'] = \
+        myawsm.config['precip']['storm_mass_threshold']
+    wrf_cfg['precip']['time_steps_to_end_storms'] = \
+        myawsm.config['precip']['time_steps_to_end_storms']
     wrf_cfg['precip']['nasde_model'] = myawsm.config['precip']['nasde_model']
 
     # leave albedo
@@ -175,7 +172,8 @@ def smrf_go_wrf(myawsm):
     wrf_cfg['solar']['distribution'] = 'grid'
     wrf_cfg['solar']['method'] = 'linear'
     wrf_cfg['solar']['detrend'] = False
-    wrf_cfg['solar']['clear_opt_depth'] = myawsm.config['solar']['clear_opt_depth']
+    wrf_cfg['solar']['clear_opt_depth'] = \
+        myawsm.config['solar']['clear_opt_depth']
     wrf_cfg['solar']['clear_tau'] = myawsm.config['solar']['clear_tau']
     wrf_cfg['solar']['clear_omega'] = myawsm.config['solar']['clear_omega']
     wrf_cfg['solar']['clear_gamma'] = myawsm.config['solar']['clear_gamma']
@@ -189,48 +187,44 @@ def smrf_go_wrf(myawsm):
 
     # replace output directory with forecast data
     wrf_cfg['output']['out_location'] = myawsm.path_wrf_s
-    # wrf_cfg['logging']['log_file'] = os.path.join(myawsm.pathd,'forecast','wrf_log.txt')
-    wrf_cfg['system']['temp_dir'] = os.path.join(myawsm.path_wrf_s,'tmp/')
+    # wrf_cfg['logging']['log_file'] = \
+    #    os.path.join(myawsm.pathd,'forecast','wrf_log.txt')
+    wrf_cfg['system']['temp_dir'] = os.path.join(myawsm.path_wrf_s, 'tmp/')
     fp_wrfini = myawsm.wrfini
 
     # output this config and use to run smrf
     myawsm._logger.info('Writing the config file for SMRF forecast')
     io.generate_config(wrf_cfg, fp_wrfini, inicheck=False)
 
-    ###################################################################################################
-    ### run smrf with the config file we just made ####################################################
-    ###################################################################################################
+    # ######################################################################
+    # ### run smrf with the config file we just made #######################
+    # ######################################################################
     myawsm._logger.info('Running SMRF forecast with gridded WRF data')
-    faulthandler.enable()
     start = datetime.now()
 
     # with smrf.framework.SMRF(meas_ini_file) as s:
     with smrf.framework.SMRF(fp_wrfini, myawsm._logger) as s:
-        #try:
-            # 2. load topo data
-            s.loadTopo()
+        # 2. load topo data
+        s.loadTopo()
 
-            # 3. initialize the distribution
-            s.initializeDistribution()
+        # 3. initialize the distribution
+        s.initializeDistribution()
 
-            # initialize the outputs if desired
-            s.initializeOutput()
+        # initialize the outputs if desired
+        s.initializeOutput()
 
-            #===============================================================================
-            # Distribute data
-            #===============================================================================
+        # ==================================================================
+        # Distribute data
+        # ==================================================================
 
-            # 5. load weather data  and station metadata
-            s.loadData()
+        # 5. load weather data  and station metadata
+        s.loadData()
 
-            # 6. distribute
-            s.distributeData()
+        # 6. distribute
+        s.distributeData()
 
-            s._logger.info(datetime.now() - start)
+        s._logger.info(datetime.now() - start)
 
-        # except Exception as e:
-        #     print 'Error: %s' % e
-        #     s._logger.error(e)
 
 def run_isnobal(myawsm):
     '''
@@ -245,7 +239,7 @@ def run_isnobal(myawsm):
     # find water year for calculating offset
     tt = myawsm.start_date - myawsm.wy_start
 
-    offset = tt.days*24 +  tt.seconds//3600 # start index for the input file
+    offset = tt.days*24 + tt.seconds//3600  # start index for the input file
     nbits = myawsm.nbits
 
     # create the run directory
@@ -271,7 +265,7 @@ def run_isnobal(myawsm):
         i_mask = ipw.IPW(myawsm.fp_mask).bands[0].data
         myawsm._logger.info('Masking init file')
     else:
-        i_mask = np.ones((myawsm.ny,myawsm.nx))
+        i_mask = np.ones((myawsm.ny, myawsm.nx))
 
     if offset > 0:
         i_in = ipw.IPW(myawsm.prev_mod_file)
@@ -279,46 +273,51 @@ def run_isnobal(myawsm):
         if myawsm.roughness_init is not None:
             i_out.new_band(ipw.IPW(myawsm.roughness_init).bands[1].data)
         else:
-            myawsm._logger.warning('No roughness given from old init, using value of 0.005 m')
-            i_out.new_band(0.005*np.ones((myawsm.ny,myawsm.nx)))
+            myawsm._logger.warning('No roughness given from old init,'
+                                   ' using value of 0.005 m')
+            i_out.new_band(0.005*np.ones((myawsm.ny, myawsm.nx)))
 
-        i_out.new_band(i_in.bands[0].data*i_mask) # snow depth
-        i_out.new_band(i_in.bands[1].data*i_mask) # snow density
+        i_out.new_band(i_in.bands[0].data*i_mask)  # snow depth
+        i_out.new_band(i_in.bands[1].data*i_mask)  # snow density
 
-        i_out.new_band(i_in.bands[4].data*i_mask) # active layer temp
-        i_out.new_band(i_in.bands[5].data*i_mask) # lower layer temp
-        i_out.new_band(i_in.bands[6].data*i_mask) # avgerage snow temp
+        i_out.new_band(i_in.bands[4].data*i_mask)  # active layer temp
+        i_out.new_band(i_in.bands[5].data*i_mask)  # lower layer temp
+        i_out.new_band(i_in.bands[6].data*i_mask)  # avgerage snow temp
 
-        i_out.new_band(i_in.bands[8].data*i_mask) # percent saturation
-        i_out.add_geo_hdr([myawsm.u, myawsm.v], [myawsm.du, myawsm.dv], myawsm.units, myawsm.csys)
-        i_out.write(os.path.join(myawsm.pathinit,'init%04d.ipw'%(offset)), nbits)
+        i_out.new_band(i_in.bands[8].data*i_mask)  # percent saturation
+        i_out.add_geo_hdr([myawsm.u, myawsm.v], [myawsm.du, myawsm.dv],
+                          myawsm.units, myawsm.csys)
+        i_out.write(os.path.join(myawsm.pathinit,
+                                 'init%04d.ipw' % (offset)), nbits)
     else:
-        zs0 = np.zeros((myawsm.ny,myawsm.nx))
+        zs0 = np.zeros((myawsm.ny, myawsm.nx))
         if myawsm.roughness_init is not None:
             i_out.new_band(ipw.IPW(myawsm.roughness_init).bands[1].data)
         else:
-            myawsm._logger.warning('No roughness given from old init, using value of 0.005 m')
-            i_out.new_band(0.005*np.ones((myawsm.ny,myawsm.nx)))
+            myawsm._logger.warning('No roughness given from old init,'
+                                   ' using value of 0.005 m')
+            i_out.new_band(0.005*np.ones((myawsm.ny, myawsm.nx)))
         #             i_out.new_band(i_rl0.bands[0].data)
-        i_out.new_band(zs0) # zeros snow cover depth
-        i_out.new_band(zs0) # 0density
-        i_out.new_band(zs0) # 0ts active
-        i_out.new_band(zs0) # 0ts avg
-        i_out.new_band(zs0) # 0liquid
-        i_out.add_geo_hdr([myawsm.u, myawsm.v], [myawsm.du, myawsm.dv], myawsm.units, myawsm.csys)
-        i_out.write(os.path.join(myawsm.pathinit,'init%04d.ipw'%(offset)), nbits)
+        i_out.new_band(zs0)  # zeros snow cover depth
+        i_out.new_band(zs0)  # 0density
+        i_out.new_band(zs0)  # 0ts active
+        i_out.new_band(zs0)  # 0ts avg
+        i_out.new_band(zs0)  # 0liquid
+        i_out.add_geo_hdr([myawsm.u, myawsm.v], [myawsm.du, myawsm.dv],
+                          myawsm.units, myawsm.csys)
+        i_out.write(os.path.join(myawsm.pathinit,
+                                 'init%04d.ipw' % (offset)), nbits)
 
     # develop the command to run the model
     myawsm._logger.debug("Developing command and running iSnobal")
     nthreads = int(myawsm.ithreads)
 
     tt = myawsm.end_date-myawsm.start_date
-    tmstps = tt.days*24 +  tt.seconds//3600 # start index for the input file
+    tmstps = tt.days*24 + tt.seconds//3600  # start index for the input file
 
     # make paths absolute if they are not
     cwd = os.getcwd()
 
-    fp_output = os.path.join(myawsm.pathrr,'sout{}.txt'.format(myawsm.end_date.strftime("%Y%m%d")))
     fp_ppt_desc = myawsm.ppt_desc
 
     # check length of ppt_desc file to see if there has been precip
@@ -327,22 +326,29 @@ def run_isnobal(myawsm):
         myawsm._logger.warning('Running iSnobal with no precip')
 
     # thresholds for iSnobal
-    mass_thresh = '{},{},{}'.format(myawsm.mass_thresh[0], myawsm.mass_thresh[1],myawsm.mass_thresh[2])
+    mass_thresh = '{},{},{}'.format(myawsm.mass_thresh[0],
+                                    myawsm.mass_thresh[1],
+                                    myawsm.mass_thresh[2])
 
     # check length of time steps (bug in the way iSnobal reads in input files)
     if (offset + tmstps) < 1000:
         tmstps = 1001
 
-    run_cmd = 'time isnobal -v -P %d -t 60 -T %s -n %d -I %s/init%04d.ipw -d %f -i %s/in'%(nthreads,mass_thresh,tmstps,myawsm.pathinit,offset,myawsm.active_layer,myawsm.pathi)
+    run_cmd = 'time isnobal -v -P %d -t 60 -T %s -n %d \
+              -I %s/init%04d.ipw -d %f -i %s/in' % (nthreads, mass_thresh,
+                                                    tmstps, myawsm.pathinit,
+                                                    offset,
+                                                    myawsm.active_layer,
+                                                    myawsm.pathi)
     if offset > 0:
-        run_cmd += ' -r %s'%(offset)
+        run_cmd += ' -r %s' % (offset)
     if is_ppt > 0:
-        run_cmd += ' -p %s'%(fp_ppt_desc)
+        run_cmd += ' -p %s' % (fp_ppt_desc)
     else:
         myawsm._logger.warning('Time frame has no precip!')
 
-    if myawsm.mask_isnobal == True:
-        run_cmd += ' -m %s'%(myawsm.fp_mask)
+    if myawsm.mask_isnobal:
+        run_cmd += ' -m %s' % (myawsm.fp_mask)
 
     # add output frequency in hours
     run_cmd += ' -O {}'.format(int(myawsm.output_freq))
@@ -354,7 +360,8 @@ def run_isnobal(myawsm):
     myawsm._logger.debug("Running {}".format(run_cmd))
     os.chdir(myawsm.pathro)
     # call iSnobal
-    p = subprocess.Popen(run_cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    p = subprocess.Popen(run_cmd, shell=True, stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE)
 
     while True:
         line = p.stdout.readline()
@@ -363,6 +370,7 @@ def run_isnobal(myawsm):
             break
 
     os.chdir(cwd)
+
 
 def run_isnobal_forecast(myawsm):
     """
@@ -373,7 +381,7 @@ def run_isnobal_forecast(myawsm):
     myawsm._logger.info("Getting ready to run iSnobal for WRF forecast!")
 
     tt = myawsm.end_date - myawsm.wy_start
-    offset = tt.days*24 +  tt.seconds//3600 # start index for the input file
+    offset = tt.days*24 + tt.seconds//3600  # start index for the input file
     nbits = myawsm.nbits
 
     # create the run directory
@@ -395,35 +403,37 @@ def run_isnobal_forecast(myawsm):
         i_dem = dem_file['dem'][:]
         i_out.new_band(i_dem)
 
-
     i_in = ipw.IPW(myawsm.prev_mod_file)
     # use given rougness from old init file if given
     if myawsm.roughness_init is not None:
         i_out.new_band(ipw.IPW(myawsm.roughness_init).bands[1].data)
     else:
-        myawsm._logger.warning('No roughness given from old init, using value of 0.005 m')
-        i_out.new_band(0.005*np.ones((myawsm.ny,myawsm.nx)))
+        myawsm._logger.warning('No roughness given from old init,'
+                               ' using value of 0.005 m')
+        i_out.new_band(0.005*np.ones((myawsm.ny, myawsm.nx)))
 
-    i_out.new_band(i_in.bands[0].data) # snow depth
-    i_out.new_band(i_in.bands[1].data) # snow density
-    i_out.new_band(i_in.bands[4].data) # active layer temp
-    i_out.new_band(i_in.bands[5].data) # lower layer temp
-    i_out.new_band(i_in.bands[6].data) # avgerage snow temp
-    i_out.new_band(i_in.bands[8].data) # percent saturation
-    i_out.add_geo_hdr([myawsm.u, myawsm.v], [myawsm.du, myawsm.dv], myawsm.units, myawsm.csys)
-    i_out.write(os.path.join(myawsm.path_wrf_init,'init%04d.ipw'%(offset)), nbits)
+    i_out.new_band(i_in.bands[0].data)  # snow depth
+    i_out.new_band(i_in.bands[1].data)  # snow density
+    i_out.new_band(i_in.bands[4].data)  # active layer temp
+    i_out.new_band(i_in.bands[5].data)  # lower layer temp
+    i_out.new_band(i_in.bands[6].data)  # avgerage snow temp
+    i_out.new_band(i_in.bands[8].data)  # percent saturation
+    i_out.add_geo_hdr([myawsm.u, myawsm.v], [myawsm.du, myawsm.dv],
+                      myawsm.units, myawsm.csys)
+    i_out.write(os.path.join(myawsm.path_wrf_init,
+                             'init%04d.ipw' % (offset)), nbits)
 
     # develop the command to run the model
     myawsm._logger.info("Developing command and running")
     nthreads = int(myawsm.ithreads)
 
-    tt = myawsm.end_date - myawsm.start_date                              # get a time delta to get hours from water year start
-    tmstps = tt.days*24 +  tt.seconds//3600 # start index for the input file
+    # get a time delta to get hours from water year start
+    tt = myawsm.end_date - myawsm.start_date
+    tmstps = tt.days*24 + tt.seconds//3600  # start index for the input file
 
     # make paths absolute if they are not
     cwd = os.getcwd()
 
-    fp_output = os.path.join(myawsm.path_wrf_run,'sout{}.txt'.format(myawsm.end_date.strftime("%Y%m%d")))
     fp_ppt_desc = myawsm.wrf_ppt_desc
 
     # check length of ppt_desc file to see if there has been precip
@@ -436,19 +446,27 @@ def run_isnobal_forecast(myawsm):
         tmstps = 1001
 
     # thresholds for iSnobal
-    mass_thresh = '{},{},{}'.format(myawsm.mass_thresh[0], myawsm.mass_thresh[1],myawsm.mass_thresh[2])
+    mass_thresh = '{},{},{}'.format(myawsm.mass_thresh[0],
+                                    myawsm.mass_thresh[1],
+                                    myawsm.mass_thresh[2])
 
     # develop run command string
-    run_cmd = 'time isnobal -v -P %d -t 60 -T %s -n %d -I %s/init%04d.ipw -d %f -i %s/in'%(nthreads,mass_thresh,tmstps,myawsm.path_wrf_init,offset, myawsm.active_layer,myawsm.path_wrf_i)
+    run_cmd = 'time isnobal -v -P %d -t 60 -T %s -n %d \
+              -I %s/init%04d.ipw -d %f -i %s/in' % (nthreads, mass_thresh,
+                                                    tmstps,
+                                                    myawsm.path_wrf_init,
+                                                    offset,
+                                                    myawsm.active_layer,
+                                                    myawsm.path_wrf_i)
     if offset > 0:
-        run_cmd += ' -r %s'%(offset)
+        run_cmd += ' -r %s' % (offset)
     if is_ppt > 0:
-        run_cmd += ' -p %s'%(fp_ppt_desc)
+        run_cmd += ' -p %s' % (fp_ppt_desc)
     else:
         myawsm._logger.warning('Time frame has no precip!')
 
-    if myawsm.mask_isnobal == True:
-        run_cmd += ' -m %s'%(myawsm.fp_mask)
+    if myawsm.mask_isnobal:
+        run_cmd += ' -m %s' % (myawsm.fp_mask)
 
     # add output frequency in hours
     run_cmd += ' -O {}'.format(int(myawsm.output_freq))
@@ -460,7 +478,8 @@ def run_isnobal_forecast(myawsm):
     myawsm._logger.debug("Running {}".format(run_cmd))
 
     os.chdir(myawsm.path_wrf_ro)
-    p = subprocess.Popen(run_cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    p = subprocess.Popen(run_cmd, shell=True,
+                         stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     while True:
         line = p.stdout.readline()
@@ -469,7 +488,6 @@ def run_isnobal_forecast(myawsm):
             break
 
     os.chdir(cwd)
-
 
 
 def restart_crash_image(myawsm):
@@ -484,9 +502,10 @@ def restart_crash_image(myawsm):
     nthreads = myawsm.ithreads
 
     # find water year hour and file paths
-    name_crash = 'snow.%04d'%myawsm.restart_hr
-    fp_crash = os.path.join(myawsm.pathro,name_crash)
-    fp_new_init = os.path.join(myawsm.pathinit,'init%04d.ipw'%myawsm.restart_hr)
+    name_crash = 'snow.%04d' % myawsm.restart_hr
+    fp_crash = os.path.join(myawsm.pathro, name_crash)
+    fp_new_init = os.path.join(myawsm.pathinit,
+                               'init%04d.ipw' % myawsm.restart_hr)
 
     # new ipw image for initializing restart
     myawsm._logger.info("making new init image")
@@ -494,7 +513,7 @@ def restart_crash_image(myawsm):
 
     # read in crash image and old init image
     i_crash = ipw.IPW(fp_crash)
-    #########################################################
+    # ########################################################
 
     # making dem band
     if myawsm.topotype == 'ipw':
@@ -508,37 +527,40 @@ def restart_crash_image(myawsm):
     if myawsm.roughness_init is not None:
         i_out.new_band(ipw.IPW(myawsm.roughness_init).bands[1].data)
     else:
-        myawsm._logger.warning('No roughness given from old init, using value of 0.005 m')
-        i_out.new_band(0.005*np.ones((myawsm.ny,myawsm.nx)))
+        myawsm._logger.warning('No roughness given from old init, '
+                               'using value of 0.005 m')
+        i_out.new_band(0.005*np.ones((myawsm.ny, myawsm.nx)))
 
     # pull apart crash image and zero out values at index with depths < thresh
-    z_s = i_crash.bands[0].data # snow depth
-    rho = i_crash.bands[1].data # snow density
-    T_s_0 = i_crash.bands[4].data # active layer temp
-    T_s_l = i_crash.bands[5].data # lower layer temp
-    T_s = i_crash.bands[6].data # avgerage snow temp
-    h20_sat = i_crash.bands[8].data # percent saturation
+    z_s = i_crash.bands[0].data  # snow depth
+    rho = i_crash.bands[1].data  # snow density
+    T_s_0 = i_crash.bands[4].data  # active layer temp
+    T_s_l = i_crash.bands[5].data  # lower layer temp
+    T_s = i_crash.bands[6].data  # avgerage snow temp
+    h20_sat = i_crash.bands[8].data  # percent saturation
 
-    myawsm._logger.info("correcting crash image, deleting depths under {} [m]".format(myawsm.depth_thresh))
+    myawsm._logger.info("correcting crash image, deleting "
+                        "depths under {} [m]".format(myawsm.depth_thresh))
 
     # find pixels that need reset
     idz = z_s < myawsm.depth_thresh
 
-
     # find number of pixels reset
-    num_pix = len(np.where(idz == True)[0])
+    num_pix = len(np.where(idz)[0])
     num_pix_tot = z_s.size
 
-    myawsm._logger.warning('Zeroing depth in {} out of {} total pixels'.format(num_pix, num_pix_tot))
+    myawsm._logger.warning('Zeroing depth in '
+                           '{} out of {} total pixels'.format(num_pix,
+                                                              num_pix_tot))
 
     z_s[idz] = 0.0
     rho[idz] = 0.0
-    #m_s[idz] = 0.0
-    #h20[idz] = 0.0
+    # m_s[idz] = 0.0
+    # h20[idz] = 0.0
     T_s_0[idz] = -75.0
     T_s_l[idz] = -75.0
     T_s[idz] = -75.0
-    #z_s_l[idz] = 0.0
+    # z_s_l[idz] = 0.0
     h20_sat[idz] = 0.0
 
     # fill in init image
@@ -548,26 +570,23 @@ def restart_crash_image(myawsm):
     i_out.new_band(T_s_l)
     i_out.new_band(T_s)
     i_out.new_band(h20_sat)
-    i_out.add_geo_hdr([myawsm.u, myawsm.v], [myawsm.du, myawsm.dv], myawsm.units, myawsm.csys)
+    i_out.add_geo_hdr([myawsm.u, myawsm.v], [myawsm.du, myawsm.dv],
+                      myawsm.units, myawsm.csys)
 
     myawsm._logger.info('Writing to {}'.format(fp_new_init))
     i_out.write(fp_new_init, nbits)
 
     myawsm._logger.info('Running isnobal from restart')
     offset = myawsm.restart_hr+1
-    start_date = myawsm.start_date.replace(tzinfo=myawsm.tzinfo)
-    end_date = myawsm.end_date.replace(tzinfo=myawsm.tzinfo)
 
     # use start date water year
     tt = myawsm.end_date - myawsm.wy_start
 
-    tmstps = tt.days*24 +  tt.seconds//3600 # start index for the input file
+    tmstps = tt.days*24 + tt.seconds//3600  # start index for the input file
     tmstps = int(tmstps - offset)
 
     # make paths absolute if they are not
     cwd = os.getcwd()
-
-    fp_output = os.path.join(myawsm.pathrr,'sout_restart{}.txt'.format(myawsm.restart_hr))
 
     fp_ppt_desc = myawsm.ppt_desc
 
@@ -581,17 +600,22 @@ def restart_crash_image(myawsm):
         tmstps = 1001
 
     # thresholds for iSnobal
-    mass_thresh = '{},{},{}'.format(myawsm.mass_thresh[0], myawsm.mass_thresh[1],myawsm.mass_thresh[2])
+    mass_thresh = '{},{},{}'.format(myawsm.mass_thresh[0],
+                                    myawsm.mass_thresh[1],
+                                    myawsm.mass_thresh[2])
 
-    run_cmd = "time isnobal -v -P %d -r %s -T %s -t 60 -n %s -I %s -d %f -i %s/in"%(nthreads,offset,mass_thresh,tmstps,fp_new_init,myawsm.active_layer,myawsm.pathi)
+    run_cmd = "time isnobal -v -P %d -r %s -T %s -t 60 -n %s \
+               -I %s -d %f -i %s/in" % (nthreads, offset, mass_thresh,
+                                        tmstps, fp_new_init,
+                                        myawsm.active_layer, myawsm.pathi)
 
     if is_ppt > 0:
-        run_cmd += ' -p %s'%(fp_ppt_desc)
+        run_cmd += ' -p %s' % (fp_ppt_desc)
     else:
         myawsm._logger.warning('Time frame has no precip!')
 
-    if myawsm.mask_isnobal == True:
-        run_cmd += ' -m %s'%(myawsm.fp_mask)
+    if myawsm.mask_isnobal:
+        run_cmd += ' -m %s' % (myawsm.fp_mask)
 
     # add output frequency in hours
     run_cmd += ' -O {}'.format(int(myawsm.output_freq))
@@ -603,7 +627,8 @@ def restart_crash_image(myawsm):
     myawsm._logger.debug("Running {}".format(run_cmd))
 
     os.chdir(myawsm.pathro)
-    p = subprocess.Popen(run_cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    p = subprocess.Popen(run_cmd, shell=True,
+                         stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     while True:
         line = p.stdout.readline()

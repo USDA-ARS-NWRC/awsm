@@ -175,7 +175,7 @@ def ipw2nc_mea(myawsm, runtype):
     # NetCDF EM image
     #===============================================================================
     m = {}
-    m['name'] = ['net_rad','sensible_heat','latent_heat','snow_soil','precip_advected','sum_EB','evaporation','snowmelt','runoff','cold_content']
+    m['name'] = ['net_rad','sensible_heat','latent_heat','snow_soil','precip_advected','sum_EB','evaporation','snowmelt','SWI','cold_content']
     m['units'] = ['W m-2','W m-2','W m-2','W m-2','W m-2','W m-2','kg m-2','kg m-2','kg or mm m-2','J m-2']
     m['description'] =['Average net all-wave radiation','Average sensible heat transfer','Average latent heat exchange','Average snow/soil heat exchange',
                      'Average advected heat from precipitation','Average sum of EB terms for snowcover','Total evaporation',

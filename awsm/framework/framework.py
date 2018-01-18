@@ -201,6 +201,8 @@ class AWSM():
         self.ithreads = self.config['awsm system']['ithreads']
         # how often to output form iSnobal
         self.output_freq = self.config['awsm system']['output_frequency']
+        # number of timesteps to run if ou don't want to run the whole thing
+        self.run_for_nsteps = self.config['aswm system']['run_for_nsteps']
 
         # options for restarting iSnobal
         if self.config['isnobal restart']['restart_crash']:

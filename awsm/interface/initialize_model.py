@@ -7,15 +7,12 @@ Authors: Scott Havens, Micah Sandusky
 
 import os
 import numpy as np
-import pandas as pd
 from datetime import timedelta
 import netCDF4 as nc
 from smrf import ipw
 from smrf.utils import utils
-import logging
 
 
-#DEFAULT_MAX_Z_S_0 = 0.25
 DEFAULT_MAX_H2O_VOL = 0.01
 
 DATA_TSTEP = 0
@@ -23,13 +20,10 @@ NORMAL_TSTEP = 1
 MEDIUM_TSTEP = 2
 SMALL_TSTEP = 3
 
-#DEFAULT_NORMAL_THRESHOLD = 60.0
-#DEFAULT_MEDIUM_THRESHOLD = 10.0
-#DEFAULT_SMALL_THRESHOLD = 1.0
 DEFAULT_MEDIUM_TSTEP = 15.0
 DEFAULT_SMALL_TSTEP = 1.0
 
-WHOLE_TSTEP = 0x1 # output when tstep is not divided
+WHOLE_TSTEP = 0x1  # output when tstep is not divided
 DIVIDED_TSTEP = 0x2  # output when timestep is divided
 
 hrs2min = lambda x: x * 60
@@ -40,6 +34,7 @@ C_TO_K = 273.16
 FREEZE = C_TO_K
 # Kelvin to Celcius
 K_TO_C = lambda x: x - FREEZE
+
 
 def check_range(value, min_val, max_val, descrip):
     """
@@ -53,7 +48,8 @@ def check_range(value, min_val, max_val, descrip):
         True if within range
     """
     if (value < min_val) or (value > max_val):
-        raise ValueError("%s (%f) out of range: %f to %f", descrip, value, min_val, max_val);
+        raise ValueError("%s (%f) out of range: %f to %f",
+                         descrip, value, min_val, max_val)
     pass
 
 
@@ -86,7 +82,7 @@ def open_init_files(myawsm, options, dem):
         init:   dictionary of initialized variables
 
     """
-    #------------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     # read the required variables in
     init = {}
     # get the initial conditions
@@ -104,7 +100,8 @@ def open_init_files(myawsm, options, dem):
         flds = ['z_s', 'rho', 'T_s_0', 'T_s', 'h2o_sat', 'mask']
 
         for f in flds:
-            if i.variables.has_key(f):
+            # if i.variables.has_key(f):
+            if f in i.variables:
                 init[f] = i.variables[f][:]         # read in the variables
             elif f == 'mask':
                 init[f] = np.ones_like(init['elevation'])   # if no mask set all to ones so all will be ran
@@ -131,34 +128,34 @@ def open_init_files(myawsm, options, dem):
         # add offset to get in wy hours
         time = time + offset
 
-        if myawsm.restart_run == True:
+        if myawsm.restart_run:
             tmpwyhr = myawsm.restart_hr
         else:
             # start date water year hour
             tmpwyhr = myawsm.start_wyhr
 
         # find closest location that the water year hours equal the restart hr
-        idt = np.argmin(np.absolute(time - tmpwyhr)) #returns index
+        idt = np.argmin(np.absolute(time - tmpwyhr))  # returns index
         if np.min(np.absolute(time - tmpwyhr)) > 24.0:
             raise ValueError('No time in resatrt file that is within a day of restart time')
 
-        #myawsm._logger.warning('Initialzing PySnobal with state from water year hour {}'.format(myawsm.restart_hr))
+        # myawsm._logger.warning('Initialzing PySnobal with state from water year hour {}'.format(myawsm.restart_hr))
         myawsm._logger.warning('Initialzing PySnobal with state from water year hour {}'.format(time[idt]))
 
         # sample bands
         init['elevation'] = dem        # get the elevation
         if myawsm.roughness_init is not None:
-            init['z_0'] = ipw.IPW(myawsm.roughness_init).bands[1].data[:] # get the roughness length
+            init['z_0'] = ipw.IPW(myawsm.roughness_init).bands[1].data[:]  # get the roughness length
         else:
-            init['z_0'] = 0.005*np.ones((myawsm.ny,myawsm.nx))
+            init['z_0'] = 0.005*np.ones((myawsm.ny, myawsm.nx))
             myawsm._logger.warning('No roughness given from old init, using value of 0.005 m')
 
-        init['z_s'] = i.variables['thickness'][idt,:]
-        init['rho'] = i.variables['snow_density'][idt,:]
-        init['T_s_0'] = i.variables['temp_surf'][idt,:]
-        init['T_s'] = i.variables['temp_snowcover'][idt,:]
-        init['T_s_l'] =  i.variables['temp_lower'][idt,:]
-        init['h2o_sat'] = i.variables['water_saturation'][idt,:]
+        init['z_s'] = i.variables['thickness'][idt, :]
+        init['rho'] = i.variables['snow_density'][idt, :]
+        init['T_s_0'] = i.variables['temp_surf'][idt, :]
+        init['T_s'] = i.variables['temp_snowcover'][idt, :]
+        init['T_s_l'] = i.variables['temp_lower'][idt, :]
+        init['h2o_sat'] = i.variables['water_saturation'][idt, :]
 
         if 'mask_file' in options['initial_conditions']:
             imask = ipw.IPW(options['initial_conditions']['mask_file'])
@@ -170,7 +167,6 @@ def open_init_files(myawsm, options, dem):
         # All other variables will be assumed zero if not present
         all_zeros = np.zeros_like(init['elevation'])
         # flds = ['z_s', 'rho', 'T_s_0', 'T_s', 'h2o_sat', 'mask']
-
 
         i.close()
 
@@ -226,9 +222,9 @@ def open_init_files(myawsm, options, dem):
         init['y'] = y         # get the y coordinates
         init['elevation'] = dem        # get the elevation
         if myawsm.roughness_init is not None:
-            init['z_0'] = ipw.IPW(myawsm.roughness_init).bands[1].data[:] # get the roughness length
+            init['z_0'] = ipw.IPW(myawsm.roughness_init).bands[1].data[:]  # get the roughness length
         else:
-            init['z_0'] = 0.005*np.ones((myawsm.ny,myawsm.nx))
+            init['z_0'] = 0.005*np.ones((myawsm.ny, myawsm.nx))
             myawsm._logger.warning('No roughness given from old init, using value of 0.005 m')
 
         # All other variables will be assumed zero if not present
@@ -250,7 +246,6 @@ def open_init_files(myawsm, options, dem):
     else:
         myawsm._logger.error('Wrong input type for iPySnobal init file')
 
-
     for key in init.keys():
         init[key] = init[key].astype(np.float64)
 
@@ -264,6 +259,7 @@ def open_init_files(myawsm, options, dem):
         init['T_s_l'] += FREEZE
 
     return init
+
 
 def open_restart_files(myawsm, options, dem):
     """
@@ -281,7 +277,7 @@ def open_restart_files(myawsm, options, dem):
     """
     # restart procedure from failed run
     options['initial_conditions']['input_type'] = 'netcdf_out'
-    options['initial_conditions']['file'] = os.path.join(myawsm.pathro,'snow.nc')
+    options['initial_conditions']['file'] = os.path.join(myawsm.pathro, 'snow.nc')
     # initialize with parameters
     init = open_init_files(myawsm, options, dem)
     # zero depths under specified threshold
@@ -297,6 +293,7 @@ def open_restart_files(myawsm, options, dem):
         init[k] = v
 
     return init
+
 
 def zero_crash_depths(myawsm, z_s, rho, T_s_0, T_s_l, T_s, h2o_sat):
     """
@@ -319,7 +316,7 @@ def zero_crash_depths(myawsm, z_s, rho, T_s_0, T_s_l, T_s, h2o_sat):
     idz = z_s < myawsm.depth_thresh
 
     # find number of pixels reset
-    num_pix = len(np.where(idz == True)[0])
+    num_pix = len(np.where(idz)[0])
     num_pix_tot = z_s.size
 
     myawsm._logger.warning('Zeroing depth in pixels lower than {} [m]'.format(myawsm.depth_thresh))
@@ -341,6 +338,7 @@ def zero_crash_depths(myawsm, z_s, rho, T_s_0, T_s_l, T_s, h2o_sat):
     restrat_var['h2o_sat'] = h2o_sat
 
     return restrat_var
+
 
 def get_timestep_netcdf(force, tstep, point=None):
     """
@@ -366,12 +364,11 @@ def get_timestep_netcdf(force, tstep, point=None):
 
     for f in force.keys():
 
-
         if isinstance(force[f], np.ndarray):
             # If it's a constant value then just read in the numpy array
             # pull out the value
             if point is None:
-                inpt[map_val[f]] = force[f].copy() # ensures not a reference (especially if T_g)
+                inpt[map_val[f]] = force[f].copy()  # ensures not a reference (especially if T_g)
             else:
                 inpt[map_val[f]] = np.atleast_2d(force[f][point[0], point[1]])
 
@@ -388,11 +385,9 @@ def get_timestep_netcdf(force, tstep, point=None):
 
             # pull out the value
             if point is None:
-                inpt[map_val[f]] = force[f].variables[v][t,:].astype(np.float64)
+                inpt[map_val[f]] = force[f].variables[v][t, :].astype(np.float64)
             else:
-                inpt[map_val[f]] = np.atleast_2d(force[f].variables[v][t,point[0], point[1]].astype(np.float64))
-
-
+                inpt[map_val[f]] = np.atleast_2d(force[f].variables[v][t, point[0], point[1]].astype(np.float64))
 
     # convert from C to K
     inpt['T_a'] += FREEZE
@@ -400,6 +395,7 @@ def get_timestep_netcdf(force, tstep, point=None):
     inpt['T_g'] += FREEZE
 
     return inpt
+
 
 def get_timestep_ipw(tstep, input_list, ppt_list, myawsm):
     """
@@ -430,12 +426,12 @@ def get_timestep_ipw(tstep, input_list, ppt_list, myawsm):
     tmp_date = tstep.replace(tzinfo=myawsm.tzinfo)
     wyhr = int(utils.water_day(tmp_date)[0]*24)
     # if we have inputs matching this water year hour
-    if np.any(input_list == wyhr) == True:
-        i_in = ipw.IPW(os.path.join(myawsm.pathi, 'in.%04i'%(wyhr)))
+    if np.any(input_list == wyhr):
+        i_in = ipw.IPW(os.path.join(myawsm.pathi, 'in.%04i' % (wyhr)))
         # assign soil temp
         inpt['T_g'] = myawsm.soil_temp*np.ones((myawsm.ny, myawsm.nx))
-        #myawsm._logger.info('T_g: {}'.format(myawsm.soil_temp))
-        #inpt['T_g'] = -2.5*np.ones((myawsm.ny, myawsm.nx))
+        # myawsm._logger.info('T_g: {}'.format(myawsm.soil_temp))
+        # inpt['T_g'] = -2.5*np.ones((myawsm.ny, myawsm.nx))
         for f, v in map_val.items():
             # if no solar data, give it zero
             if f == 5 and len(i_in.bands) < 6:
@@ -447,14 +443,13 @@ def get_timestep_ipw(tstep, input_list, ppt_list, myawsm):
     else:
         raise ValueError('No input timesteps for {}'.format(tstep))
 
-    if np.any(ppt_list == wyhr) == True:
-        i_ppt = ipw.IPW(os.path.join(myawsm.path_ppt, 'ppt.4b_%04i'%(wyhr)))
+    if np.any(ppt_list == wyhr):
+        i_ppt = ipw.IPW(os.path.join(myawsm.path_ppt, 'ppt.4b_%04i' % (wyhr)))
         for f, v in map_val_prec.items():
             inpt[v] = i_ppt.bands[f].data
     else:
         for f, v in map_val_prec.items():
             inpt[v] = np.zeros((myawsm.ny, myawsm.nx))
-
 
     # convert from C to K
     inpt['T_a'] += FREEZE
@@ -462,6 +457,7 @@ def get_timestep_ipw(tstep, input_list, ppt_list, myawsm):
     inpt['T_g'] += FREEZE
 
     return inpt
+
 
 def get_tstep_info(options, config, thresh):
     """
@@ -490,7 +486,6 @@ def get_tstep_info(options, config, thresh):
     for i in range(4):
         t = {'level': i, 'output': False, 'threshold': None, 'time_step': None, 'intervals': None}
         tstep_info.append(t)
-
 
     # The input data's time step must be between 1 minute and 6 hours.
     # If it is greater than 1 hour, it must be a multiple of 1 hour, e.g.
@@ -525,10 +520,9 @@ def get_tstep_info(options, config, thresh):
 #     tstep_info[DATA_TSTEP]['output'] = DIVIDED_TSTEP
 
     # mass thresholds for run timesteps
-    tstep_info[NORMAL_TSTEP]['threshold'] = thresh[0] #DEFAULT_NORMAL_THRESHOLD
-    tstep_info[MEDIUM_TSTEP]['threshold'] = thresh[1] #DEFAULT_MEDIUM_THRESHOLD
-    tstep_info[SMALL_TSTEP]['threshold'] = thresh[2] #DEFAULT_SMALL_THRESHOLD
-
+    tstep_info[NORMAL_TSTEP]['threshold'] = thresh[0]
+    tstep_info[MEDIUM_TSTEP]['threshold'] = thresh[1]
+    tstep_info[SMALL_TSTEP]['threshold'] = thresh[2]
 
     # get the rest of the parameters
     params = {}
@@ -549,6 +543,7 @@ def get_tstep_info(options, config, thresh):
     params['relative_heights'] = options['relative_heights']
 
     return params, tstep_info
+
 
 def get_args(myawsm):
     """
@@ -581,17 +576,17 @@ def get_args(myawsm):
     To-do: take all the rest of the defualt and check ranges for the
     input arguements, i.e. rewrite the rest of getargs.c
     """
-    #------------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     # these are the default options
     options = {
         'time_step': 60,
         'max-h2o': 0.01,
-#         'max_z0': DEFAULT_MAX_Z_S_0,
+        # 'max_z0': DEFAULT_MAX_Z_S_0,
         'c': True,
         'K': True,
         'mass_threshold': myawsm.mass_thresh[0],
         'time_z': 0,
-        'max_z_s_0': myawsm.active_layer, #DEFAULT_MAX_Z_S_0,
+        'max_z_s_0': myawsm.active_layer,
         'z_u': 5.0,
         'z_t': 5.0,
         'z_g': 0.5,
@@ -603,14 +598,14 @@ def get_args(myawsm):
     config['time'] = {}
     config['output'] = {}
     config['time']['time_step'] = myawsm.time_step
-    if myawsm.restart_run == True:
+    if myawsm.restart_run:
         config['time']['start_date'] = myawsm.restart_date
     else:
         config['time']['start_date'] = myawsm.start_date
 
     config['time']['end_date'] = myawsm.end_date
     config['output']['frequency'] = myawsm.output_freq
-    #config['output'] = myawsm.config['ipysnobal output']
+    # config['output'] = myawsm.config['ipysnobal output']
     config['output']['location'] = myawsm.pathro
     config['output']['nthreads'] = int(myawsm.ipy_threads)
     config['constants'] = myawsm.config['ipysnobal constants']
@@ -618,22 +613,21 @@ def get_args(myawsm):
     c = {}
     for v in myawsm.config['ipysnobal constants']:
         c[v] = float(myawsm.config['ipysnobal constants'][v])
-    options.update(c) # update the defult with any user values
+    options.update(c)  # update the defult with any user values
 
     config['constants'] = options
 
-    #------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------
     # read in the time and ensure a few things
     # nsteps will only be used if end_date is not specified
     data_tstep_min = int(config['time']['time_step'])
-    check_range (data_tstep_min, 1.0, hrs2min(60),"input data's timestep")
+    check_range(data_tstep_min, 1.0, hrs2min(60), "input data's timestep")
     if ((data_tstep_min > 60) and (data_tstep_min % 60 != 0)):
         raise ValueError("Data timestep > 60 min must be multiple of 60 min (whole hrs)")
     config['time']['time_step'] = data_tstep_min
 
     # add to constant sections for tstep_info calculation
     config['constants']['time_step'] = config['time']['time_step']
-
 
     # read in the start date and end date
     start_date = config['time']['start_date']
@@ -668,7 +662,6 @@ def get_args(myawsm):
     config['inputs']['point'] = None
     config['inputs']['input_type'] = myawsm.ipy_init_type
     config['inputs']['soil_temp'] = myawsm.soil_temp
-
 
     config['initial_conditions'] = {}
     config['initial_conditions']['file'] = os.path.abspath(myawsm.config['ipysnobal initial conditions']['init_file'])
@@ -710,13 +703,13 @@ def initialize(params, tstep_info, init):
     """
 
     sz = init['elevation'].shape
-    flds = ['mask', 'elevation', 'z_0', 'rho', 'T_s_0', 'T_s_l', 'T_s', \
-            'cc_s_0', 'cc_s_l', 'cc_s', 'm_s', 'm_s_0', 'm_s_l', 'z_s', 'z_s_0', 'z_s_l',\
-            'h2o_sat', 'layer_count', 'h2o', 'h2o_max', 'h2o_vol','h2o_total',\
-            'R_n_bar', 'H_bar', 'L_v_E_bar', 'G_bar', 'G_0_bar',\
-            'M_bar', 'delta_Q_bar', 'delta_Q_0_bar', 'E_s_sum', 'melt_sum', 'ro_pred_sum',\
+    flds = ['mask', 'elevation', 'z_0', 'rho', 'T_s_0', 'T_s_l', 'T_s',
+            'cc_s_0', 'cc_s_l', 'cc_s', 'm_s', 'm_s_0', 'm_s_l', 'z_s', 'z_s_0', 'z_s_l',
+            'h2o_sat', 'layer_count', 'h2o', 'h2o_max', 'h2o_vol', 'h2o_total',
+            'R_n_bar', 'H_bar', 'L_v_E_bar', 'G_bar', 'G_0_bar',
+            'M_bar', 'delta_Q_bar', 'delta_Q_0_bar', 'E_s_sum', 'melt_sum', 'ro_pred_sum',
             'current_time', 'time_since_out']
-    s = {key: np.zeros(sz) for key in flds} # the structure fields
+    s = {key: np.zeros(sz) for key in flds}  # the structure fields
 
     # go through each sn value and fill
     for key, val in init.items():

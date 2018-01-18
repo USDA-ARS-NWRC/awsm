@@ -26,14 +26,9 @@ def nc2ipw_mea(myawsm, runtype):
         sys.exit()
 
     tt = myawsm.start_date - myawsm.wy_start
-    if runtype == 'smrf':
-        smrfpath = myawsm.paths
-        datapath = myawsm.pathdd
-        f = open(myawsm.ppt_desc, 'w')
-    elif runtype == 'wrf':
-        smrfpath = myawsm.path_wrf_s
-        datapath = myawsm.path_wrf_data
-        f = open(myawsm.wrf_ppt_desc, 'w')
+    smrfpath = myawsm.paths
+    datapath = myawsm.pathdd
+    f = open(myawsm.ppt_desc, 'w')
 
     offset = tt.days*24 + tt.seconds//3600  # start index for the input file
 
@@ -198,7 +193,7 @@ def ipw2nc_mea(myawsm, runtype):
     if runtype == 'smrf':
         netcdfFile = os.path.join(myawsm.pathrr, 'em.nc')
     elif runtype == 'wrf':
-        netcdfFile = os.path.join(myawsm.path_wrf_run, 'em.nc')
+        netcdfFile = os.path.join(myawsm.pathrr, 'em_forecast.nc')
 
     dimensions = ('time', 'y', 'x')
     em = nc.Dataset(netcdfFile, 'w')
@@ -249,7 +244,7 @@ def ipw2nc_mea(myawsm, runtype):
     if runtype == 'smrf':
         netcdfFile = os.path.join(myawsm.pathrr, 'snow.nc')
     elif runtype == 'wrf':
-        netcdfFile = os.path.join(myawsm.path_wrf_run, 'snow.nc')
+        netcdfFile = os.path.join(myawsm.pathrr, 'snow_forescast.nc')
 
     dimensions = ('time', 'y', 'x')
     snow = nc.Dataset(netcdfFile, 'w')
@@ -283,12 +278,8 @@ def ipw2nc_mea(myawsm, runtype):
     # =======================================================================
 
     # get all the files in the directory
-    if runtype == 'smrf':
-        d = sorted(glob.glob("%s/snow*" % myawsm.pathro),
-                   key=os.path.getmtime)
-    elif runtype == 'wrf':
-        d = sorted(glob.glob("%s/snow*" % myawsm.path_wrf_ro),
-                   key=os.path.getmtime)
+    d = sorted(glob.glob("%s/snow*" % myawsm.pathro),
+               key=os.path.getmtime)
 
     d.sort(key=lambda f: os.path.splitext(f))
     # pbar = progressbar.ProgressBar(max_value=len(d)).start()

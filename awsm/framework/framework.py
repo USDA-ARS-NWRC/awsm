@@ -459,26 +459,28 @@ class AWSM():
             # used to check if data direcotry exists
             check_if_data = self.pathdd
         else:
-            path_names_att = ['path_wrf_data', 'path_wrf_run', 'path_wrf_i',
-                              'path_wrf_init', 'path_wrf_ro', 'path_wrf_s',
-                              'path_wrf_ppt']
-            self.path_wrf_data = \
+            # path_names_att = ['path_wrf_data', 'path_wrf_run', 'path_wrf_i',
+            #                   'path_wrf_init', 'path_wrf_ro', 'path_wrf_s',
+            #                   'path_wrf_ppt']
+            path_names_att = ['pathdd', 'pathrr', 'pathi',
+                              'pathinit', 'pathro', 'paths', 'path_ppt']
+            self.pathdd = \
                 os.path.join(self.pathd,
                              'forecast{}'.format(self.folder_date_stamp))
-            self.path_wrf_run = \
+            self.pathrr = \
                 os.path.join(self.pathr,
                              'forecast{}'.format(self.folder_date_stamp))
-            self.path_wrf_i = os.path.join(self.path_wrf_data, 'input/')
-            self.path_wrf_init = os.path.join(self.path_wrf_data, 'init/')
-            self.path_wrf_ro = os.path.join(self.path_wrf_run, 'output/')
-            self.path_wrf_s = os.path.join(self.path_wrf_data, 'smrfOutputs')
-            self.wrf_ppt_desc = \
-                os.path.join(self.path_wrf_data,
+            self.pathi = os.path.join(self.pathdd, 'input/')
+            self.pathinit = os.path.join(self.pathdd, 'init/')
+            self.pathro = os.path.join(self.pathrr, 'output/')
+            self.paths = os.path.join(self.pathdd, 'smrfOutputs')
+            self.ppt_desc = \
+                os.path.join(self.pathdd,
                              'ppt_desc{}.txt'.format(self.folder_date_stamp))
-            self.path_wrf_ppt = os.path.join(self.path_wrf_data, 'ppt_4b')
+            self.path_ppt = os.path.join(self.pathdd, 'ppt_4b')
 
             # used to check if data direcotry exists
-            check_if_data = self.path_wrf_data
+            check_if_data = self.pathdd
 
         # add log path to create directory
         path_names_att.append('pathll')
@@ -527,9 +529,8 @@ class AWSM():
                 os.makedirs(os.path.join(self.path_wy, 'runs/'))
 
             # if we're not running wrf data, make sure path to outputs exists
-            if not self.do_wrf:
-                if not os.path.exists(self.pathro):
-                    os.makedirs(self.pathro)
+            if not os.path.exists(self.pathro):
+                os.makedirs(self.pathro)
 
             # find where to write file
             fp_desc = os.path.join(self.path_wy, 'projectDescription.txt')
@@ -540,7 +541,8 @@ class AWSM():
                     pass
                 else:
                     self.desc = input('\nNo description for project. '
-                                      'Enter one now:\n')
+                                      'Enter one now, but do not use '
+                                      'any punctuation:\n')
                 f = open(fp_desc, 'w')
                 f.write(self.desc)
                 f.close()

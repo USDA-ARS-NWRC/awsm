@@ -186,10 +186,10 @@ def smrf_go_wrf(myawsm):
     # wrf_cfg['thermal']['detrend'] = False
 
     # replace output directory with forecast data
-    wrf_cfg['output']['out_location'] = myawsm.path_wrf_s
+    wrf_cfg['output']['out_location'] = myawsm.paths
     # wrf_cfg['logging']['log_file'] = \
     #    os.path.join(myawsm.pathd,'forecast','wrf_log.txt')
-    wrf_cfg['system']['temp_dir'] = os.path.join(myawsm.path_wrf_s, 'tmp/')
+    wrf_cfg['system']['temp_dir'] = os.path.join(myawsm.paths, 'tmp/')
     fp_wrfini = myawsm.wrfini
 
     # output this config and use to run smrf
@@ -385,10 +385,10 @@ def run_isnobal_forecast(myawsm):
     nbits = myawsm.nbits
 
     # create the run directory
-    if not os.path.exists(myawsm.path_wrf_ro):
-        os.makedirs(myawsm.path_wrf_ro)
-    if not os.path.exists(myawsm.path_wrf_init):
-        os.makedirs(myawsm.path_wrf_init)
+    # if not os.path.exists(myawsm.path_wrf_ro):
+    #     os.makedirs(myawsm.path_wrf_ro)
+    # if not os.path.exists(myawsm.path_wrf_init):
+    #     os.makedirs(myawsm.path_wrf_init)
 
     # making initial conditions file
     myawsm._logger.info("Making initial conds image")
@@ -420,7 +420,7 @@ def run_isnobal_forecast(myawsm):
     i_out.new_band(i_in.bands[8].data)  # percent saturation
     i_out.add_geo_hdr([myawsm.u, myawsm.v], [myawsm.du, myawsm.dv],
                       myawsm.units, myawsm.csys)
-    i_out.write(os.path.join(myawsm.path_wrf_init,
+    i_out.write(os.path.join(myawsm.pathinit,
                              'init%04d.ipw' % (offset)), nbits)
 
     # develop the command to run the model
@@ -434,7 +434,7 @@ def run_isnobal_forecast(myawsm):
     # make paths absolute if they are not
     cwd = os.getcwd()
 
-    fp_ppt_desc = myawsm.wrf_ppt_desc
+    fp_ppt_desc = myawsm.ppt_desc
 
     # check length of ppt_desc file to see if there has been precip
     is_ppt = os.stat(fp_ppt_desc).st_size
@@ -454,10 +454,10 @@ def run_isnobal_forecast(myawsm):
     run_cmd = 'time isnobal -v -P %d -t 60 -T %s -n %d \
               -I %s/init%04d.ipw -d %f -i %s/in' % (nthreads, mass_thresh,
                                                     tmstps,
-                                                    myawsm.path_wrf_init,
+                                                    myawsm.pathinit,
                                                     offset,
                                                     myawsm.active_layer,
-                                                    myawsm.path_wrf_i)
+                                                    myawsm.pathi)
     if offset > 0:
         run_cmd += ' -r %s' % (offset)
     if is_ppt > 0:
@@ -477,7 +477,7 @@ def run_isnobal_forecast(myawsm):
     # change directories, run, and move back
     myawsm._logger.debug("Running {}".format(run_cmd))
 
-    os.chdir(myawsm.path_wrf_ro)
+    os.chdir(myawsm.pathro)
     p = subprocess.Popen(run_cmd, shell=True,
                          stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 

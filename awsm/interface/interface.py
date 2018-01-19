@@ -315,8 +315,8 @@ def run_isnobal(myawsm):
     tt = myawsm.end_date-myawsm.start_date
     tmstps = tt.days*24 + tt.seconds//3600  # start index for the input file
     # if we have input for timesteps, use it
-    if self.run_for_nsteps is not None:
-        tmstps = self.run_for_nsteps
+    if myawsm.run_for_nsteps is not None:
+        tmstps = myawsm.run_for_nsteps
 
     # make paths absolute if they are not
     cwd = os.getcwd()
@@ -434,8 +434,8 @@ def run_isnobal_forecast(myawsm):
     tt = myawsm.end_date - myawsm.start_date
     tmstps = tt.days*24 + tt.seconds//3600  # start index for the input file
     # if we have input for tmstps, use it
-    if self.run_for_nsteps is not None:
-        tmstps = self.run_for_nsteps
+    if myawsm.run_for_nsteps is not None:
+        tmstps = myawsm.run_for_nsteps
 
     # make paths absolute if they are not
     cwd = os.getcwd()
@@ -591,8 +591,8 @@ def restart_crash_image(myawsm):
     tmstps = tt.days*24 + tt.seconds//3600  # start index for the input file
     tmstps = int(tmstps - offset)
     # if we have input for tmstps, use it
-    if self.run_for_nsteps is not None:
-        tmstps = self.run_for_nsteps
+    if myawsm.run_for_nsteps is not None:
+        tmstps = myawsm.run_for_nsteps
 
     # make paths absolute if they are not
     cwd = os.getcwd()

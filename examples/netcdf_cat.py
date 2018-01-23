@@ -18,6 +18,48 @@ fmt = '%Y-%m-%d %H:%M:%S'
 # chunk size
 cs = (6, 10, 10)
 
+# =========================================================================
+# Input section
+# =========================================================================
+fp_list = ['/home/micahsandusky/Code/AWSM/test_data/RME_run/output/rme/devel/wy1998/rme_test/runs/run1464_1680/output',
+           '/home/micahsandusky/Code/AWSM/test_data/RME_run/output/rme/devel/wy1998/rme_test/runs/run1560_1800/output',
+           '/home/micahsandusky/Code/AWSM/test_data/RME_run/output/rme/devel/wy1998/rme_test/runs/run1800_1920/output'
+           ]
+
+# names of files to combine
+em_name = 'em.nc'
+snow_name = 'snow.nc'
+
+# where to save the files
+out_snow_fp = '/home/micahsandusky/Code/AWSM/test_data/RME_run/output/rme/snow.nc'
+out_em_fp = '/home/micahsandusky/Code/AWSM/test_data/RME_run/output/rme/em.nc'
+
+# whether or not to delete duplicates
+delete_duplicates = True
+
+def avoid_duplicate(dates, var):
+    """
+    dates: np array of dates
+    var: 3d np array for variabbles
+
+    Get rid of duplicate dates for this var,
+    but keep the first one.
+    """
+    # list of deleted indices
+    deleted = []
+    # loop through and compare
+    for idt, d in enumerate(dates):
+        deld = np.where(dates == d)
+        # print(deld)
+        # go delete all but first entry
+        for dd in deld[0][1:]:
+            if dd not in deleted:
+                print('deleting duplicate {}'.format(d))
+                var = np.delete(var, (dd), axis=0)
+                deleted.append(dd)
+
+    return var
+
 
 def combine_nc(tot, old):
     """
@@ -69,7 +111,6 @@ def combine_nc(tot, old):
 
     t_units = old[0].variables['time'].units
     nc_calendar = old[0].variables['time'].calendar
-    tot.variables['time'][:] = nc.date2num(nc_dates, t_units, calendar=nc_calendar)
 
     # loop through variables not equal to time
     for i, v in enumerate(var_lst):
@@ -83,6 +124,10 @@ def combine_nc(tot, old):
             else:
                 varnew = onc.variables[v][:]
                 var = np.concatenate((var, varnew), axis=0)
+
+        # avoid having duplicates
+        if delete_duplicates:
+            var = avoid_duplicate(nc_dates, var)
         # save in total netcdf
         tot.variables[v][:] = var[:]
 
@@ -90,28 +135,16 @@ def combine_nc(tot, old):
         del(var)
         del(varnew)
 
+    # save dates
+    if delete_duplicates:
+        nc_dates = avoid_duplicate(nc_dates, nc_dates)
+    tot.variables['time'][:] = nc.date2num(nc_dates, t_units, calendar=nc_calendar)
     # sync and close files
     tot.sync()
     return tot
 
 
 def run():
-
-    # =========================================================================
-    # Input section
-    # =========================================================================
-    fp_list = ['/home/micahsandusky/Code/AWSM/test_data/RME_run/output/rme/devel/wy1998/rme_test/runs/run1464_1680/output',
-               '/home/micahsandusky/Code/AWSM/test_data/RME_run/output/rme/devel/wy1998/rme_test/runs/run1680_1800/output',
-               '/home/micahsandusky/Code/AWSM/test_data/RME_run/output/rme/devel/wy1998/rme_test/runs/run1800_1920/output'
-               ]
-
-    # names of files to combine
-    em_name = 'em.nc'
-    snow_name = 'snow.nc'
-
-    # where to save the files
-    out_snow_fp = '/home/micahsandusky/Code/AWSM/test_data/RME_run/output/rme/snow.nc'
-    out_em_fp = '/home/micahsandusky/Code/AWSM/test_data/RME_run/output/rme/em.nc'
 
     # =========================================================================
     # Read in files

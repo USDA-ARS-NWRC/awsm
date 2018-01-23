@@ -37,6 +37,7 @@ out_em_fp = '/home/micahsandusky/Code/AWSM/test_data/RME_run/output/rme/em.nc'
 # whether or not to delete duplicates
 delete_duplicates = True
 
+
 def avoid_duplicate(dates, var):
     """
     dates: np array of dates

@@ -224,7 +224,8 @@ class QueueIsnobal(threading.Thread):
             # output at the frequency and the last time step
             if ((j)*(data_tstep/3600.0) % self.options['output']['frequency'] == 0)\
                     or (j == len(self.options['time']['date_time'])):
-                io_mod.output_timestep(self.output_rec, tstep, self.options)
+                io_mod.output_timestep(self.output_rec, tstep, self.options,
+                                       myawsm.pysnobal_output_vars)
                 self.output_rec['time_since_out'] = \
                     np.zeros(self.output_rec['elevation'].shape)
 
@@ -388,7 +389,8 @@ class PySnobal():
         # if (self.j*(self.data_tstep/3600.0) % self.options['output']['frequency'] == 0) or (self.j == len(self.options['time']['date_time'])):
         if ((self.j)*(self.data_tstep/3600.0) % self.options['output']['frequency'] == 0)\
                 or (self.j == len(self.options['time']['date_time'])):
-            io_mod.output_timestep(self.output_rec, tstep, self.options)
+            io_mod.output_timestep(self.output_rec, tstep, self.options,
+                                   myawsm.pysnobal_output_vars)
             self.output_rec['time_since_out'] = np.zeros(self.output_rec['elevation'].shape)
 
         self.j += 1

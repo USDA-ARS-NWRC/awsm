@@ -23,10 +23,10 @@ COPY . / /code/awsm/
 
 RUN cd /code/pysnobal-master \
     && python3 -m pip install --upgrade pip \
-    && python3 -m pip install -r requirements_dev.txt \
+    && python3 -m pip install -r requirements_smrf.txt \
     && python3 setup.py install \
     && cd /code/awsm \
-    && python3 -m pip install -r /code/awsm/requirements_dev.txt \
+    && python3 -m pip install -r /code/awsm/requirements_smrf.txt \
     && python3 setup.py install \
     && rm -r /root/.cache/pip
 

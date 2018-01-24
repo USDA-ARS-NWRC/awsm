@@ -1,6 +1,8 @@
 # Automated Water Supply Model
 
 [![DOI](https://readthedocs.org/projects/awsm/badge/)](https://awsm.readthedocs.io)
+[![Docker Build Status](https://img.shields.io/docker/build/scotthavens/awsm.svg)](https://hub.docker.com/r/scotthavens/awsm/)
+[![Docker Automated build](https://img.shields.io/docker/automated/scotthavens/awsm.svg)](https://hub.docker.com/r/scotthavens/awsm/)
 
 
 Automated Water Supply Model (AWSM) was developed at

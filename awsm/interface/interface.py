@@ -337,10 +337,10 @@ def run_isnobal(myawsm):
     if (offset + tmstps) < 1000:
         tmstps = 1001
 
-    run_cmd = 'time isnobal -v -P %d -t 60 -T %s -n %d \
-              -I %s/init%04d.ipw -d %f -i %s/in' % (nthreads, mass_thresh,
-                                                    tmstps, myawsm.pathinit,
-                                                    offset,
+    run_cmd = 'time isnobal -v -P %d -b %d -t 60 -T %s -n %d \
+              -I %s/init%04d.ipw -d %f -i %s/in' % (nthreads, myawsm.nbits,
+                                                    mass_thresh, tmstps,
+                                                    myawsm.pathinit, offset,
                                                     myawsm.active_layer,
                                                     myawsm.pathi)
     if offset > 0:

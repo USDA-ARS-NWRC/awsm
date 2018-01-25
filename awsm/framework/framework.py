@@ -332,14 +332,6 @@ class AWSM():
         # modify config and run smrf
         smin.smrfMEAS(self)
 
-    def runSmrf_forecast(self):
-        """
-        Convert ipw smrf output to isnobal inputs. Calls
-        :mod: `awsm.convertFiles.convertFiles.nc2ipw_mea`
-        """
-        # modify config and run smrf
-        smin.smrfMEAS(self)
-
     def nc2ipw(self, runtype):
         """
         Convert ipw smrf output to isnobal inputs
@@ -358,13 +350,6 @@ class AWSM():
         Run isnobal. Calls :mod: `awsm.interface.interface.run_isnobal`
         """
 
-        smin.run_isnobal(self)
-
-    def run_isnobal_forecast(self):
-        """
-        Run isnobal with smrf forecast data
-        """
-        # modify config and run smrf
         smin.run_isnobal(self)
 
     def run_smrf_ipysnobal(self):

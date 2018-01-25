@@ -83,7 +83,7 @@ class AWSM():
         # ################## Decide which modules to run #####################
         self.do_smrf = self.config['awsm master']['run_smrf']
         self.do_isnobal = self.config['awsm master']['run_isnobal']
-        self.do_wrf = self.config['awsm master']['use_wrf']
+        self.do_forecast = self.config['awsm master']['use_forecast']
         self.do_smrf_ipysnobal = \
             self.config['awsm master']['run_smrf_ipysnobal']
         self.do_ipysnobal = self.config['awsm master']['run_ipysnobal']
@@ -137,23 +137,23 @@ class AWSM():
         # find style for folder date stamp
         self.folder_date_style = self.config['paths']['folder_date_style']
 
-        if self.do_wrf:
+        if self.do_forecast:
             self.tmp_log.append('Forecasting set to True')
 
-            self.fp_wrfdata = self.config['forecast']['wrf_data']
-            if self.fp_wrfdata is None:
+            self.fp_forecastdata = self.config['gridded']['file']
+            if self.fp_forecastdata is None:
                 self.tmp_err.append('Forecast set to true, '
-                                    'but no wrf_data given')
+                                    'but no grid file given')
                 print("Errors in the config file. See configuration "
                       "status report above.")
                 print(self.tmp_err)
                 sys.exit()
 
-            self.zone_number = self.config['forecast']['zone_number']
-            self.zone_letter = self.config['forecast']['zone_letter']
+            # setting to output in seperate daily folders
+            self.daily_folders = self.config['awsm system']['daily_folders']
 
             if self.config['system']['threading']:
-                # Can't run threaded smrf if running wrf_data
+                # Can't run threaded smrf if running forecast_data
                 self.tmp_err.append('Cannot run SMRF threaded with'
                                     ' gridded input data')
                 print(self.tmp_err)
@@ -248,7 +248,7 @@ class AWSM():
                       'paths': 'Configurations for PATHS section'
                                ' for rigid directory work',
                       'forecast': 'Configurations for FORECAST section'
-                                  ' for running with WRF forecast',
+                                  ' for running with gridded forecast',
                       'grid': 'Configurations for GRID data to run iSnobal',
                       'files': 'Input files to run AWSM',
                       'awsm system': 'System parameters',
@@ -288,7 +288,7 @@ class AWSM():
                 logfile = \
                     os.path.join(self.pathll,
                                  'log_restart_{}.out'.format(self.restart_hr))
-            elif self.do_wrf:
+            elif self.do_forecast:
                 logfile = \
                     os.path.join(self.pathll,
                                  'log_forecast_'
@@ -332,13 +332,13 @@ class AWSM():
         # modify config and run smrf
         smin.smrfMEAS(self)
 
-    def runSmrf_wrf(self):
+    def runSmrf_forecast(self):
         """
         Convert ipw smrf output to isnobal inputs. Calls
         :mod: `awsm.convertFiles.convertFiles.nc2ipw_mea`
         """
         # modify config and run smrf
-        smin.smrf_go_wrf(self)
+        smin.smrfMEAS(self)
 
     def nc2ipw(self, runtype):
         """
@@ -365,7 +365,7 @@ class AWSM():
         Run isnobal with smrf forecast data
         """
         # modify config and run smrf
-        smin.run_isnobal_forecast(self)
+        smin.run_isnobal(self)
 
     def run_smrf_ipysnobal(self):
         """
@@ -434,9 +434,10 @@ class AWSM():
 
         # name of temporary smrf file to write out
         self.smrfini = os.path.join(self.path_wy, 'tmp_smrf_config.ini')
-        self.wrfini = os.path.join(self.path_wy, 'tmp_smrf_wrf_config.ini')
+        self.forecastini = os.path.join(self.path_wy,
+                                        'tmp_smrf_forecast_config.ini')
 
-        if not self.do_wrf:
+        if not self.do_forecast:
             # assign path names for isnobal, path_names_att will be used
             # to create necessary directories
             path_names_att = ['pathdd', 'pathrr', 'pathi',
@@ -459,9 +460,6 @@ class AWSM():
             # used to check if data direcotry exists
             check_if_data = self.pathdd
         else:
-            # path_names_att = ['path_wrf_data', 'path_wrf_run', 'path_wrf_i',
-            #                   'path_wrf_init', 'path_wrf_ro', 'path_wrf_s',
-            #                   'path_wrf_ppt']
             path_names_att = ['pathdd', 'pathrr', 'pathi',
                               'pathinit', 'pathro', 'paths', 'path_ppt']
             self.pathdd = \
@@ -528,7 +526,7 @@ class AWSM():
             if not os.path.exists(os.path.join(self.path_wy, 'runs/')):
                 os.makedirs(os.path.join(self.path_wy, 'runs/'))
 
-            # if we're not running wrf data, make sure path to outputs exists
+            # if we're not running forecast, make sure path to outputs exists
             if not os.path.exists(self.pathro):
                 os.makedirs(self.pathro)
 

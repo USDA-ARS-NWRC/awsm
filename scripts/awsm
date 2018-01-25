@@ -22,7 +22,7 @@ def run():
     # try:
     with awsm.framework.framework.AWSM(configFile) as a:
 
-        if not a.do_wrf:
+        if not a.do_forecast:
             if not a.config['isnobal restart']['restart_crash']:
             # distribute data by running smrf
                 if a.do_smrf:
@@ -57,18 +57,18 @@ def run():
                     a.ipw2nc('smrf')
 
         # perform same operations using gridded WRF data
-        elif a.do_wrf:
+        elif a.do_forecast:
             if a.do_smrf:
-                a.runSmrf_wrf()
+                a.runSmrf_forecast()
 
             if a.do_make_in:
-                a.nc2ipw('wrf')
+                a.nc2ipw('forecast')
 
             if a.do_isnobal:
                 a.run_isnobal_forecast()
 
             if a.do_make_nc:
-                a.ipw2nc('wrf')
+                a.ipw2nc('forecast')
 
         # Run iPySnobal from SMRF in memory
         if a.do_smrf_ipysnobal:

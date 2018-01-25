@@ -11,6 +11,7 @@ from smrf import ipw
 from smrf.envphys import radiation
 import sys
 import numpy as np
+import pandas as pd
 from datetime import datetime
 from awsm.interface import ipysnobal
 from awsm.interface import interface
@@ -27,7 +28,8 @@ except Exception as e:
 
 def run_ipysnobal(myawsm):
     """
-    Function to run PySnobal from netcdf of ipw forcing data, not from SMRF instance.
+    Function to run PySnobal from netcdf of ipw forcing data,
+    not from SMRF instance.
 
     Args:
         myawsm:  awsm class
@@ -61,11 +63,12 @@ def run_ipysnobal(myawsm):
         input1 = initmodel.get_timestep_netcdf(force, options['time']['date_time'][0])
     else:
         input_list, ppt_list = io_mod.open_files_ipw(myawsm)
-        input1 = initmodel.get_timestep_ipw(options['time']['date_time'][0], input_list, ppt_list, myawsm)
+        input1 = initmodel.get_timestep_ipw(options['time']['date_time'][0],
+                                            input_list, ppt_list, myawsm)
 
     myawsm._logger.info('starting PySnobal time series loop')
     j = 1
-    # first_step = 1
+    # run PySnobal
     for tstep in options['time']['date_time'][1:]:
         # for tstep in options['time']['date_time'][953:958]:
         myawsm._logger.info('running PySnobal for timestep: {}'.format(tstep))
@@ -75,7 +78,6 @@ def run_ipysnobal(myawsm):
             input2 = initmodel.get_timestep_ipw(tstep, input_list, ppt_list, myawsm)
         # print output_rec
 
-        # rt = snobal.do_tstep_grid(input1, input2, output_rec, tstep_info, options['constants'], params, j, nthreads=myawsm.ipy_threads)
         rt = snobal.do_tstep_grid(input1, input2, output_rec, tstep_info,
                                   options['constants'], params, first_step=j,
                                   nthreads=myawsm.ipy_threads)
@@ -91,12 +93,18 @@ def run_ipysnobal(myawsm):
         if ((j)*(data_tstep/3600.0) % options['output']['frequency'] == 0) \
                 or (j == len(options['time']['date_time'])):
             myawsm._logger.info('Outputting {}'.format(tstep))
-            io_mod.output_timestep(output_rec, tstep, options)
+            io_mod.output_timestep(output_rec, tstep, options,
+                                   myawsm.pysnobal_output_vars)
             output_rec['time_since_out'] = np.zeros(output_rec['elevation'].shape)
 
         myawsm._logger.info('Finished timestep: {}'.format(tstep))
 
         j += 1
+
+        # if input has run_for_nsteps, make sure not to go past it
+        if myawsm.run_for_nsteps is not None:
+            if j > myawsm.run_for_nsteps:
+                break
 
     # close input files
     if myawsm.forcing_data_type == 'netcdf':
@@ -118,6 +126,17 @@ def run_smrf_ipysnobal(myawsm):
 
     # initialize
     with smrf.framework.SMRF(fp_smrfini, myawsm._logger) as s:
+        # if input has run_for_nsteps, make sure not to go past it
+        if myawsm.run_for_nsteps is not None:
+            change_in_hours = int(myawsm.run_for_nsteps *
+                                  s.config['time']['time_step']/60)
+            # recalculate end_date before initializing run
+            s.end_date = s.start_date + pd.to_timedelta(change_in_hours - 1,
+                                                        unit='h')
+            myawsm.end_date = s.end_date
+            s.date_time = s.date_time[:myawsm.run_for_nsteps]
+            s.time_steps = myawsm.run_for_nsteps
+
         # load topo data
         s.loadTopo()
 

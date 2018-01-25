@@ -173,11 +173,12 @@ def output_files(options, init, start_date, myawsm):
 
         # em image
         for i, v in enumerate(m['name']):
-
-            # em.createVariable(v, 'f', dimensions[:3], chunksizes=(6,10,10))
-            em.createVariable(v, 'f', dimensions[:3], chunksizes=cs)
-            setattr(em.variables[v], 'units', m['units'][i])
-            setattr(em.variables[v], 'description', m['description'][i])
+            # check to see if in output variables
+            if v.lower() in myawsm.pysnobal_output_vars:
+                # em.createVariable(v, 'f', dimensions[:3], chunksizes=(6,10,10))
+                em.createVariable(v, 'f', dimensions[:3], chunksizes=cs)
+                setattr(em.variables[v], 'units', m['units'][i])
+                setattr(em.variables[v], 'description', m['description'][i])
 
     options['output']['em'] = em
 
@@ -237,16 +238,17 @@ def output_files(options, init, start_date, myawsm):
 
         # snow image
         for i, v in enumerate(s['name']):
-
-            snow.createVariable(v, 'f', dimensions[:3], chunksizes=cs)
-            # snow.createVariable(v, 'f', dimensions[:3])
-            setattr(snow.variables[v], 'units', s['units'][i])
-            setattr(snow.variables[v], 'description', s['description'][i])
+            # check to see if in output variables
+            if v.lower() in myawsm.pysnobal_output_vars:
+                snow.createVariable(v, 'f', dimensions[:3], chunksizes=cs)
+                # snow.createVariable(v, 'f', dimensions[:3])
+                setattr(snow.variables[v], 'units', s['units'][i])
+                setattr(snow.variables[v], 'description', s['description'][i])
 
     options['output']['snow'] = snow
 
 
-def output_timestep(s, tstep, options):
+def output_timestep(s, tstep, options, output_vars):
     """
     Output the model results for the current time step
 
@@ -313,9 +315,11 @@ def output_timestep(s, tstep, options):
 
     # insert the data
     for key in em_out:
-        options['output']['em'].variables[key][index, :] = em[key]
+        if key.lower() in output_vars:
+            options['output']['em'].variables[key][index, :] = em[key]
     for key in snow_out:
-        options['output']['snow'].variables[key][index, :] = snow[key]
+        if key.lower() in output_vars:
+            options['output']['snow'].variables[key][index, :] = snow[key]
 
     # sync to disk
     options['output']['snow'].sync()

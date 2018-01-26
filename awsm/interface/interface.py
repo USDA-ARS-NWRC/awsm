@@ -337,12 +337,12 @@ def run_isnobal(myawsm):
     if (offset + tmstps) < 1000:
         tmstps = 1001
 
-    run_cmd = 'time isnobal -v -P %d -b %d -t 60 -T %s -n %d \
-              -I %s/init%04d.ipw -d %f -i %s/in' % (nthreads, myawsm.nbits,
-                                                    mass_thresh, tmstps,
-                                                    myawsm.pathinit, offset,
-                                                    myawsm.active_layer,
-                                                    myawsm.pathi)
+    run_cmd = 'isnobal -v -P %d -b %d -t 60 -T %s -n %d \
+    -I %s/init%04d.ipw -d %f -i %s/in' % (nthreads, myawsm.nbits,
+                                          mass_thresh, tmstps,
+                                          myawsm.pathinit, offset,
+                                          myawsm.active_layer,
+                                          myawsm.pathi)
     if offset > 0:
         run_cmd += ' -r %s' % (offset)
     if is_ppt > 0:
@@ -457,7 +457,7 @@ def run_isnobal_forecast(myawsm):
                                     myawsm.mass_thresh[2])
 
     # develop run command string
-    run_cmd = 'time isnobal -v -P %d -t 60 -T %s -n %d \
+    run_cmd = 'isnobal -v -P %d -t 60 -T %s -n %d \
               -I %s/init%04d.ipw -d %f -i %s/in' % (nthreads, mass_thresh,
                                                     tmstps,
                                                     myawsm.path_wrf_init,
@@ -613,7 +613,7 @@ def restart_crash_image(myawsm):
                                     myawsm.mass_thresh[1],
                                     myawsm.mass_thresh[2])
 
-    run_cmd = "time isnobal -v -P %d -r %s -T %s -t 60 -n %s \
+    run_cmd = "isnobal -v -P %d -r %s -T %s -t 60 -n %s \
                -I %s -d %f -i %s/in" % (nthreads, offset, mass_thresh,
                                         tmstps, fp_new_init,
                                         myawsm.active_layer, myawsm.pathi)

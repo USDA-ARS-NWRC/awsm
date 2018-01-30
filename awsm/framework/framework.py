@@ -244,15 +244,13 @@ class AWSM():
         # ################ Generate config backup ##################
         if self.config['output']['input_backup']:
             # order in which to output awsm config sections
-            order_lst = ['awsm master', 'paths', 'forecast', 'grid', 'files',
+            order_lst = ['awsm master', 'paths', 'grid', 'files',
                          'awsm system', 'isnobal restart', 'ipysnobal',
                          'ipysnobal initial conditions', 'ipysnobal constants']
             # section titles
             titles = {'awsm master': 'Configurations for AWSM Master section',
                       'paths': 'Configurations for PATHS section'
                                ' for rigid directory work',
-                      'forecast': 'Configurations for FORECAST section'
-                                  ' for running with gridded forecast',
                       'grid': 'Configurations for GRID data to run iSnobal',
                       'files': 'Input files to run AWSM',
                       'awsm system': 'System parameters',

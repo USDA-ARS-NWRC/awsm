@@ -27,6 +27,10 @@ def create_smrf_config(myawsm):
         if key in myawsm.sec_awsm:
             del smrf_cfg[key]
 
+    # make sure start and end date are correcting
+    smrf_cfg['time']['start_date'] = myawsm.start_date
+    smrf_cfg['time']['end_date'] = myawsm.end_date
+
     # change start date if using smrf_ipysnobal and restarting
     if myawsm.restart_run and myawsm.run_smrf_ipysnobal:
         smrf_cfg['time']['start_date'] = myawsm.restart_date
@@ -389,3 +393,77 @@ def restart_crash_image(myawsm):
             break
 
     os.chdir(cwd)
+
+
+def run_awsm_daily(myawsm):
+    """
+    This function is used to run smrf and pysnobal on an hourly scale with
+    outputs seperated into daily folders. This will run hourly and allow for
+    forecasts like the 18 hour HRRR forecast.
+    """
+    # get the array of time steps over which to simulate
+    d = data.mysql_data.date_range(myawsm.start_date, myawsm.end_date,
+                                   timedelta(minutes=
+                                             int(myawsm.time_step)))
+
+    myawsm._logger.warning('Changing PySnobal output to hourly')
+    myawsm.output_freq = 1
+
+    # set variables for adding a day or hour
+    add_day = pd.to_timedelta(24, unit='h')
+    add_hour = pd.to_timedelta(1, unit='h')
+
+    start_day = pd.to_datetime(d[0].strftime("%Y%m%d"))
+    end_day = pd.to_datetime(d[-1].strftime("%Y%m%d"))
+    # if we're starting on an intermediate hour, find timesteps
+    # up to first full day
+    if d[0] != start_day:
+        start_diff = start_day + add_day - d[0]
+    else:
+        start_diff = add_day
+    # find timesteps to end run on last, incomplete day
+    if d[-1] != end_day:
+        end_diff = d[-1] - end_day
+    else:
+        end_diff = add_day
+
+    # find total days to run model
+    total_days = int(len(d) * myawsm.time_step / (60*24))
+
+    # loop through timesteps and initialize runs for each day
+    for day in range(len(total_days)):
+        # set variable output names
+        myawsm.snow_name = 'snow_00'
+        myawsm.em_name = 'em_00'
+        # set start and end appropriately
+        if day == 0:
+            myawsm.start_date = d[0]
+            myawsm.end_date = d[0] + start_diff
+        elif day == len(total_days - 1):
+            myawsm.start_date = start_day + pd.to_timedelta(24*day, unit='h')
+            myawsm.end_date = myawsm.start_date + end_diff
+        else:
+            myawsm.start_date = start_day + pd.to_timedelta(24*day, unit='h')
+            myawsm.end_date = myawsm.start_date + pd.to_timedelta(24*day, unit='h')
+
+
+        # find day for labelling the output folder nested one more level in
+        daily_append = '{}'.format(myawsm.start_date.strftime("%Y%m%d"))
+        myawsm.pathro = os.path.join(myawsm.pathrr, 'output'+daily_append)
+        if not os.path.exists(myawsm.pathro):
+            os.path.makedirs(myawsm.pathro)
+
+        # ################# run_model for day ###############################
+        myawsm.run_smrf_ipysnobal()
+
+        # reset restart to be last output for next time step
+        self.ipy_init_type = 'netcdf_out'
+        self.config['ipysnobal initial conditions']['init_file'] = \
+            os.path.join(myawsm.pathro, myawsm.snow_name + '.nc')
+
+        # now loop through the forecast hours for 18hr forecasts
+        # d_inner = data.mysql_data.date_range(myawsm.start_date,
+        #                                       myawsm.end_date,
+        #                                       timedelta(minutes=int(myawsm.time_step)))
+        # for t in d_inner:
+        #     myawsm.snow_name =

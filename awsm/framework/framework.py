@@ -151,6 +151,9 @@ class AWSM():
 
             # setting to output in seperate daily folders
             self.daily_folders = self.config['awsm system']['daily_folders']
+            if self.daily_folders and not self.run_smrf_ipysnobal:
+                raise ValueError('Cannot run daily_folders with anything other'
+                                 ' than run_smrf_ipysnobal')
 
             if self.config['system']['threading']:
                 # Can't run threaded smrf if running forecast_data
@@ -205,6 +208,9 @@ class AWSM():
         self.run_for_nsteps = self.config['awsm system']['run_for_nsteps']
         # pysnobal output variables
         self.pysnobal_output_vars = self.config['awsm system']['variables']
+        # snow and emname
+        myawsm.snow_name = self.config['awsm system']['snow_name']
+        myawsm.em_name = self.config['awsm system']['em_name']
 
         # options for restarting iSnobal
         if self.config['isnobal restart']['restart_crash']:
@@ -361,6 +367,15 @@ class AWSM():
         """
 
         smrf_ipy.run_smrf_ipysnobal(self)
+
+    def run_awsm_daily(self):
+        """
+        This function runs :mod: `awsm.interface.smrf_ipysnobal.run_smrf_ipysnobal`
+        on an hourly output from Pysnobal, outputting to daily folders, similar
+        to the HRRR froecast.
+        """
+
+        smin.run_awsm_daily(self)
 
     def run_ipysnobal(self):
         """

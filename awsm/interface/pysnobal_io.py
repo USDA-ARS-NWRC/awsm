@@ -134,7 +134,7 @@ def output_files(options, init, start_date, myawsm):
                         'Total runoff',
                         'Snowcover cold content']
 
-    emname = 'em.nc'
+    emname = myawsm.em_name+'.nc'
     if myawsm.restart_run:
         emname = 'em_restart_{}.nc'.format(myawsm.restart_hr)
         start_date = myawsm.restart_date
@@ -201,7 +201,7 @@ def output_files(options, init, start_date, myawsm):
                         'Predicted thickness of the lower layer',
                         'Predicted percentage of liquid water saturation of the snowcover']
 
-    snowname = 'snow.nc'
+    snowname = myawsm.snow_name + '.nc'
     if myawsm.restart_run:
         snowname = 'snow_restart_{}.nc'.format(myawsm.restart_hr)
 

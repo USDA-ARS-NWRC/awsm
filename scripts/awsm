@@ -62,7 +62,10 @@ def run():
 
         # Run iPySnobal from SMRF in memory
         if a.do_smrf_ipysnobal:
-            a.run_smrf_ipysnobal()
+            if myawsm.daily_folders:
+                a.run_awsm_daily()
+            else:
+                a.run_smrf_ipysnobal()
 
         a._logger.info('AWSM finished in: {}'.format(datetime.now() - start))
 

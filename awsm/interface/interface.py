@@ -1,10 +1,11 @@
 import smrf
-from smrf import ipw
-from smrf.utils import io
+from smrf import ipw, data
+from smrf.utils import io, utils
 import os
 import numpy as np
 import netCDF4 as nc
 from datetime import datetime
+import pandas as pd
 import subprocess
 import copy
 
@@ -403,8 +404,8 @@ def run_awsm_daily(myawsm):
     """
     # get the array of time steps over which to simulate
     d = data.mysql_data.date_range(myawsm.start_date, myawsm.end_date,
-                                   timedelta(minutes=
-                                             int(myawsm.time_step)))
+                                   pd.to_timedelta(myawsm.time_step,
+                                                   unit='m'))
 
     myawsm._logger.warning('Changing PySnobal output to hourly')
     myawsm.output_freq = 1
@@ -431,7 +432,7 @@ def run_awsm_daily(myawsm):
     total_days = int(len(d) * myawsm.time_step / (60*24))
 
     # loop through timesteps and initialize runs for each day
-    for day in range(len(total_days)):
+    for day in range(total_days):
         # set variable output names
         myawsm.snow_name = 'snow_00'
         myawsm.em_name = 'em_00'
@@ -439,31 +440,37 @@ def run_awsm_daily(myawsm):
         if day == 0:
             myawsm.start_date = d[0]
             myawsm.end_date = d[0] + start_diff
-        elif day == len(total_days - 1):
+        elif day == total_days - 1:
             myawsm.start_date = start_day + pd.to_timedelta(24*day, unit='h')
             myawsm.end_date = myawsm.start_date + end_diff
         else:
             myawsm.start_date = start_day + pd.to_timedelta(24*day, unit='h')
-            myawsm.end_date = myawsm.start_date + pd.to_timedelta(24*day, unit='h')
+            myawsm.end_date = myawsm.start_date + pd.to_timedelta(24, unit='h')
 
+        # recalculate start and end water year hour
+        tmp_date = myawsm.start_date.replace(tzinfo=myawsm.tzinfo)
+        tmp_end_date = myawsm.end_date.replace(tzinfo=myawsm.tzinfo)
+        myawsm.start_wyhr = int(utils.water_day(tmp_date)[0]*24)
+        myawsm.end_wyhr = int(utils.water_day(tmp_end_date)[0]*24)
 
         # find day for labelling the output folder nested one more level in
         daily_append = '{}'.format(myawsm.start_date.strftime("%Y%m%d"))
         myawsm.pathro = os.path.join(myawsm.pathrr, 'output'+daily_append)
         if not os.path.exists(myawsm.pathro):
-            os.path.makedirs(myawsm.pathro)
+            os.makedirs(myawsm.pathro)
 
         # ################# run_model for day ###############################
         myawsm.run_smrf_ipysnobal()
 
         # reset restart to be last output for next time step
-        self.ipy_init_type = 'netcdf_out'
-        self.config['ipysnobal initial conditions']['init_file'] = \
+        myawsm.ipy_init_type = 'netcdf_out'
+        myawsm.config['ipysnobal initial conditions']['init_file'] = \
             os.path.join(myawsm.pathro, myawsm.snow_name + '.nc')
 
         # now loop through the forecast hours for 18hr forecasts
         # d_inner = data.mysql_data.date_range(myawsm.start_date,
         #                                       myawsm.end_date,
-        #                                       timedelta(minutes=int(myawsm.time_step)))
+        #                                       pd.to_timedelta(myawsm.time_step,
+                                               # unit='m'))
         # for t in d_inner:
         #     myawsm.snow_name =

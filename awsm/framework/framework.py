@@ -137,6 +137,12 @@ class AWSM():
         # find style for folder date stamp
         self.folder_date_style = self.config['paths']['folder_date_style']
 
+        # setting to output in seperate daily folders
+        self.daily_folders = self.config['awsm system']['daily_folders']
+        if self.daily_folders and not self.run_smrf_ipysnobal:
+            raise ValueError('Cannot run daily_folders with anything other'
+                             ' than run_smrf_ipysnobal')
+
         if self.do_forecast:
             self.tmp_log.append('Forecasting set to True')
 
@@ -148,12 +154,6 @@ class AWSM():
                       "status report above.")
                 print(self.tmp_err)
                 sys.exit()
-
-            # setting to output in seperate daily folders
-            self.daily_folders = self.config['awsm system']['daily_folders']
-            if self.daily_folders and not self.run_smrf_ipysnobal:
-                raise ValueError('Cannot run daily_folders with anything other'
-                                 ' than run_smrf_ipysnobal')
 
             if self.config['system']['threading']:
                 # Can't run threaded smrf if running forecast_data
@@ -209,8 +209,8 @@ class AWSM():
         # pysnobal output variables
         self.pysnobal_output_vars = self.config['awsm system']['variables']
         # snow and emname
-        myawsm.snow_name = self.config['awsm system']['snow_name']
-        myawsm.em_name = self.config['awsm system']['em_name']
+        self.snow_name = self.config['awsm system']['snow_name']
+        self.em_name = self.config['awsm system']['em_name']
 
         # options for restarting iSnobal
         if self.config['isnobal restart']['restart_crash']:

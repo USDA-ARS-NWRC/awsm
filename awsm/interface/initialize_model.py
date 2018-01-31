@@ -665,7 +665,7 @@ def get_args(myawsm):
 
     config['initial_conditions'] = {}
     config['initial_conditions']['file'] = os.path.abspath(myawsm.config['ipysnobal initial conditions']['init_file'])
-    config['initial_conditions']['input_type'] = myawsm.config['ipysnobal initial conditions']['input_type'].lower()
+    config['initial_conditions']['input_type'] = myawsm.ipy_init_type.lower()
     if 'restart' in myawsm.config['ipysnobal initial conditions']:
         config['initial_conditions']['restart'] = myawsm.config['ipysnobal initial conditions']['restart']
     else:

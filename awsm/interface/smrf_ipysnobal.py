@@ -206,6 +206,7 @@ def run_smrf_ipysnobal_single(myawsm, s):
     # initialize pysnobal run class
     my_pysnobal = ipysnobal.PySnobal(s.date_time,
                                      variable_list,
+                                     myawsm.pysnobal_output_vars,
                                      options,
                                      params,
                                      tstep_info,
@@ -330,6 +331,7 @@ def run_smrf_ipysnobal_threaded(myawsm, s):
     # isnobal thread
     t.append(ipysnobal.QueueIsnobal(q, s.date_time,
                                     s.thread_variables,
+                                    myawsm.pysnobal_output_vars,
                                     options,
                                     params,
                                     tstep_info,

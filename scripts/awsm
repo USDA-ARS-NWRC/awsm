@@ -62,7 +62,7 @@ def run():
 
         # Run iPySnobal from SMRF in memory
         if a.do_smrf_ipysnobal:
-            if myawsm.daily_folders:
+            if a.daily_folders:
                 a.run_awsm_daily()
             else:
                 a.run_smrf_ipysnobal()

@@ -34,4 +34,7 @@ RUN cd /code/pysnobal-master \
 
 WORKDIR /data
 
-CMD ["awsm"]
+#COPY ./docker-entrypoint.sh /
+#ENTRYPOINT ["/docker-entrypoint.sh"]
+
+ENTRYPOINT ["python3", "/code/awsm/scripts/awsm"]

@@ -8,7 +8,7 @@ import sys
 def run():
     start = datetime.now()
 
-    configFile = '../test_data/AWSM_test_config_tuol.ini'
+    configFile = '/code/awsm/test_data/RME_run/AWSM_test_config_ipysnobal.ini'
     if len(sys.argv) > 1:
         configFile = sys.argv[1]
 

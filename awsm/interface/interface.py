@@ -407,11 +407,13 @@ def run_awsm_daily(myawsm):
                                    pd.to_timedelta(myawsm.time_step,
                                                    unit='m'))
 
-    myawsm._logger.warning('Changing PySnobal output to hourly')
-    myawsm.output_freq = 1
+    if myawsm.do_forecast:
+        myawsm._logger.warning('Changing PySnobal output to hourly to allow'
+                               ' for forecast on each hour')
+        myawsm.output_freq = 1
 
     # set variables for adding a day or hour
-    add_day = pd.to_timedelta(24, unit='h')
+    add_day = pd.to_timedelta(23, unit='h')
     add_hour = pd.to_timedelta(1, unit='h')
 
     start_day = pd.to_datetime(d[0].strftime("%Y%m%d"))
@@ -445,7 +447,7 @@ def run_awsm_daily(myawsm):
             myawsm.end_date = myawsm.start_date + end_diff
         else:
             myawsm.start_date = start_day + pd.to_timedelta(24*day, unit='h')
-            myawsm.end_date = myawsm.start_date + pd.to_timedelta(24, unit='h')
+            myawsm.end_date = myawsm.start_date + pd.to_timedelta(23, unit='h')
 
         # recalculate start and end water year hour
         tmp_date = myawsm.start_date.replace(tzinfo=myawsm.tzinfo)
@@ -459,6 +461,9 @@ def run_awsm_daily(myawsm):
         if not os.path.exists(myawsm.pathro):
             os.makedirs(myawsm.pathro)
 
+        # turn off forecast for daily run (will be turned on later if it was true)
+        mywasm.config['gridded']['forecast_flag'] = False
+
         # ################# run_model for day ###############################
         myawsm.run_smrf_ipysnobal()
 
@@ -467,10 +472,26 @@ def run_awsm_daily(myawsm):
         myawsm.config['ipysnobal initial conditions']['init_file'] = \
             os.path.join(myawsm.pathro, myawsm.snow_name + '.nc')
 
-        # now loop through the forecast hours for 18hr forecasts
-        # d_inner = data.mysql_data.date_range(myawsm.start_date,
-        #                                       myawsm.end_date,
-        #                                       pd.to_timedelta(myawsm.time_step,
-                                               # unit='m'))
-        # for t in d_inner:
-        #     myawsm.snow_name =
+        if mywasm.do_forecast:
+            # turn forecast back on in smrf config
+            mywasm.config['gridded']['forecast_flag'] = True
+
+            # now loop through the forecast hours for 18hr forecasts
+            d_inner = data.mysql_data.date_range(myawsm.start_date,
+                                                  myawsm.end_date,
+                                                  pd.to_timedelta(myawsm.time_step,
+                                                  unit='m'))
+            for t in d_inner:
+                day_hour = t - pd.to_datetime(d_inner[0].strftime("%Y%m%d"))
+                day_hour = int(day_hour / np.timedelta64(1, 'h'))
+
+                # reset output names
+                myawsm.snow_name = 'snow_{:02d}'.format(day_hour)
+                myawsm.em_name = 'snow_{:02d}'.format(day_hour)
+
+                # reset start and end days
+                myawsm.start_date = t
+                myawsm.end_date = t + pd.to_timedelta(1, unit='h')
+
+                # run the model for the forecast times
+                myawsm.run_smrf_ipysnobal()

@@ -83,7 +83,7 @@ class AWSM():
         # ################## Decide which modules to run #####################
         self.do_smrf = self.config['awsm master']['run_smrf']
         self.do_isnobal = self.config['awsm master']['run_isnobal']
-        self.do_forecast = self.config['awsm master']['use_forecast']
+        self.do_forecast = self.config['gridded']['forecast_flag']
         self.do_smrf_ipysnobal = \
             self.config['awsm master']['run_smrf_ipysnobal']
         self.do_ipysnobal = self.config['awsm master']['run_ipysnobal']
@@ -146,14 +146,14 @@ class AWSM():
         if self.do_forecast:
             self.tmp_log.append('Forecasting set to True')
 
-            self.fp_forecastdata = self.config['gridded']['file']
-            if self.fp_forecastdata is None:
-                self.tmp_err.append('Forecast set to true, '
-                                    'but no grid file given')
-                print("Errors in the config file. See configuration "
-                      "status report above.")
-                print(self.tmp_err)
-                sys.exit()
+            # self.fp_forecastdata = self.config['gridded']['file']
+            # if self.fp_forecastdata is None:
+            #     self.tmp_err.append('Forecast set to true, '
+            #                         'but no grid file given')
+            #     print("Errors in the config file. See configuration "
+            #           "status report above.")
+            #     print(self.tmp_err)
+            #     sys.exit()
 
             if self.config['system']['threading']:
                 # Can't run threaded smrf if running forecast_data

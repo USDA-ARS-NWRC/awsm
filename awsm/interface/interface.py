@@ -462,7 +462,7 @@ def run_awsm_daily(myawsm):
             os.makedirs(myawsm.pathro)
 
         # turn off forecast for daily run (will be turned on later if it was true)
-        mywasm.config['gridded']['forecast_flag'] = False
+        myawsm.config['gridded']['forecast_flag'] = False
 
         # ################# run_model for day ###############################
         myawsm.run_smrf_ipysnobal()
@@ -472,6 +472,7 @@ def run_awsm_daily(myawsm):
         myawsm.config['ipysnobal initial conditions']['init_file'] = \
             os.path.join(myawsm.pathro, myawsm.snow_name + '.nc')
 
+        # do the 18hr forecast on each hour if forecast is true
         if mywasm.do_forecast:
             # turn forecast back on in smrf config
             mywasm.config['gridded']['forecast_flag'] = True

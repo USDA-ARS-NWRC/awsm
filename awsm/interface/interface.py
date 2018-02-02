@@ -493,7 +493,8 @@ def run_awsm_daily(myawsm):
 
                 # reset start and end days
                 myawsm.start_date = t
-                myawsm.end_date = t + pd.to_timedelta(1, unit='h')
+                myawsm.end_date = t + pd.to_timedelta(myawsm.n_forecast_hours,
+                                                      unit='h')
 
                 # recalculate start and end water year hour
                 tmp_date = myawsm.start_date.replace(tzinfo=myawsm.tzinfo)

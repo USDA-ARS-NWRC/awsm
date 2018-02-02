@@ -83,10 +83,15 @@ class AWSM():
         # ################## Decide which modules to run #####################
         self.do_smrf = self.config['awsm master']['run_smrf']
         self.do_isnobal = self.config['awsm master']['run_isnobal']
-        self.do_forecast = self.config['gridded']['forecast_flag']
         self.do_smrf_ipysnobal = \
             self.config['awsm master']['run_smrf_ipysnobal']
         self.do_ipysnobal = self.config['awsm master']['run_ipysnobal']
+
+        if 'gridded' in self.config:
+            self.do_forecast = self.config['gridded']['forecast_flag']
+            self.n_forecast_hours = self.config['gridded']['n_forecast_hours']
+        else:
+            self.do_forecast = False
 
         # options for converting files
         self.do_make_in = self.config['awsm master']['make_in']

@@ -140,7 +140,7 @@ def open_init_files(myawsm, options, dem):
             raise ValueError('No time in resatrt file that is within a day of restart time')
 
         # myawsm._logger.warning('Initialzing PySnobal with state from water year hour {}'.format(myawsm.restart_hr))
-        myawsm._logger.warning('Initialzing PySnobal with state from water year hour {}'.format(time[idt]))
+        myawsm._logger.warning('Initializing PySnobal with state from water year hour {}'.format(time[idt]))
 
         # sample bands
         init['elevation'] = dem        # get the elevation

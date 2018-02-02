@@ -473,9 +473,9 @@ def run_awsm_daily(myawsm):
             os.path.join(myawsm.pathro, myawsm.snow_name + '.nc')
 
         # do the 18hr forecast on each hour if forecast is true
-        if mywasm.do_forecast:
+        if myawsm.do_forecast:
             # turn forecast back on in smrf config
-            mywasm.config['gridded']['forecast_flag'] = True
+            myawsm.config['gridded']['forecast_flag'] = True
 
             # now loop through the forecast hours for 18hr forecasts
             d_inner = data.mysql_data.date_range(myawsm.start_date,
@@ -483,16 +483,23 @@ def run_awsm_daily(myawsm):
                                                   pd.to_timedelta(myawsm.time_step,
                                                   unit='m'))
             for t in d_inner:
+                # find hour from start of day
                 day_hour = t - pd.to_datetime(d_inner[0].strftime("%Y%m%d"))
                 day_hour = int(day_hour / np.timedelta64(1, 'h'))
 
                 # reset output names
                 myawsm.snow_name = 'snow_{:02d}'.format(day_hour)
-                myawsm.em_name = 'snow_{:02d}'.format(day_hour)
+                myawsm.em_name = 'em_{:02d}'.format(day_hour)
 
                 # reset start and end days
                 myawsm.start_date = t
                 myawsm.end_date = t + pd.to_timedelta(1, unit='h')
+
+                # recalculate start and end water year hour
+                tmp_date = myawsm.start_date.replace(tzinfo=myawsm.tzinfo)
+                tmp_end_date = myawsm.end_date.replace(tzinfo=myawsm.tzinfo)
+                myawsm.start_wyhr = int(utils.water_day(tmp_date)[0]*24)
+                myawsm.end_wyhr = int(utils.water_day(tmp_end_date)[0]*24)
 
                 # run the model for the forecast times
                 myawsm.run_smrf_ipysnobal()

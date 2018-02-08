@@ -91,7 +91,7 @@ def nc2ipw_mea(myawsm, runtype):
         wind_step = wind_file.variables[wind_var][idxt, :]
         sn_step = sn_file.variables[sn_var][idxt, :]
         mp_step = mp_file.variables[mp_var][idxt, :]
-        tg_step = np.ones_like(mp_step)*(-2.5)  # ground temp
+        tg_step = np.ones_like(mp_step)*(myawsm.soil_temp)  # ground temp
 
         in_step = os.path.join(in_path, 'in.%04i' % (t))
 

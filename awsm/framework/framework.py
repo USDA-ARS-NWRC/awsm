@@ -102,6 +102,8 @@ class AWSM():
         if self.mask_isnobal:
             # mask file
             self.fp_mask = os.path.abspath(self.config['topo']['mask'])
+        # prompt for making directories
+        self.prompt_dirs = self.config['awsm master']['prompt_dirs']
 
         # ################ Time information ##################
         self.start_date = pd.to_datetime(self.config['time']['start_date'])
@@ -505,9 +507,13 @@ class AWSM():
                 y_n = 'a'  # set a funny value to y_n
                 # while it is not y or n (for yes or no)
                 while y_n not in ['y', 'n']:
-                    y_n = input('Directory %s does not exist. Create base '
-                                'directory and all subdirectories? '
-                                '(y n): ' % self.path_wy)
+                    if self.prompt_dirs:
+                        y_n = input('Directory %s does not exist. Create base '
+                                    'directory and all subdirectories? '
+                                    '(y n): ' % self.path_wy)
+                    else:
+                        y_n = 'y'
+
                 if y_n == 'n':
                     self.tmp_err.append('Please fix the base directory'
                                         ' (path_wy) in your config file.')
@@ -520,9 +526,13 @@ class AWSM():
             elif not os.path.exists(check_if_data):
                 y_n = 'a'
                 while y_n not in ['y', 'n']:
-                    y_n = input('Directory %s does not exist. Create base '
-                                'directory and all subdirectories? '
-                                '(y n): ' % check_if_data)
+                    if self.prompt_dirs:
+                        y_n = input('Directory %s does not exist. Create base '
+                                    'directory and all subdirectories? '
+                                    '(y n): ' % check_if_data)
+                    else:
+                        y_n = 'y'
+                        
                 if y_n == 'n':
                     self.tmp_err.append('Please fix the base directory'
                                         ' (path_wy) in your config file.')

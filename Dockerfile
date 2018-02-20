@@ -21,6 +21,8 @@ RUN apt-get update \
 
 COPY . / /code/awsm/
 
+#ENV PYTHONPATH=/code/awsm/
+
 RUN cd /code/pysnobal-master \
     && python3 -m pip install --upgrade pip \
     && python3 -m pip install -r requirements_smrf.txt \
@@ -32,4 +34,7 @@ RUN cd /code/pysnobal-master \
 
 WORKDIR /data
 
-ENTRYPOINT ["/bin/bash"]
+#COPY ./docker-entrypoint.sh /
+#ENTRYPOINT ["/docker-entrypoint.sh"]
+
+ENTRYPOINT ["python3", "/code/awsm/scripts/awsm"]

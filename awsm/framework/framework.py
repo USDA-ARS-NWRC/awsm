@@ -289,6 +289,23 @@ class AWSM():
         Now that the directory structure is done, create log file and print out
         saved logging statements.
         '''
+        
+        level_styles = {'info': {'color': 'white'},
+                        'notice': {'color': 'magenta'}, 
+                        'verbose': {'color': 'blue'}, 
+                        'success': {'color': 'green', 'bold': True}, 
+                        'spam': {'color': 'green', 'faint': True}, 
+                        'critical': {'color': 'red', 'bold': True}, 
+                        'error': {'color': 'red'}, 
+                        'debug': {'color': 'green'}, 
+                        'warning': {'color': 'yellow'}}
+        
+        field_styles =  {'hostname': {'color': 'magenta'},
+                         'programname': {'color': 'cyan'}, 
+                         'name': {'color': 'white'}, 
+                         'levelname': {'color': 'white', 'bold': True}, 
+                         'asctime': {'color': 'green'}}
+        
         # start logging
         loglevel = self.config['awsm system']['log_level'].upper()
 
@@ -323,7 +340,10 @@ class AWSM():
                                 format=fmt)
         else:
             logging.basicConfig(level=numeric_level)
-            coloredlogs.install(level=numeric_level, fmt=fmt)
+            coloredlogs.install(level=numeric_level,
+                                fmt=fmt,
+                                level_styles=level_styles,
+                                field_styles=field_styles)
 
         self._loglevel = numeric_level
 

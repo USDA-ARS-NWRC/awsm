@@ -102,6 +102,8 @@ class AWSM():
         if self.mask_isnobal:
             # mask file
             self.fp_mask = os.path.abspath(self.config['topo']['mask'])
+        # prompt for making directories
+        self.prompt_dirs = self.config['awsm master']['prompt_dirs']
 
         # ################ Time information ##################
         self.start_date = pd.to_datetime(self.config['time']['start_date'])
@@ -289,6 +291,23 @@ class AWSM():
         Now that the directory structure is done, create log file and print out
         saved logging statements.
         '''
+        
+        level_styles = {'info': {'color': 'white'},
+                        'notice': {'color': 'magenta'}, 
+                        'verbose': {'color': 'blue'}, 
+                        'success': {'color': 'green', 'bold': True}, 
+                        'spam': {'color': 'green', 'faint': True}, 
+                        'critical': {'color': 'red', 'bold': True}, 
+                        'error': {'color': 'red'}, 
+                        'debug': {'color': 'green'}, 
+                        'warning': {'color': 'yellow'}}
+        
+        field_styles =  {'hostname': {'color': 'magenta'},
+                         'programname': {'color': 'cyan'}, 
+                         'name': {'color': 'white'}, 
+                         'levelname': {'color': 'white', 'bold': True}, 
+                         'asctime': {'color': 'green'}}
+        
         # start logging
         loglevel = self.config['awsm system']['log_level'].upper()
 
@@ -323,7 +342,10 @@ class AWSM():
                                 format=fmt)
         else:
             logging.basicConfig(level=numeric_level)
-            coloredlogs.install(level=numeric_level, fmt=fmt)
+            coloredlogs.install(level=numeric_level,
+                                fmt=fmt,
+                                level_styles=level_styles,
+                                field_styles=field_styles)
 
         self._loglevel = numeric_level
 
@@ -507,9 +529,13 @@ class AWSM():
                 y_n = 'a'  # set a funny value to y_n
                 # while it is not y or n (for yes or no)
                 while y_n not in ['y', 'n']:
-                    y_n = input('Directory %s does not exist. Create base '
-                                'directory and all subdirectories? '
-                                '(y n): ' % self.path_wy)
+                    if self.prompt_dirs:
+                        y_n = input('Directory %s does not exist. Create base '
+                                    'directory and all subdirectories? '
+                                    '(y n): ' % self.path_wy)
+                    else:
+                        y_n = 'y'
+
                 if y_n == 'n':
                     self.tmp_err.append('Please fix the base directory'
                                         ' (path_wy) in your config file.')
@@ -522,9 +548,13 @@ class AWSM():
             elif not os.path.exists(check_if_data):
                 y_n = 'a'
                 while y_n not in ['y', 'n']:
-                    y_n = input('Directory %s does not exist. Create base '
-                                'directory and all subdirectories? '
-                                '(y n): ' % check_if_data)
+                    if self.prompt_dirs:
+                        y_n = input('Directory %s does not exist. Create base '
+                                    'directory and all subdirectories? '
+                                    '(y n): ' % check_if_data)
+                    else:
+                        y_n = 'y'
+                        
                 if y_n == 'n':
                     self.tmp_err.append('Please fix the base directory'
                                         ' (path_wy) in your config file.')

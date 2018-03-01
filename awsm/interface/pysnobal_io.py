@@ -114,6 +114,8 @@ def output_files(options, init, start_date, myawsm):
     fmt = '%Y-%m-%d %H:%M:%S'
     # chunk size
     cs = (6, 10, 10)
+    if myawsm.nx < 10:
+        cs = (3, 3, 3)
 
     # ------------------------------------------------------------------------
     # EM netCDF

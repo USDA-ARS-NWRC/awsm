@@ -137,7 +137,6 @@ def run_isnobal(myawsm):
         i_mask = np.ones((myawsm.ny, myawsm.nx))
 
     if offset > 0:
-        i_in = ipw.IPW(myawsm.prev_mod_file)
         # use given rougness from old init file if given
         if myawsm.roughness_init is not None:
             i_out.new_band(ipw.IPW(myawsm.roughness_init).bands[1].data)
@@ -146,18 +145,35 @@ def run_isnobal(myawsm):
                                    ' using value of 0.005 m')
             i_out.new_band(0.005*np.ones((myawsm.ny, myawsm.nx)))
 
-        i_out.new_band(i_in.bands[0].data*i_mask)  # snow depth
-        i_out.new_band(i_in.bands[1].data*i_mask)  # snow density
+        # if we have a previous mod file
+        if myawsm.prev_mod_file is not None:
+            i_in = ipw.IPW(myawsm.prev_mod_file)
 
-        i_out.new_band(i_in.bands[4].data*i_mask)  # active layer temp
-        i_out.new_band(i_in.bands[5].data*i_mask)  # lower layer temp
-        i_out.new_band(i_in.bands[6].data*i_mask)  # avgerage snow temp
+            i_out.new_band(i_in.bands[0].data*i_mask)  # snow depth
+            i_out.new_band(i_in.bands[1].data*i_mask)  # snow density
 
-        i_out.new_band(i_in.bands[8].data*i_mask)  # percent saturation
+            i_out.new_band(i_in.bands[4].data*i_mask)  # active layer temp
+            i_out.new_band(i_in.bands[5].data*i_mask)  # lower layer temp
+            i_out.new_band(i_in.bands[6].data*i_mask)  # avgerage snow temp
+
+            i_out.new_band(i_in.bands[8].data*i_mask)  # percent saturatio
+
+        else:
+            myawsm._logger.warning('Offset is greater than zero, but no prev_mod_file given!')
+            i_out.new_band(0.0*i_mask)  # snow depth
+            i_out.new_band(0.0*i_mask)  # snow density
+
+            i_out.new_band(-75.0*i_mask)  # active layer temp
+            i_out.new_band(-75.0*i_mask)  # lower layer temp
+            i_out.new_band(-75.0*i_mask)  # avgerage snow temp
+
+            i_out.new_band(0.0*i_mask)  # percent saturation
+
         i_out.add_geo_hdr([myawsm.u, myawsm.v], [myawsm.du, myawsm.dv],
                           myawsm.units, myawsm.csys)
         i_out.write(os.path.join(myawsm.pathinit,
                                  'init%04d.ipw' % (offset)), nbits)
+
     else:
         zs0 = np.zeros((myawsm.ny, myawsm.nx))
         if myawsm.roughness_init is not None:

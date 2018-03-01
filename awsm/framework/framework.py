@@ -204,6 +204,8 @@ class AWSM():
         if self.config['files']['prev_mod_file'] is not None:
             self.prev_mod_file = \
                 os.path.abspath(self.config['files']['prev_mod_file'])
+        else:
+            self.prev_mod_file = None
 
         # threads for running iSnobal
         self.ithreads = self.config['awsm system']['ithreads']

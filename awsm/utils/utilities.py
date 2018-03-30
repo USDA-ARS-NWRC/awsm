@@ -1,3 +1,5 @@
+from .gitinfo import __gitVersion__, __gitPath__
+
 def getgitinfo():
     """gitignored file that contains specific AWSM version and path
 

@@ -225,6 +225,8 @@ def ipw2nc_mea(myawsm, runtype):
         setattr(em.variables[v], 'units', m['units'][i])
         setattr(em.variables[v], 'description', m['description'][i])
 
+    em.setncattr_string('source',
+                    'AWSM {}'.format(myawsm.gitVersion))
     # ========================================================================
     # NetCDF SNOW image
     # ========================================================================
@@ -277,6 +279,9 @@ def ipw2nc_mea(myawsm, runtype):
         snow.createVariable(v, 'f', dimensions[:3], chunksizes=(6, 10, 10))
         setattr(snow.variables[v], 'units', s['units'][i])
         setattr(snow.variables[v], 'description', s['description'][i])
+
+    snow.setncattr_string('source',
+                    'AWSM {}'.format(myawsm.gitVersion))
 
     # =======================================================================
     # Get all files in the directory, open ipw file, and add to netCDF

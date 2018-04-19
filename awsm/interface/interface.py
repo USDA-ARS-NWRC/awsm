@@ -1,10 +1,11 @@
 import smrf
-from smrf import ipw
-from smrf.utils import io
+from smrf import ipw, data
+from smrf.utils import io, utils
 import os
 import numpy as np
 import netCDF4 as nc
 from datetime import datetime
+import pandas as pd
 import subprocess
 import copy
 
@@ -27,6 +28,10 @@ def create_smrf_config(myawsm):
         if key in myawsm.sec_awsm:
             del smrf_cfg[key]
 
+    # make sure start and end date are correcting
+    smrf_cfg['time']['start_date'] = myawsm.start_date
+    smrf_cfg['time']['end_date'] = myawsm.end_date
+
     # change start date if using smrf_ipysnobal and restarting
     if myawsm.restart_run and myawsm.run_smrf_ipysnobal:
         smrf_cfg['time']['start_date'] = myawsm.restart_date
@@ -34,7 +39,10 @@ def create_smrf_config(myawsm):
     # set ouput location in smrf config
     smrf_cfg['output']['out_location'] = os.path.join(myawsm.paths)
     smrf_cfg['system']['temp_dir'] = os.path.join(myawsm.paths, 'tmp')
-    fp_smrfini = myawsm.smrfini
+    if myawsm.do_forecast:
+        fp_smrfini = myawsm.forecastini
+    else:
+        fp_smrfini = myawsm.smrfini
 
     myawsm._logger.info('Writing the config file for SMRF')
     io.generate_config(smrf_cfg, fp_smrfini, inicheck=False)
@@ -87,145 +95,6 @@ def smrfMEAS(myawsm):
             s._logger.info(datetime.now() - start)
 
 
-def smrf_go_wrf(myawsm):
-    '''
-    Run standard SMRF run. Calls
-    :mod: `awsm.interface.interface.creae_smrf_config`
-    to make :mod: `smrf` config file and runs
-    :mod: `smrf.framework.SMRF` similar to standard run_smrf script
-
-    Args:
-        myawsm: AWSM instance
-    '''
-
-    # get wrf config
-    wrf_cfg = copy.deepcopy(myawsm.config)
-
-    # edit config file to use gridded wrf data
-    if 'stations' in wrf_cfg.keys():
-        del wrf_cfg['stations']
-    if 'csv' in wrf_cfg.keys():
-        del wrf_cfg['csv']
-    if 'mysql' in wrf_cfg.keys():
-        del wrf_cfg['mysql']
-
-    if 'gridded' not in wrf_cfg:
-        wrf_cfg['gridded'] = copy.deepcopy(wrf_cfg['time'])
-        wrf_cfg['gridded'].clear()
-    wrf_cfg['gridded']['file'] = myawsm.fp_wrfdata
-    wrf_cfg['gridded']['data_type'] = 'wrf'
-    wrf_cfg['gridded']['zone_number'] = int(myawsm.zone_number)
-    wrf_cfg['gridded']['zone_letter'] = str(myawsm.zone_letter)
-
-    # delete AWSM sections
-    for key in wrf_cfg:
-        if key in myawsm.sec_awsm:
-            del wrf_cfg[key]
-
-    # ####################################################################
-    # ### serious config edits to run wrf  ###############################
-    # ####################################################################
-    # del wrf_cfg['air_temp'][:]
-    wrf_cfg['air_temp'].clear()
-    wrf_cfg['air_temp']['distribution'] = 'grid'
-    wrf_cfg['air_temp']['method'] = 'linear'
-    wrf_cfg['air_temp']['detrend'] = True
-    wrf_cfg['air_temp']['slope'] = -1
-    wrf_cfg['air_temp']['mask'] = True
-
-    # del wrf_cfg['vapor_pressure'][:]
-    wrf_cfg['vapor_pressure'].clear()
-    wrf_cfg['vapor_pressure']['distribution'] = 'grid'
-    wrf_cfg['vapor_pressure']['method'] = 'linear'
-    wrf_cfg['vapor_pressure']['detrend'] = True
-    wrf_cfg['vapor_pressure']['slope'] = -1
-    wrf_cfg['vapor_pressure']['mask'] = True
-    wrf_cfg['vapor_pressure']['tolerance'] = \
-        myawsm.config['vapor_pressure']['tolerance']
-    wrf_cfg['vapor_pressure']['nthreads'] = \
-        myawsm.config['vapor_pressure']['nthreads']
-
-    # del wrf_cfg['wind'][:]
-    wrf_cfg['wind'].clear()
-    wrf_cfg['wind']['distribution'] = 'grid'
-    wrf_cfg['wind']['method'] = 'linear'
-    wrf_cfg['wind']['detrend'] = False
-
-    # del wrf_cfg['precip'][:]
-    wrf_cfg['precip'].clear()
-    wrf_cfg['precip']['distribution'] = 'grid'
-    wrf_cfg['precip']['method'] = 'cubic_2-D'
-    wrf_cfg['precip']['detrend'] = True
-    wrf_cfg['precip']['slope'] = 1
-    wrf_cfg['precip']['mask'] = True
-    wrf_cfg['precip']['storm_mass_threshold'] = \
-        myawsm.config['precip']['storm_mass_threshold']
-    wrf_cfg['precip']['time_steps_to_end_storms'] = \
-        myawsm.config['precip']['time_steps_to_end_storms']
-    wrf_cfg['precip']['nasde_model'] = myawsm.config['precip']['nasde_model']
-
-    # leave albedo
-    wrf_cfg['albedo'] = myawsm.config['albedo']
-
-    # del wrf_cfg['solar'][:]
-    wrf_cfg['solar'].clear()
-    wrf_cfg['solar']['distribution'] = 'grid'
-    wrf_cfg['solar']['method'] = 'linear'
-    wrf_cfg['solar']['detrend'] = False
-    wrf_cfg['solar']['clear_opt_depth'] = \
-        myawsm.config['solar']['clear_opt_depth']
-    wrf_cfg['solar']['clear_tau'] = myawsm.config['solar']['clear_tau']
-    wrf_cfg['solar']['clear_omega'] = myawsm.config['solar']['clear_omega']
-    wrf_cfg['solar']['clear_gamma'] = myawsm.config['solar']['clear_gamma']
-
-    # del wrf_cfg['thermal']
-    # use default settings for thermal
-    wrf_cfg['thermal'].clear()
-    # wrf_cfg['thermal']['distribution'] = 'grid'
-    # wrf_cfg['thermal']['method'] = 'linear'
-    # wrf_cfg['thermal']['detrend'] = False
-
-    # replace output directory with forecast data
-    wrf_cfg['output']['out_location'] = myawsm.path_wrf_s
-    # wrf_cfg['logging']['log_file'] = \
-    #    os.path.join(myawsm.pathd,'forecast','wrf_log.txt')
-    wrf_cfg['system']['temp_dir'] = os.path.join(myawsm.path_wrf_s, 'tmp/')
-    fp_wrfini = myawsm.wrfini
-
-    # output this config and use to run smrf
-    myawsm._logger.info('Writing the config file for SMRF forecast')
-    io.generate_config(wrf_cfg, fp_wrfini, inicheck=False)
-
-    # ######################################################################
-    # ### run smrf with the config file we just made #######################
-    # ######################################################################
-    myawsm._logger.info('Running SMRF forecast with gridded WRF data')
-    start = datetime.now()
-
-    # with smrf.framework.SMRF(meas_ini_file) as s:
-    with smrf.framework.SMRF(fp_wrfini, myawsm._logger) as s:
-        # 2. load topo data
-        s.loadTopo()
-
-        # 3. initialize the distribution
-        s.initializeDistribution()
-
-        # initialize the outputs if desired
-        s.initializeOutput()
-
-        # ==================================================================
-        # Distribute data
-        # ==================================================================
-
-        # 5. load weather data  and station metadata
-        s.loadData()
-
-        # 6. distribute
-        s.distributeData()
-
-        s._logger.info(datetime.now() - start)
-
-
 def run_isnobal(myawsm):
     '''
     Run iSnobal from command line. Checks necessary directories, creates
@@ -268,7 +137,6 @@ def run_isnobal(myawsm):
         i_mask = np.ones((myawsm.ny, myawsm.nx))
 
     if offset > 0:
-        i_in = ipw.IPW(myawsm.prev_mod_file)
         # use given rougness from old init file if given
         if myawsm.roughness_init is not None:
             i_out.new_band(ipw.IPW(myawsm.roughness_init).bands[1].data)
@@ -277,18 +145,35 @@ def run_isnobal(myawsm):
                                    ' using value of 0.005 m')
             i_out.new_band(0.005*np.ones((myawsm.ny, myawsm.nx)))
 
-        i_out.new_band(i_in.bands[0].data*i_mask)  # snow depth
-        i_out.new_band(i_in.bands[1].data*i_mask)  # snow density
+        # if we have a previous mod file
+        if myawsm.prev_mod_file is not None:
+            i_in = ipw.IPW(myawsm.prev_mod_file)
 
-        i_out.new_band(i_in.bands[4].data*i_mask)  # active layer temp
-        i_out.new_band(i_in.bands[5].data*i_mask)  # lower layer temp
-        i_out.new_band(i_in.bands[6].data*i_mask)  # avgerage snow temp
+            i_out.new_band(i_in.bands[0].data*i_mask)  # snow depth
+            i_out.new_band(i_in.bands[1].data*i_mask)  # snow density
 
-        i_out.new_band(i_in.bands[8].data*i_mask)  # percent saturation
+            i_out.new_band(i_in.bands[4].data*i_mask)  # active layer temp
+            i_out.new_band(i_in.bands[5].data*i_mask)  # lower layer temp
+            i_out.new_band(i_in.bands[6].data*i_mask)  # avgerage snow temp
+
+            i_out.new_band(i_in.bands[8].data*i_mask)  # percent saturatio
+
+        else:
+            myawsm._logger.warning('Offset is greater than zero, but no prev_mod_file given!')
+            i_out.new_band(0.0*i_mask)  # snow depth
+            i_out.new_band(0.0*i_mask)  # snow density
+
+            i_out.new_band(-75.0*i_mask)  # active layer temp
+            i_out.new_band(-75.0*i_mask)  # lower layer temp
+            i_out.new_band(-75.0*i_mask)  # avgerage snow temp
+
+            i_out.new_band(0.0*i_mask)  # percent saturation
+
         i_out.add_geo_hdr([myawsm.u, myawsm.v], [myawsm.du, myawsm.dv],
                           myawsm.units, myawsm.csys)
         i_out.write(os.path.join(myawsm.pathinit,
                                  'init%04d.ipw' % (offset)), nbits)
+
     else:
         zs0 = np.zeros((myawsm.ny, myawsm.nx))
         if myawsm.roughness_init is not None:
@@ -365,127 +250,6 @@ def run_isnobal(myawsm):
     # call iSnobal
     p = subprocess.Popen(run_cmd, shell=True, stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE)
-
-    while True:
-        line = p.stdout.readline()
-        myawsm._logger.info(line)
-        if not line:
-            break
-
-    os.chdir(cwd)
-
-
-def run_isnobal_forecast(myawsm):
-    """
-    Args:
-        myawsm: AWSM instance
-    """
-
-    myawsm._logger.info("Getting ready to run iSnobal for WRF forecast!")
-
-    tt = myawsm.end_date - myawsm.wy_start
-    offset = tt.days*24 + tt.seconds//3600  # start index for the input file
-    nbits = myawsm.nbits
-
-    # create the run directory
-    if not os.path.exists(myawsm.path_wrf_ro):
-        os.makedirs(myawsm.path_wrf_ro)
-    if not os.path.exists(myawsm.path_wrf_init):
-        os.makedirs(myawsm.path_wrf_init)
-
-    # making initial conditions file
-    myawsm._logger.info("Making initial conds image")
-    i_out = ipw.IPW()
-
-    # making dem band
-    if myawsm.topotype == 'ipw':
-        i_dem = ipw.IPW(myawsm.fp_dem)
-        i_out.new_band(i_dem.bands[0].data)
-    elif myawsm.topotype == 'netcdf':
-        dem_file = nc.Dataset(myawsm.fp_dem, 'r')
-        i_dem = dem_file['dem'][:]
-        i_out.new_band(i_dem)
-
-    i_in = ipw.IPW(myawsm.prev_mod_file)
-    # use given rougness from old init file if given
-    if myawsm.roughness_init is not None:
-        i_out.new_band(ipw.IPW(myawsm.roughness_init).bands[1].data)
-    else:
-        myawsm._logger.warning('No roughness given from old init,'
-                               ' using value of 0.005 m')
-        i_out.new_band(0.005*np.ones((myawsm.ny, myawsm.nx)))
-
-    i_out.new_band(i_in.bands[0].data)  # snow depth
-    i_out.new_band(i_in.bands[1].data)  # snow density
-    i_out.new_band(i_in.bands[4].data)  # active layer temp
-    i_out.new_band(i_in.bands[5].data)  # lower layer temp
-    i_out.new_band(i_in.bands[6].data)  # avgerage snow temp
-    i_out.new_band(i_in.bands[8].data)  # percent saturation
-    i_out.add_geo_hdr([myawsm.u, myawsm.v], [myawsm.du, myawsm.dv],
-                      myawsm.units, myawsm.csys)
-    i_out.write(os.path.join(myawsm.path_wrf_init,
-                             'init%04d.ipw' % (offset)), nbits)
-
-    # develop the command to run the model
-    myawsm._logger.info("Developing command and running")
-    nthreads = int(myawsm.ithreads)
-
-    # get a time delta to get hours from water year start
-    tt = myawsm.end_date - myawsm.start_date
-    tmstps = tt.days*24 + tt.seconds//3600  # start index for the input file
-    # if we have input for tmstps, use it
-    if myawsm.run_for_nsteps is not None:
-        tmstps = myawsm.run_for_nsteps
-
-    # make paths absolute if they are not
-    cwd = os.getcwd()
-
-    fp_ppt_desc = myawsm.wrf_ppt_desc
-
-    # check length of ppt_desc file to see if there has been precip
-    is_ppt = os.stat(fp_ppt_desc).st_size
-    if is_ppt == 0:
-        myawsm._logger.warning('Running iSnobal with no precip')
-
-    # check length of time steps (bug in the way iSnobal reads in input files)
-    if (offset + tmstps) < 1000:
-        tmstps = 1001
-
-    # thresholds for iSnobal
-    mass_thresh = '{},{},{}'.format(myawsm.mass_thresh[0],
-                                    myawsm.mass_thresh[1],
-                                    myawsm.mass_thresh[2])
-
-    # develop run command string
-    run_cmd = 'isnobal -v -P %d -t 60 -T %s -n %d \
-              -I %s/init%04d.ipw -d %f -i %s/in' % (nthreads, mass_thresh,
-                                                    tmstps,
-                                                    myawsm.path_wrf_init,
-                                                    offset,
-                                                    myawsm.active_layer,
-                                                    myawsm.path_wrf_i)
-    if offset > 0:
-        run_cmd += ' -r %s' % (offset)
-    if is_ppt > 0:
-        run_cmd += ' -p %s' % (fp_ppt_desc)
-    else:
-        myawsm._logger.warning('Time frame has no precip!')
-
-    if myawsm.mask_isnobal:
-        run_cmd += ' -m %s' % (myawsm.fp_mask)
-
-    # add output frequency in hours
-    run_cmd += ' -O {}'.format(int(myawsm.output_freq))
-
-    # add end to string
-    run_cmd += ' -e em -s snow  2>&1'
-
-    # change directories, run, and move back
-    myawsm._logger.debug("Running {}".format(run_cmd))
-
-    os.chdir(myawsm.path_wrf_ro)
-    p = subprocess.Popen(run_cmd, shell=True,
-                         stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     while True:
         line = p.stdout.readline()
@@ -646,3 +410,113 @@ def restart_crash_image(myawsm):
             break
 
     os.chdir(cwd)
+
+
+def run_awsm_daily(myawsm):
+    """
+    This function is used to run smrf and pysnobal on an hourly scale with
+    outputs seperated into daily folders. This will run hourly and allow for
+    forecasts like the 18 hour HRRR forecast.
+    """
+    # get the array of time steps over which to simulate
+    d = data.mysql_data.date_range(myawsm.start_date, myawsm.end_date,
+                                   pd.to_timedelta(myawsm.time_step,
+                                                   unit='m'))
+
+    if myawsm.do_forecast:
+        myawsm._logger.warning('Changing PySnobal output to hourly to allow'
+                               ' for forecast on each hour')
+        myawsm.output_freq = 1
+
+    # set variables for adding a day or hour
+    add_day = pd.to_timedelta(23, unit='h')
+    add_hour = pd.to_timedelta(1, unit='h')
+
+    start_day = pd.to_datetime(d[0].strftime("%Y%m%d"))
+    end_day = pd.to_datetime(d[-1].strftime("%Y%m%d"))
+    # if we're starting on an intermediate hour, find timesteps
+    # up to first full day
+    if d[0] != start_day:
+        start_diff = start_day + add_day - d[0]
+    else:
+        start_diff = add_day
+    # find timesteps to end run on last, incomplete day
+    if d[-1] != end_day:
+        end_diff = d[-1] - end_day
+    else:
+        end_diff = add_day
+
+    # find total days to run model
+    total_days = int(len(d) * myawsm.time_step / (60*24))
+
+    # loop through timesteps and initialize runs for each day
+    for day in range(total_days):
+        # set variable output names
+        myawsm.snow_name = 'snow_00'
+        myawsm.em_name = 'em_00'
+        # set start and end appropriately
+        if day == 0:
+            myawsm.start_date = d[0]
+            myawsm.end_date = d[0] + start_diff
+        elif day == total_days - 1:
+            myawsm.start_date = start_day + pd.to_timedelta(24*day, unit='h')
+            myawsm.end_date = myawsm.start_date + end_diff
+        else:
+            myawsm.start_date = start_day + pd.to_timedelta(24*day, unit='h')
+            myawsm.end_date = myawsm.start_date + pd.to_timedelta(23, unit='h')
+
+        # recalculate start and end water year hour
+        tmp_date = myawsm.start_date.replace(tzinfo=myawsm.tzinfo)
+        tmp_end_date = myawsm.end_date.replace(tzinfo=myawsm.tzinfo)
+        myawsm.start_wyhr = int(utils.water_day(tmp_date)[0]*24)
+        myawsm.end_wyhr = int(utils.water_day(tmp_end_date)[0]*24)
+
+        # find day for labelling the output folder nested one more level in
+        daily_append = '{}'.format(myawsm.start_date.strftime("%Y%m%d"))
+        myawsm.pathro = os.path.join(myawsm.pathrr, 'output'+daily_append)
+        if not os.path.exists(myawsm.pathro):
+            os.makedirs(myawsm.pathro)
+
+        # turn off forecast for daily run (will be turned on later if it was true)
+        myawsm.config['gridded']['forecast_flag'] = False
+
+        # ################# run_model for day ###############################
+        myawsm.run_smrf_ipysnobal()
+
+        # reset restart to be last output for next time step
+        myawsm.ipy_init_type = 'netcdf_out'
+        myawsm.config['ipysnobal initial conditions']['init_file'] = \
+            os.path.join(myawsm.pathro, myawsm.snow_name + '.nc')
+
+        # do the 18hr forecast on each hour if forecast is true
+        if myawsm.do_forecast:
+            # turn forecast back on in smrf config
+            myawsm.config['gridded']['forecast_flag'] = True
+
+            # now loop through the forecast hours for 18hr forecasts
+            d_inner = data.mysql_data.date_range(myawsm.start_date,
+                                                  myawsm.end_date,
+                                                  pd.to_timedelta(myawsm.time_step,
+                                                  unit='m'))
+            for t in d_inner:
+                # find hour from start of day
+                day_hour = t - pd.to_datetime(d_inner[0].strftime("%Y%m%d"))
+                day_hour = int(day_hour / np.timedelta64(1, 'h'))
+
+                # reset output names
+                myawsm.snow_name = 'snow_{:02d}'.format(day_hour)
+                myawsm.em_name = 'em_{:02d}'.format(day_hour)
+
+                # reset start and end days
+                myawsm.start_date = t
+                myawsm.end_date = t + pd.to_timedelta(myawsm.n_forecast_hours,
+                                                      unit='h')
+
+                # recalculate start and end water year hour
+                tmp_date = myawsm.start_date.replace(tzinfo=myawsm.tzinfo)
+                tmp_end_date = myawsm.end_date.replace(tzinfo=myawsm.tzinfo)
+                myawsm.start_wyhr = int(utils.water_day(tmp_date)[0]*24)
+                myawsm.end_wyhr = int(utils.water_day(tmp_end_date)[0]*24)
+
+                # run the model for the forecast times
+                myawsm.run_smrf_ipysnobal()

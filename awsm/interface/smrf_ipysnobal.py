@@ -91,7 +91,7 @@ def run_ipysnobal(myawsm):
         # output at the frequency and the last time step
         # if (j % options['output']['frequency'] == 0) or (j == len(options['time']['date_time'])):
         if ((j)*(data_tstep/3600.0) % options['output']['frequency'] == 0) \
-                or (j == len(options['time']['date_time'])):
+                or (j == len(options['time']['date_time']) - 1):
             myawsm._logger.info('Outputting {}'.format(tstep))
             io_mod.output_timestep(output_rec, tstep, options,
                                    myawsm.pysnobal_output_vars)
@@ -206,6 +206,7 @@ def run_smrf_ipysnobal_single(myawsm, s):
     # initialize pysnobal run class
     my_pysnobal = ipysnobal.PySnobal(s.date_time,
                                      variable_list,
+                                     myawsm.pysnobal_output_vars,
                                      options,
                                      params,
                                      tstep_info,
@@ -330,6 +331,7 @@ def run_smrf_ipysnobal_threaded(myawsm, s):
     # isnobal thread
     t.append(ipysnobal.QueueIsnobal(q, s.date_time,
                                     s.thread_variables,
+                                    myawsm.pysnobal_output_vars,
                                     options,
                                     params,
                                     tstep_info,

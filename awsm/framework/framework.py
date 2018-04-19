@@ -6,20 +6,25 @@ from datetime import datetime
 import pandas as pd
 import pytz
 import copy
+from inicheck.config import MasterConfig
+from inicheck.tools import get_user_config, check_config
+from inicheck.output import print_config_report, generate_config
+
 # make input the same as raw input if python 2
 try:
     input = raw_input
 except NameError:
     pass
 
+from smrf import __core_config__ as __smrf_core_config__
+from smrf import __recipes__ as __smrf_recipes__
+from awsm import __core_config__ as __awsm_core_config__
+from awsm import __config_titles__
+
 from smrf.utils import utils, io
 from awsm.convertFiles import convertFiles as cvf
 from awsm.interface import interface as smin
 from awsm.interface import smrf_ipysnobal as smrf_ipy
-
-from smrf import __core_config__ as __smrf_core_config__
-from awsm import __core_config__ as __awsm_core_config__
-
 
 class AWSM():
     """
@@ -42,14 +47,13 @@ class AWSM():
                             .format(configFile))
         try:
             # get both master configs
-            # smrf_mcfg = io.get_master_config()
-            smrf_mcfg = io.MasterConfig(__smrf_core_config__).cfg
-            awsm_mcfg = io.MasterConfig(__awsm_core_config__).cfg
-            # combine master configs
-            combined_mcfg = copy.deepcopy(smrf_mcfg)
-            combined_mcfg.update(awsm_mcfg)
+            smrf_mcfg = MasterConfig(module = 'smrf')
+            awsm_mcfg = MasterConfig(module='awsm')
+            combined_mcfg = copy.deepcopy(awsm_mcfg)
+            combined_mcfg.merge(smrf_mcfg)
+
             # Read in the original users config
-            self.config = io.get_user_config(configFile, mcfg=combined_mcfg)
+            self.ucfg = get_user_config(configFile, mcfg=combined_mcfg)
             self.configFile = configFile
         except UnicodeDecodeError:
             raise Exception(('The configuration file is not encoded in '
@@ -60,25 +64,18 @@ class AWSM():
         self.tmp_err = []
         self.tmp_warn = []
 
-        # Add defaults.
-        self.tmp_log.append("Adding defaults to config...")
-        self.config = io.add_defaults(self.config, combined_mcfg)
-
         # Check the user config file for errors and report issues if any
         self.tmp_log.append("Checking config file for issues...")
-        warnings, errors = io.check_config_file(self.config, combined_mcfg,
-                                                user_cfg_path=configFile)
-        io.print_config_report(warnings, errors)
+        warnings, errors = check_config(self.ucfg)
+        print_config_report(warnings, errors)
+
+        self.config = self.ucfg.cfg
 
         # Exit AWSM if config file has errors
         if len(errors) > 0:
             print("Errors in the config file. "
                   "See configuration status report above.")
             sys.exit()
-
-        # update config paths to be absolute
-        self.config = io.update_config_paths(self.config, configFile,
-                                             combined_mcfg)
 
         # ################## Decide which modules to run #####################
         self.do_smrf = self.config['awsm master']['run_smrf']
@@ -251,37 +248,18 @@ class AWSM():
 
         # list of sections releated to AWSM
         # These will be removed for smrf config
-        self.sec_awsm = awsm_mcfg.keys()
+        self.sec_awsm = awsm_mcfg.cfg.keys()
 
         # Make rigid directory structure
         self.mk_directories()
 
         # ################ Generate config backup ##################
         if self.config['output']['input_backup']:
-            # order in which to output awsm config sections
-            order_lst = ['awsm master', 'paths', 'grid', 'files',
-                         'awsm system', 'isnobal restart', 'ipysnobal',
-                         'ipysnobal initial conditions', 'ipysnobal constants']
-            # section titles
-            titles = {'awsm master': 'Configurations for AWSM Master section',
-                      'paths': 'Configurations for PATHS section'
-                               ' for rigid directory work',
-                      'grid': 'Configurations for GRID data to run iSnobal',
-                      'files': 'Input files to run AWSM',
-                      'awsm system': 'System parameters',
-                      'isnobal restart': 'Parameters for restarting'
-                                         ' from crash',
-                      'ipysnobal': 'Running Python wrapped iSnobal',
-                      'ipysnobal initial conditions': 'Initial condition'
-                                                      ' parameters for'
-                                                      ' PySnobal',
-                      'ipysnobal constants': 'Input constants for PySnobal'
-                      }
+
             # set location for backup and output backup of awsm sections
             config_backup_location = \
                 os.path.join(self.pathdd, 'awsm_config_backup.ini')
-            io.generate_config(self.config, config_backup_location,
-                               order_lst=order_lst, titles=titles)
+            generate_config(self.ucfg, config_backup_location)
 
         # create log now that directory structure is done
         self.createLog()
@@ -291,23 +269,23 @@ class AWSM():
         Now that the directory structure is done, create log file and print out
         saved logging statements.
         '''
-        
+
         level_styles = {'info': {'color': 'white'},
-                        'notice': {'color': 'magenta'}, 
-                        'verbose': {'color': 'blue'}, 
-                        'success': {'color': 'green', 'bold': True}, 
-                        'spam': {'color': 'green', 'faint': True}, 
-                        'critical': {'color': 'red', 'bold': True}, 
-                        'error': {'color': 'red'}, 
-                        'debug': {'color': 'green'}, 
+                        'notice': {'color': 'magenta'},
+                        'verbose': {'color': 'blue'},
+                        'success': {'color': 'green', 'bold': True},
+                        'spam': {'color': 'green', 'faint': True},
+                        'critical': {'color': 'red', 'bold': True},
+                        'error': {'color': 'red'},
+                        'debug': {'color': 'green'},
                         'warning': {'color': 'yellow'}}
-        
+
         field_styles =  {'hostname': {'color': 'magenta'},
-                         'programname': {'color': 'cyan'}, 
-                         'name': {'color': 'white'}, 
-                         'levelname': {'color': 'white', 'bold': True}, 
+                         'programname': {'color': 'cyan'},
+                         'name': {'color': 'white'},
+                         'levelname': {'color': 'white', 'bold': True},
                          'asctime': {'color': 'green'}}
-        
+
         # start logging
         loglevel = self.config['awsm system']['log_level'].upper()
 
@@ -554,7 +532,7 @@ class AWSM():
                                     '(y n): ' % check_if_data)
                     else:
                         y_n = 'y'
-                        
+
                 if y_n == 'n':
                     self.tmp_err.append('Please fix the base directory'
                                         ' (path_wy) in your config file.')

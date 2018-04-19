@@ -80,7 +80,7 @@ class QueueIsnobal(threading.Thread):
     Takes values from the queue and uses them to run iPySnobal
     """
 
-    def __init__(self, queue, date_time, thread_variables,
+    def __init__(self, queue, date_time, thread_variables, awsm_output_vars,
                  options, params, tstep_info, init,
                  output_rec, nx, ny, soil_temp, logger, tzi):
         """
@@ -88,6 +88,7 @@ class QueueIsnobal(threading.Thread):
             queue:      dictionary of the queue
             date_time:  array of date_time
             thread_variables: list of threaded variables
+            awsm_output_vars: list of variables to output
             options:    dictionary of Snobal options
             params:     dictionary of Snobal params
             tstep_info: dictionary of info for Snobal timesteps
@@ -104,6 +105,7 @@ class QueueIsnobal(threading.Thread):
         self.queue = queue
         self.date_time = date_time
         self.thread_variables = thread_variables
+        self.awsm_output_vars = awsm_output_vars
         self.options = options
         self.params = params
         self.tstep_info = tstep_info
@@ -223,9 +225,9 @@ class QueueIsnobal(threading.Thread):
 
             # output at the frequency and the last time step
             if ((j)*(data_tstep/3600.0) % self.options['output']['frequency'] == 0)\
-                    or (j == len(self.options['time']['date_time'])):
+                    or (j == len(self.options['time']['date_time']) - 1):
                 io_mod.output_timestep(self.output_rec, tstep, self.options,
-                                       myawsm.pysnobal_output_vars)
+                                       self.awsm_output_vars)
                 self.output_rec['time_since_out'] = \
                     np.zeros(self.output_rec['elevation'].shape)
 
@@ -243,13 +245,14 @@ class PySnobal():
     implimentation
     """
 
-    def __init__(self, date_time, variable_list,
+    def __init__(self, date_time, variable_list, awsm_output_vars,
                  options, params, tstep_info, init,
                  output_rec, nx, ny, soil_temp, logger, tzi):
         """
         Args:
             date_time:  array of date_time
             variable_list: list of forcing variables to recieve from smrf
+            output_vars:    list of variables to output
             options:    dictionary of Snobal options
             params:     dictionary of Snobal params
             tstep_info: dictionary of info for Snobal timesteps
@@ -264,6 +267,7 @@ class PySnobal():
 
         self.date_time = date_time
         self.variable_list = variable_list
+        self.awsm_output_vars = awsm_output_vars
         self.options = options
         self.params = params
         self.tstep_info = tstep_info
@@ -388,9 +392,9 @@ class PySnobal():
         # output at the frequency and the last time step
         # if (self.j*(self.data_tstep/3600.0) % self.options['output']['frequency'] == 0) or (self.j == len(self.options['time']['date_time'])):
         if ((self.j)*(self.data_tstep/3600.0) % self.options['output']['frequency'] == 0)\
-                or (self.j == len(self.options['time']['date_time'])):
+                or (self.j == len(self.options['time']['date_time']) - 1):
             io_mod.output_timestep(self.output_rec, tstep, self.options,
-                                   myawsm.pysnobal_output_vars)
+                                   self.awsm_output_vars)
             self.output_rec['time_since_out'] = np.zeros(self.output_rec['elevation'].shape)
 
         self.j += 1

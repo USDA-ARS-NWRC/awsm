@@ -114,6 +114,8 @@ def output_files(options, init, start_date, myawsm):
     fmt = '%Y-%m-%d %H:%M:%S'
     # chunk size
     cs = (6, 10, 10)
+    if myawsm.nx < 10:
+        cs = (3, 3, 3)
 
     # ------------------------------------------------------------------------
     # EM netCDF
@@ -134,7 +136,7 @@ def output_files(options, init, start_date, myawsm):
                         'Total runoff',
                         'Snowcover cold content']
 
-    emname = 'em.nc'
+    emname = myawsm.em_name+'.nc'
     if myawsm.restart_run:
         emname = 'em_restart_{}.nc'.format(myawsm.restart_hr)
         start_date = myawsm.restart_date
@@ -201,7 +203,7 @@ def output_files(options, init, start_date, myawsm):
                         'Predicted thickness of the lower layer',
                         'Predicted percentage of liquid water saturation of the snowcover']
 
-    snowname = 'snow.nc'
+    snowname = myawsm.snow_name + '.nc'
     if myawsm.restart_run:
         snowname = 'snow_restart_{}.nc'.format(myawsm.restart_hr)
 

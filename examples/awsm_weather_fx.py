@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import awsf
+import awsm
 from datetime import datetime
 import sys
 import os
@@ -9,7 +9,7 @@ import copy
 
 start = datetime.now()
 
-configFile = '/home/micahsandusky/Tuolumne/devel/awsfTesting/AWSF_tuol_weather.ini'
+configFile = '/home/micahsandusky/Tuolumne/devel/awsmTesting/awsm_tuol_weather.ini'
 
 #===============================================================================
 # Initialize and run basin
@@ -25,19 +25,19 @@ scen_run = range(scen_start, scen_end)
 tps = ['regular_hourly2']
 # 1. initialize
 # try:
-with awsf.framework.framework.AWSF(configFile) as a:
+with awsm.framework.framework.awsm(configFile) as a:
 
     for tp in tps:
         for sn in scen_run:
             start_temp = datetime.now()
             # replace directory names
             a.proj = '{}_scenario{}'.format(tp, sn)
-            a.desc = 'AWSF run for {} scenario {}'.format(tp, sn)
+            a.desc = 'awsm run for {} scenario {}'.format(tp, sn)
 
             # replace station data paths
-            #csv_p = '/data/blizzard/awsftest/weatherGenerator/scenario_{}/'.format(sn)
-            #csv_p = '/data/blizzard/awsftest/weatherGenerator_warmwet/scenario_{}/'.format(sn)
-            csv_p = '/data/blizzard/awsftest/febWeather/{}/scenario_{}/'.format(tp, sn)
+            #csv_p = '/data/blizzard/awsmtest/weatherGenerator/scenario_{}/'.format(sn)
+            #csv_p = '/data/blizzard/awsmtest/weatherGenerator_warmwet/scenario_{}/'.format(sn)
+            csv_p = '/data/blizzard/awsmtest/febWeather/{}/scenario_{}/'.format(tp, sn)
 
             a.config['csv']['metadata'] = os.path.join(csv_p, 'metadata.csv')
             a.config['csv']['air_temp'] = os.path.join(csv_p, 'air_temp.csv')

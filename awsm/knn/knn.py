@@ -1,7 +1,7 @@
 """
 K nearest neighbor approach to generating weather data based on
 the paper Yates et al 2003. This is only for testing and will
-be integrated into AWSF or SMRF
+be integrated into awsm or SMRF
 
 Scott Havens 20171016
 """
@@ -252,7 +252,7 @@ def construct_senario(data, days, resample='3h'):
 
     return DF
 
-def do_knn(myawsf, fpath, sql_user, start_date, end_date, scen_num, add_temp, mult_precip):
+def do_knn(myawsm, fpath, sql_user, start_date, end_date, scen_num, add_temp, mult_precip):
 
     resample = '1D'
     w = 20
@@ -282,7 +282,7 @@ def do_knn(myawsf, fpath, sql_user, start_date, end_date, scen_num, add_temp, mu
 
     # make directory for each scenario and output station data to csv
     for j, DD in enumerate(D):
-        # '/data/blizzard/awsftest/tuolumne/devel'
+        # '/data/blizzard/awsmtest/tuolumne/devel'
         #fpath = './weatherdata/scenario'
         # output directory
         dir_out = os.path.join(fpath, 'scenario_{}'.format(j))

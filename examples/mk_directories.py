@@ -19,7 +19,7 @@ proj = 'testproj'
 desc = ''
 
 # path to starting drive
-path_dr = '/home/micahsandusky/Documents/Code/awsfTesting/run1'
+path_dr = '/home/micahsandusky/Documents/Code/awsmTesting/run1'
 
 #####################
 #### Doin stuff #####

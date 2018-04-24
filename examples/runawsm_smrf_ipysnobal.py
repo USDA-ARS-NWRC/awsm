@@ -2,7 +2,7 @@
 
 """Main module."""
 
-import awsf
+import awsm
 from datetime import datetime
 import sys
 #import faulthandler
@@ -28,7 +28,7 @@ if len(sys.argv) > 1:
 
 # 1. initialize
 # try:
-with awsf.framework.framework.AWSF(configFile) as a:
+with awsm.framework.framework.AWSF(configFile) as a:
 
     # 2. do everything else
     a.run_smrf_ipysnobal()

@@ -1,16 +1,16 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""Tests for `awsf` package."""
+"""Tests for `awsm` package."""
 
 
 import unittest
 
-from awsf import awsf
+from awsm import awsm
 
 
 class TestAwsf(unittest.TestCase):
-    """Tests for `awsf` package."""
+    """Tests for `awsm` package."""
 
     def setUp(self):
         """Set up test fixtures, if any."""

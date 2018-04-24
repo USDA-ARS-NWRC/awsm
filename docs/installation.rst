@@ -8,13 +8,13 @@ Installation
 Stable release
 --------------
 
-To install awsf, run this command in your terminal:
+To install awsm, run this command in your terminal:
 
 .. code-block:: console
 
-    $ pip install awsf
+    $ pip install awsm
 
-This is the preferred method to install awsf, as it will always install the most recent stable release. 
+This is the preferred method to install awsm, as it will always install the most recent stable release. 
 
 If you don't have `pip`_ installed, this `Python installation guide`_ can guide
 you through the process.
@@ -26,19 +26,19 @@ you through the process.
 From sources
 ------------
 
-The sources for awsf can be downloaded from the `Github repo`_.
+The sources for awsm can be downloaded from the `Github repo`_.
 
 You can either clone the public repository:
 
 .. code-block:: console
 
-    $ git clone git://github.com/micahsandusky5/awsf
+    $ git clone git://github.com/micahsandusky5/awsm
 
 Or download the `tarball`_:
 
 .. code-block:: console
 
-    $ curl  -OL https://github.com/micahsandusky5/awsf/tarball/master
+    $ curl  -OL https://github.com/micahsandusky5/awsm/tarball/master
 
 Once you have a copy of the source, you can install it with:
 
@@ -47,5 +47,5 @@ Once you have a copy of the source, you can install it with:
     $ python setup.py install
 
 
-.. _Github repo: https://github.com/micahsandusky5/awsf
-.. _tarball: https://github.com/micahsandusky5/awsf/tarball/master
+.. _Github repo: https://github.com/micahsandusky5/awsm
+.. _tarball: https://github.com/micahsandusky5/awsm/tarball/master

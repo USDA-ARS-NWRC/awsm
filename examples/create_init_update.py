@@ -33,7 +33,7 @@ ny = 1339
 nbits =  16
 units = 'm'
 csys = 'UTM'
-pathinit = '/home/micahsandusky/Code/awsfTesting/initUpdate/'
+pathinit = '/home/micahsandusky/Code/awsmTesting/initUpdate/'
 
 # End User input.**************************
 ##  Begin opening files and assigning names.
@@ -55,11 +55,11 @@ else:
 
 
 #gisPath = '/data/blizzard/Tuolumne/common_data/topo/'
-gisPath = '/home/micahsandusky/Code/awsfTesting/initUpdate/'
+gisPath = '/home/micahsandusky/Code/awsmTesting/initUpdate/'
 ###chdir(os.path.join(basePath,dataDir))
 ###runPath = os.path.join(basePath,runDir,previous_update_dir,output_dir)
 #last_snow_image = ipw.IPW(os.path.join(runPath, 'snow.{}'.format(wyhr)))
-last_snow_image = ipw.IPW('/home/micahsandusky/Code/awsfTesting/initUpdate/snow.5999')
+last_snow_image = ipw.IPW('/home/micahsandusky/Code/awsmTesting/initUpdate/snow.5999')
 
 demPath = os.path.join(gisPath,'tuolx_dem_50m.{}'.format(filetype[0:3]) )
 if int(wy) <= 2015: # Model domain was only above Hetchy before 2016.
@@ -95,7 +95,7 @@ ncols = nx
 
 ##  Update the snow depths in the initialization file using ASO lidar:
 # Path='/data/blizzard/Tuolumne/lidar/snowon/{}/gridded_asc/'.format(wy2)
-Path = '/home/micahsandusky/Code/awsfTesting/initUpdate/'
+Path = '/home/micahsandusky/Code/awsmTesting/initUpdate/'
 filename = 'TB{}{}_SUPERsnow_depth'.format(wy2, date_mmdd)
 # [D, R] = arcgridread_v2([Path filename '.asc'])
 # [xs, ys] = arcticks(D, R)

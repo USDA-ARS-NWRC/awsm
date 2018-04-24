@@ -1,4 +1,4 @@
-Welcome to awsf's documentation!
+Welcome to awsm's documentation!
 ======================================
 
 Contents:

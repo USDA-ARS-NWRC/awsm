@@ -88,10 +88,15 @@ class AWSM():
         # ################## Decide which modules to run #####################
         self.do_smrf = self.config['awsm master']['run_smrf']
         self.do_isnobal = self.config['awsm master']['run_isnobal']
-        self.do_wrf = self.config['awsm master']['use_wrf']
         self.do_smrf_ipysnobal = \
             self.config['awsm master']['run_smrf_ipysnobal']
         self.do_ipysnobal = self.config['awsm master']['run_ipysnobal']
+
+        if 'gridded' in self.config:
+            self.do_forecast = self.config['gridded']['forecast_flag']
+            self.n_forecast_hours = self.config['gridded']['n_forecast_hours']
+        else:
+            self.do_forecast = False
 
         # options for converting files
         self.do_make_in = self.config['awsm master']['make_in']
@@ -102,6 +107,8 @@ class AWSM():
         if self.mask_isnobal:
             # mask file
             self.fp_mask = os.path.abspath(self.config['topo']['mask'])
+        # prompt for making directories
+        self.prompt_dirs = self.config['awsm master']['prompt_dirs']
 
         # ################ Time information ##################
         self.start_date = pd.to_datetime(self.config['time']['start_date'])
@@ -142,23 +149,26 @@ class AWSM():
         # find style for folder date stamp
         self.folder_date_style = self.config['paths']['folder_date_style']
 
-        if self.do_wrf:
+        # setting to output in seperate daily folders
+        self.daily_folders = self.config['awsm system']['daily_folders']
+        if self.daily_folders and not self.run_smrf_ipysnobal:
+            raise ValueError('Cannot run daily_folders with anything other'
+                             ' than run_smrf_ipysnobal')
+
+        if self.do_forecast:
             self.tmp_log.append('Forecasting set to True')
 
-            self.fp_wrfdata = self.config['forecast']['wrf_data']
-            if self.fp_wrfdata is None:
-                self.tmp_err.append('Forecast set to true, '
-                                    'but no wrf_data given')
-                print("Errors in the config file. See configuration "
-                      "status report above.")
-                print(self.tmp_err)
-                sys.exit()
-
-            self.zone_number = self.config['forecast']['zone_number']
-            self.zone_letter = self.config['forecast']['zone_letter']
+            # self.fp_forecastdata = self.config['gridded']['file']
+            # if self.fp_forecastdata is None:
+            #     self.tmp_err.append('Forecast set to true, '
+            #                         'but no grid file given')
+            #     print("Errors in the config file. See configuration "
+            #           "status report above.")
+            #     print(self.tmp_err)
+            #     sys.exit()
 
             if self.config['system']['threading']:
-                # Can't run threaded smrf if running wrf_data
+                # Can't run threaded smrf if running forecast_data
                 self.tmp_err.append('Cannot run SMRF threaded with'
                                     ' gridded input data')
                 print(self.tmp_err)
@@ -201,6 +211,8 @@ class AWSM():
         if self.config['files']['prev_mod_file'] is not None:
             self.prev_mod_file = \
                 os.path.abspath(self.config['files']['prev_mod_file'])
+        else:
+            self.prev_mod_file = None
 
         # threads for running iSnobal
         self.ithreads = self.config['awsm system']['ithreads']
@@ -210,6 +222,9 @@ class AWSM():
         self.run_for_nsteps = self.config['awsm system']['run_for_nsteps']
         # pysnobal output variables
         self.pysnobal_output_vars = self.config['awsm system']['variables']
+        # snow and emname
+        self.snow_name = self.config['awsm system']['snow_name']
+        self.em_name = self.config['awsm system']['em_name']
 
         # options for restarting iSnobal
         if self.config['isnobal restart']['restart_crash']:
@@ -249,15 +264,13 @@ class AWSM():
         # ################ Generate config backup ##################
         if self.config['output']['input_backup']:
             # order in which to output awsm config sections
-            order_lst = ['awsm master', 'paths', 'forecast', 'grid', 'files',
+            order_lst = ['awsm master', 'paths', 'grid', 'files',
                          'awsm system', 'isnobal restart', 'ipysnobal',
                          'ipysnobal initial conditions', 'ipysnobal constants']
             # section titles
             titles = {'awsm master': 'Configurations for AWSM Master section',
                       'paths': 'Configurations for PATHS section'
                                ' for rigid directory work',
-                      'forecast': 'Configurations for FORECAST section'
-                                  ' for running with WRF forecast',
                       'grid': 'Configurations for GRID data to run iSnobal',
                       'files': 'Input files to run AWSM',
                       'awsm system': 'System parameters',
@@ -314,7 +327,7 @@ class AWSM():
                 logfile = \
                     os.path.join(self.pathll,
                                  'log_restart_{}.out'.format(self.restart_hr))
-            elif self.do_wrf:
+            elif self.do_forecast:
                 logfile = \
                     os.path.join(self.pathll,
                                  'log_forecast_'
@@ -343,6 +356,12 @@ class AWSM():
 
         self._logger = logging.getLogger(__name__)
 
+        # print title and mountains
+        title, mountain = self.title()
+        for line in mountain:
+            self._logger.info(line)
+        for line in title:
+            self._logger.info(line)
         # dump saved logs
         if len(self.tmp_log) > 0:
             for l in self.tmp_log:
@@ -360,14 +379,6 @@ class AWSM():
         """
         # modify config and run smrf
         smin.smrfMEAS(self)
-
-    def runSmrf_wrf(self):
-        """
-        Convert ipw smrf output to isnobal inputs. Calls
-        :mod: `awsm.convertFiles.convertFiles.nc2ipw_mea`
-        """
-        # modify config and run smrf
-        smin.smrf_go_wrf(self)
 
     def nc2ipw(self, runtype):
         """
@@ -389,13 +400,6 @@ class AWSM():
 
         smin.run_isnobal(self)
 
-    def run_isnobal_forecast(self):
-        """
-        Run isnobal with smrf forecast data
-        """
-        # modify config and run smrf
-        smin.run_isnobal_forecast(self)
-
     def run_smrf_ipysnobal(self):
         """
         Run smrf and pass inputs to ipysnobal in memory.
@@ -403,6 +407,15 @@ class AWSM():
         """
 
         smrf_ipy.run_smrf_ipysnobal(self)
+
+    def run_awsm_daily(self):
+        """
+        This function runs :mod: `awsm.interface.smrf_ipysnobal.run_smrf_ipysnobal`
+        on an hourly output from Pysnobal, outputting to daily folders, similar
+        to the HRRR froecast.
+        """
+
+        smin.run_awsm_daily(self)
 
     def run_ipysnobal(self):
         """
@@ -463,9 +476,10 @@ class AWSM():
 
         # name of temporary smrf file to write out
         self.smrfini = os.path.join(self.path_wy, 'tmp_smrf_config.ini')
-        self.wrfini = os.path.join(self.path_wy, 'tmp_smrf_wrf_config.ini')
+        self.forecastini = os.path.join(self.path_wy,
+                                        'tmp_smrf_forecast_config.ini')
 
-        if not self.do_wrf:
+        if not self.do_forecast:
             # assign path names for isnobal, path_names_att will be used
             # to create necessary directories
             path_names_att = ['pathdd', 'pathrr', 'pathi',
@@ -488,26 +502,25 @@ class AWSM():
             # used to check if data direcotry exists
             check_if_data = self.pathdd
         else:
-            path_names_att = ['path_wrf_data', 'path_wrf_run', 'path_wrf_i',
-                              'path_wrf_init', 'path_wrf_ro', 'path_wrf_s',
-                              'path_wrf_ppt']
-            self.path_wrf_data = \
+            path_names_att = ['pathdd', 'pathrr', 'pathi',
+                              'pathinit', 'pathro', 'paths', 'path_ppt']
+            self.pathdd = \
                 os.path.join(self.pathd,
                              'forecast{}'.format(self.folder_date_stamp))
-            self.path_wrf_run = \
+            self.pathrr = \
                 os.path.join(self.pathr,
                              'forecast{}'.format(self.folder_date_stamp))
-            self.path_wrf_i = os.path.join(self.path_wrf_data, 'input/')
-            self.path_wrf_init = os.path.join(self.path_wrf_data, 'init/')
-            self.path_wrf_ro = os.path.join(self.path_wrf_run, 'output/')
-            self.path_wrf_s = os.path.join(self.path_wrf_data, 'smrfOutputs')
-            self.wrf_ppt_desc = \
-                os.path.join(self.path_wrf_data,
+            self.pathi = os.path.join(self.pathdd, 'input/')
+            self.pathinit = os.path.join(self.pathdd, 'init/')
+            self.pathro = os.path.join(self.pathrr, 'output/')
+            self.paths = os.path.join(self.pathdd, 'smrfOutputs')
+            self.ppt_desc = \
+                os.path.join(self.pathdd,
                              'ppt_desc{}.txt'.format(self.folder_date_stamp))
-            self.path_wrf_ppt = os.path.join(self.path_wrf_data, 'ppt_4b')
+            self.path_ppt = os.path.join(self.pathdd, 'ppt_4b')
 
             # used to check if data direcotry exists
-            check_if_data = self.path_wrf_data
+            check_if_data = self.pathdd
 
         # add log path to create directory
         path_names_att.append('pathll')
@@ -521,9 +534,13 @@ class AWSM():
                 y_n = 'a'  # set a funny value to y_n
                 # while it is not y or n (for yes or no)
                 while y_n not in ['y', 'n']:
-                    y_n = input('Directory %s does not exist. Create base '
-                                'directory and all subdirectories? '
-                                '(y n): ' % self.path_wy)
+                    if self.prompt_dirs:
+                        y_n = input('Directory %s does not exist. Create base '
+                                    'directory and all subdirectories? '
+                                    '(y n): ' % self.path_wy)
+                    else:
+                        y_n = 'y'
+
                 if y_n == 'n':
                     self.tmp_err.append('Please fix the base directory'
                                         ' (path_wy) in your config file.')
@@ -536,9 +553,13 @@ class AWSM():
             elif not os.path.exists(check_if_data):
                 y_n = 'a'
                 while y_n not in ['y', 'n']:
-                    y_n = input('Directory %s does not exist. Create base '
-                                'directory and all subdirectories? '
-                                '(y n): ' % check_if_data)
+                    if self.prompt_dirs:
+                        y_n = input('Directory %s does not exist. Create base '
+                                    'directory and all subdirectories? '
+                                    '(y n): ' % check_if_data)
+                    else:
+                        y_n = 'y'
+                        
                 if y_n == 'n':
                     self.tmp_err.append('Please fix the base directory'
                                         ' (path_wy) in your config file.')
@@ -555,10 +576,9 @@ class AWSM():
             if not os.path.exists(os.path.join(self.path_wy, 'runs/')):
                 os.makedirs(os.path.join(self.path_wy, 'runs/'))
 
-            # if we're not running wrf data, make sure path to outputs exists
-            if not self.do_wrf:
-                if not os.path.exists(self.pathro):
-                    os.makedirs(self.pathro)
+            # if we're not running forecast, make sure path to outputs exists
+            if not os.path.exists(self.pathro):
+                os.makedirs(self.pathro)
 
             # find where to write file
             fp_desc = os.path.join(self.path_wy, 'projectDescription.txt')
@@ -569,7 +589,8 @@ class AWSM():
                     pass
                 else:
                     self.desc = input('\nNo description for project. '
-                                      'Enter one now:\n')
+                                      'Enter one now, but do not use '
+                                      'any punctuation:\n')
                 f = open(fp_desc, 'w')
                 f.write(self.desc)
                 f.close()
@@ -597,6 +618,59 @@ class AWSM():
                 os.makedirs(path)
             else:
                 self.tmp_log.append('Directory --{}-- exists, not creating.\n')
+
+    def title(self):
+        """
+        AWSM titles
+        Text generated from:    http://patorjk.com/software/taag/#p=testall&f=Swamp%20Land&t=AWSM
+        Mountain ascii from:    https://www.ascii-code.com/ascii-art/nature/mountains.php
+        """
+        mountain = ["                      _  ",
+                    "                     /#\    ",
+                    "                    /###\     /\    ",
+                    "                   /  ###\   /##\  /\   ",
+                    "                  /      #\ /####\/##\  ",
+                    "                 /  /      /   # /  ##\             _       /\  ",
+                    "               // //  /\  /    _/  /  #\ _         /#\    _/##\    /\   ",
+                    "              // /   /  \     /   /    #\ \      _/###\_ /   ##\__/ _\ ",
+                    "             /  \   / .. \   / /   _   { \ \   _/       / //    /    \\    ",
+                    "     /\     /    /\  ...  \_/   / / \   } \ | /  /\  \ /  _    /  /    \ /\    ",
+                    "  _ /  \  /// / .\  ..%:.  /... /\ . \ {:  \\   /. \     / \  /   ___   /  \   ",
+                    " /.\ .\.\// \/... \.::::..... _/..\ ..\:|:. .  / .. \\  /.. \    /...\ /  \ \  ",
+                    "/...\.../..:.\. ..:::::::..:..... . ...\{:... / %... \\/..%. \  /./:..\__   \  ",
+                    " .:..\:..:::....:::;;;;;;::::::::.:::::.\}.....::%.:. \ .:::. \/.%:::.:..\ ",
+                    "::::...:::;;:::::;;;;;;;;;;;;;;:::::;;::{:::::::;;;:..  .:;:... ::;;::::.. ",
+                    ";;;;:::;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;];;;;;;;;;;::::::;;;;:.::;;;;;;;;:..  ",
+                    ";;;;;;;;;;;;;;ii;;;;;;;;;;;;;;;;;;;;;;;;[;;;;;;;;;;;;;;;;;;;;;;:;;;;;;;;;;;;;  ",
+                    ";;;;;;;;;;;;;;;;;;;iiiiiiii;;;;;;;;;;;;;;};;ii;;iiii;;;;i;;;;;;;;;;;;;;;ii;;;  ",
+                    "iiii;;;iiiiiiiiiiIIIIIIIIIIIiiiiiIiiiiii{iiIIiiiiiiiiiiiiiiii;;;;;iiiilliiiii  ",
+                    "IIIiiIIllllllIIlllIIIIlllIIIlIiiIIIIIIIIIIIIlIIIIIllIIIIIIIIiiiiiiiillIIIllII  ",
+                    "IIIiiilIIIIIIIllTIIIIllIIlIlIIITTTTlIlIlIIIlIITTTTTTTIIIIlIIllIlIlllIIIIIIITT  ",
+                    "IIIIilIIIIITTTTTTTIIIIIIIIIIIIITTTTTIIIIIIIIITTTTTTTTTTIIIIIIIIIlIIIIIIIITTTT  ",
+                    "IIIIIIIIITTTTTTTTTTTTTIIIIIIIITTTTTTTTIIIIIITTTTTTTTTTTTTTIIIIIIIIIIIIIITTTTT  ",
+                    "",
+                    "",
+                    ""]
+        title = [
+                '               AAA   WWWWWWWW                           WWWWWWWW   SSSSSSSSSSSSSSS MMMMMMMM               MMMMMMMM',
+                '              A:::A  W::::::W                           W::::::W SS:::::::::::::::SM:::::::M             M:::::::M',
+                '             A:::::A W::::::W                           W::::::WS:::::SSSSSS::::::SM::::::::M           M::::::::M',
+                '            A:::::::AW::::::W                           W::::::WS:::::S     SSSSSSSM:::::::::M         M:::::::::M',
+                '           A:::::::::AW:::::W           WWWWW           W:::::W S:::::S            M::::::::::M       M::::::::::M',
+                '          A:::::A:::::AW:::::W         W:::::W         W:::::W  S:::::S            M:::::::::::M     M:::::::::::M',
+                '         A:::::A A:::::AW:::::W       W:::::::W       W:::::W    S::::SSSS         M:::::::M::::M   M::::M:::::::M',
+                '        A:::::A   A:::::AW:::::W     W:::::::::W     W:::::W      SS::::::SSSSS    M::::::M M::::M M::::M M::::::M',
+                '       A:::::A     A:::::AW:::::W   W:::::W:::::W   W:::::W         SSS::::::::SS  M::::::M  M::::M::::M  M::::::M',
+                '      A:::::AAAAAAAAA:::::AW:::::W W:::::W W:::::W W:::::W             SSSSSS::::S M::::::M   M:::::::M   M::::::M',
+                '     A:::::::::::::::::::::AW:::::W:::::W   W:::::W:::::W                   S:::::SM::::::M    M:::::M    M::::::M',
+                '    A:::::AAAAAAAAAAAAA:::::AW:::::::::W     W:::::::::W                    S:::::SM::::::M     MMMMM     M::::::M',
+                '   A:::::A             A:::::AW:::::::W       W:::::::W         SSSSSSS     S:::::SM::::::M               M::::::M',
+                '  A:::::A               A:::::AW:::::W         W:::::W          S::::::SSSSSS:::::SM::::::M               M::::::M',
+                ' A:::::A                 A:::::AW:::W           W:::W           S:::::::::::::::SS M::::::M               M::::::M',
+                'AAAAAAA                   AAAAAAAWWW             WWW             SSSSSSSSSSSSSSS   MMMMMMMM               MMMMMMMM'
+                ]
+
+        return title, mountain
 
     def __enter__(self):
         return self

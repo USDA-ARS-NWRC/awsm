@@ -12,7 +12,7 @@ def nc2ipw_mea(myawsm, runtype):
     Function to create iSnobal forcing and precip images from smrf ouputs
     Args:
         myawsm: AWSM instance
-        runtype: either 'smrf' for standard run or 'wrf' for gridded data run
+        runtype: either 'smrf' for standard run or 'forecast' for gridded data run
     '''
     ################################################################
     # Make .ipw input files from netCDF files ####################
@@ -20,20 +20,15 @@ def nc2ipw_mea(myawsm, runtype):
     myawsm._logger.info("making the ipw files"
                         " from NetCDF files for {}".format(runtype))
 
-    if runtype != 'smrf' and runtype != 'wrf':
+    if runtype != 'smrf' and runtype != 'forecast':
         myawsm._logger.error('Wrong run type given to nc2ipw. '
-                             'not smrf or wrf')
+                             'not smrf or forecast')
         sys.exit()
 
     tt = myawsm.start_date - myawsm.wy_start
-    if runtype == 'smrf':
-        smrfpath = myawsm.paths
-        datapath = myawsm.pathdd
-        f = open(myawsm.ppt_desc, 'w')
-    elif runtype == 'wrf':
-        smrfpath = myawsm.path_wrf_s
-        datapath = myawsm.path_wrf_data
-        f = open(myawsm.wrf_ppt_desc, 'w')
+    smrfpath = myawsm.paths
+    datapath = myawsm.pathdd
+    f = open(myawsm.ppt_desc, 'w')
 
     offset = tt.days*24 + tt.seconds//3600  # start index for the input file
 
@@ -96,7 +91,7 @@ def nc2ipw_mea(myawsm, runtype):
         wind_step = wind_file.variables[wind_var][idxt, :]
         sn_step = sn_file.variables[sn_var][idxt, :]
         mp_step = mp_file.variables[mp_var][idxt, :]
-        tg_step = np.ones_like(mp_step)*(-2.5)  # ground temp
+        tg_step = np.ones_like(mp_step)*(myawsm.soil_temp)  # ground temp
 
         in_step = os.path.join(in_path, 'in.%04i' % (t))
 
@@ -156,14 +151,14 @@ def ipw2nc_mea(myawsm, runtype):
 
     Args:
         myawsm: AWSM instance
-        runtype: either 'smrf' for standard run or 'wrf' for gridded data run
+        runtype: either 'smrf' for standard run or 'forecast' for gridded data run
     '''
     myawsm._logger.info("making the NetCDF files from ipw"
                         " files for {}".format(runtype))
 
-    if runtype != 'smrf' and runtype != 'wrf':
+    if runtype != 'smrf' and runtype != 'forecast':
         myawsm._logger.error('Wrong run type given to ipw2nc. '
-                             'not smrf or wrf')
+                             'not smrf or forecast')
         sys.exit()
 
     myawsm._logger.info("convert all .ipw output files to netcdf files")
@@ -197,8 +192,8 @@ def ipw2nc_mea(myawsm, runtype):
 
     if runtype == 'smrf':
         netcdfFile = os.path.join(myawsm.pathrr, 'em.nc')
-    elif runtype == 'wrf':
-        netcdfFile = os.path.join(myawsm.path_wrf_run, 'em.nc')
+    elif runtype == 'forecast':
+        netcdfFile = os.path.join(myawsm.pathrr, 'em_forecast.nc')
 
     dimensions = ('time', 'y', 'x')
     em = nc.Dataset(netcdfFile, 'w')
@@ -250,8 +245,8 @@ def ipw2nc_mea(myawsm, runtype):
 
     if runtype == 'smrf':
         netcdfFile = os.path.join(myawsm.pathrr, 'snow.nc')
-    elif runtype == 'wrf':
-        netcdfFile = os.path.join(myawsm.path_wrf_run, 'snow.nc')
+    elif runtype == 'forecast':
+        netcdfFile = os.path.join(myawsm.pathrr, 'snow_forescast.nc')
 
     dimensions = ('time', 'y', 'x')
     snow = nc.Dataset(netcdfFile, 'w')
@@ -288,12 +283,8 @@ def ipw2nc_mea(myawsm, runtype):
     # =======================================================================
 
     # get all the files in the directory
-    if runtype == 'smrf':
-        d = sorted(glob.glob("%s/snow*" % myawsm.pathro),
-                   key=os.path.getmtime)
-    elif runtype == 'wrf':
-        d = sorted(glob.glob("%s/snow*" % myawsm.path_wrf_ro),
-                   key=os.path.getmtime)
+    d = sorted(glob.glob("%s/snow*" % myawsm.pathro),
+               key=os.path.getmtime)
 
     d.sort(key=lambda f: os.path.splitext(f))
     # pbar = progressbar.ProgressBar(max_value=len(d)).start()

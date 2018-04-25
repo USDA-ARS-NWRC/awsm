@@ -20,7 +20,7 @@ def run():
 
     # 1. initialize
     # try:
-    with awsm.framework.framework.awsm(configFile) as a:
+    with awsm.framework.framework.AWSM(configFile) as a:
 
         if not a.do_wrf:
             if not a.config['isnobal restart']['restart_crash']:

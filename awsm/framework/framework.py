@@ -14,7 +14,7 @@ from awsm.interface import interface as smin
 from awsm.interface import smrf_ipysnobal as smrf_ipy
 
 
-class awsm():
+class AWSM():
     """
 
     Args:

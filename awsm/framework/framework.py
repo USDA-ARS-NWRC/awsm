@@ -17,6 +17,7 @@ from awsm.convertFiles import convertFiles as cvf
 from awsm.interface import interface as smin
 from awsm.interface import smrf_ipysnobal as smrf_ipy
 from awsm.utils import utilities as awsm_utils
+import awsm.reporting.reportingtools as retools
 
 from smrf import __core_config__ as __smrf_core_config__
 from awsm import __core_config__ as __awsm_core_config__
@@ -101,6 +102,8 @@ class AWSM():
         # options for converting files
         self.do_make_in = self.config['awsm master']['make_in']
         self.do_make_nc = self.config['awsm master']['make_nc']
+        # do report?
+        self.do_report = self.config['awsm master']['run_report']
 
         # options for masking isnobal
         self.mask_isnobal = self.config['awsm master']['mask_isnobal']
@@ -261,6 +264,10 @@ class AWSM():
         # Make rigid directory structure
         self.mk_directories()
 
+        # parse reporting section and make reporting folder
+        if self.do_report:
+            self.parseReport()
+
         # ################ Generate config backup ##################
         if self.config['output']['input_backup']:
             # order in which to output awsm config sections
@@ -290,6 +297,35 @@ class AWSM():
 
         # create log now that directory structure is done
         self.createLog()
+
+    def parseReport(self):
+        """
+        Parse the options related to reporting
+        """
+        # get all relevant options
+        # self.report = self.config['reporting']['report']
+        self.dashboard = self.config['reporting']['dashboard']
+
+        self.snowband = self.config['reporting']['snowband']
+        self.emband = self.config['reporting']['emband']
+
+        self.report_units = self.config['reporting']['units']
+        self.report_dempath = self.config['reporting']['dempath']
+        self.report_mask = self.config['reporting']['total_mask']
+        self.subbasin1 = self.config['reporting']['subbasin1']
+        self.subbasin2 = self.config['reporting']['subbasin2']
+        self.subbasin3 = self.config['reporting']['subbasin3']
+
+        self.total_lbl = self.config['reporting']['total_lbl']
+        self.sub1_lbl = self.config['reporting']['sub1_lbl']
+        self.sub2_lbl = self.config['reporting']['sub2_lbl']
+        self.sub3_lbl = self.config['reporting']['sub3_lbl']
+
+        # make reporting directory
+        self.path_report_o = os.path.join(self.path_wy, 'reports')
+        self.path_report_i = os.path.join(self.path_report_o, 'report_{}'.format(self.folder_date_stamp))
+        if not os.path.exists(self.path_report_i):
+            os.makedirs(self.path_report_i)
 
     def createLog(self):
         '''
@@ -559,7 +595,7 @@ class AWSM():
                                     '(y n): ' % check_if_data)
                     else:
                         y_n = 'y'
-                        
+
                 if y_n == 'n':
                     self.tmp_err.append('Please fix the base directory'
                                         ' (path_wy) in your config file.')
@@ -618,6 +654,13 @@ class AWSM():
                 os.makedirs(path)
             else:
                 self.tmp_log.append('Directory --{}-- exists, not creating.\n')
+
+    def do_reporting(self):
+        """
+        Outer most function for controlling what gets plotted to the dashboard
+        or written to the report
+        """
+        retools.plot_dashboard(self)
 
     def title(self):
         """

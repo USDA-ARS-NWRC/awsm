@@ -67,6 +67,11 @@ def run():
             else:
                 a.run_smrf_ipysnobal()
 
+        # create report
+        if a.do_report:
+            a._logger.info('AWSM finished run, starting report')
+            a.do_reporting()
+
         a._logger.info('AWSM finished in: {}'.format(datetime.now() - start))
 
 

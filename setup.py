@@ -75,7 +75,8 @@ setup(
 			  'awsm.interface',
 			  'awsm.framework',
               'awsm.knn',
-			  'awsm.utils'
+			  'awsm.utils',
+			  'awsm.reporting'
 			  ],
 
 

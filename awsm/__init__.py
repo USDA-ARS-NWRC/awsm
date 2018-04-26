@@ -14,3 +14,4 @@ from . import interface
 from . import framework
 from . import knn
 from . import utils
+from . import reporting

@@ -8,3 +8,4 @@ from . import ipysnobal
 from . import smrf_ipysnobal
 from . import initialize_model
 from . import pysnobal_io
+from . import ingest_data

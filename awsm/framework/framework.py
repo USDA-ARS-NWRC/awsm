@@ -214,6 +214,13 @@ class AWSM():
         else:
             self.prev_mod_file = None
 
+        if self.config['files']['init_file'] is not None:
+            self.init_file = os.path.abspath(self.config['files']['init_file'])
+            if self.prev_mod_file is not None:
+                raise IOError('Cannot have init file and prev mod file, pick one please.')
+        else:
+            self.init_file = None
+
         # threads for running iSnobal
         self.ithreads = self.config['awsm system']['ithreads']
         # how often to output form iSnobal
@@ -253,6 +260,11 @@ class AWSM():
             # set a new start date for this run
             self.restart_date = self.start_date + reset_offset
             self.tmp_log.append('Restart date is {}'.format(self.start_date))
+
+        # read in update depth parameters
+        myawsm.update_depth = self.config['update depth']['update']
+        if myawsm.update_depth:
+            myawsm.update_file = self.config['update depth']['update_file']
 
         # list of sections releated to AWSM
         # These will be removed for smrf config
@@ -559,7 +571,7 @@ class AWSM():
                                     '(y n): ' % check_if_data)
                     else:
                         y_n = 'y'
-                        
+
                 if y_n == 'n':
                     self.tmp_err.append('Please fix the base directory'
                                         ' (path_wy) in your config file.')

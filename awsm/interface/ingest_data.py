@@ -6,6 +6,50 @@ from matplotlib import pyplot as plt
 from netCDF4 import Dataset
 import netCDF4 as nc
 
+
+# ###outline
+"""
+Initialize the updates, stick them in a dictionary or list with the key as the
+update date. Only keep ones that are in the daterange.
+In this step, make a list of nsteps to run isnobal (between each update and at the end)
+
+Make function to take in last update depths and all necessary bands and do the update
+and return necessary bands
+
+Make function to write the update to init file.
+
+Make outer function to loop through each function, output and reassign init file, kick off isnobal runs, call
+updates, and so on
+"""
+
+def run_update_procedure(myawsm):
+
+    update_fp = myawsm.update_file
+    # read in updates and store both dates and images
+    initialize_aso_updates(myawsm, update_fp)
+
+    # callculate offset for each section of the run
+    calculate_run_steps()
+
+    # run iSnobal up to first update
+    myawsm.run_for_nsteps =
+
+    # calculate offsets
+    # need a whole procedure here
+    offsets = []
+    nsteps = []
+
+    # run isnobal Once
+    myawsm.run_isnobal(offset=None)
+
+    # do each update and run again
+    for ido, off in enumerate(offsets):
+        do_update..
+        set_init_file...
+        run_isnobal...
+
+def initialize_aso_updates(myawsm, update_fp):
+
 # User inputs:
 date_mmdd = '0608' # date in MMDD format for lidar file.
 wy = '2015'    # Water year working in 'YYYY'.

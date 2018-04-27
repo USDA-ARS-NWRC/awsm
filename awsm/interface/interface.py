@@ -94,31 +94,7 @@ def smrfMEAS(myawsm):
 
             s._logger.info(datetime.now() - start)
 
-
-def run_isnobal(myawsm):
-    '''
-    Run iSnobal from command line. Checks necessary directories, creates
-    initialization image and calls iSnobal.
-
-    Args:
-        myawsm: AWSM instance
-    '''
-
-    myawsm._logger.info('Setting up to run iSnobal')
-    # find water year for calculating offset
-    tt = myawsm.start_date - myawsm.wy_start
-
-    offset = tt.days*24 + tt.seconds//3600  # start index for the input file
-    nbits = myawsm.nbits
-
-    # create the run directory
-    # if not os.path.exists(myawsm.pathro):
-    #     os.makedirs(myawsm.pathro)
-    # if not os.path.exists(myawsm.pathinit):
-    #     os.makedirs(myawsm.pathinit)
-
-    # making initial conditions file
-    myawsm._logger.debug("making initial conds img for iSnobal")
+def make_init_file(myawsm, offset):
     i_out = ipw.IPW()
 
     # making dem band
@@ -193,6 +169,36 @@ def run_isnobal(myawsm):
         i_out.write(os.path.join(myawsm.pathinit,
                                  'init%04d.ipw' % (offset)), nbits)
 
+
+def run_isnobal(myawsm, offset=None):
+    '''
+    Run iSnobal from command line. Checks necessary directories, creates
+    initialization image and calls iSnobal.
+
+    Args:
+        myawsm: AWSM instance
+    '''
+
+    myawsm._logger.info('Setting up to run iSnobal')
+    # find water year for calculating offset
+    tt = myawsm.start_date - myawsm.wy_start
+
+    # allow offset to be passed in for depth updating procedure
+    if offset = None:
+        offset = tt.days*24 + tt.seconds//3600  # start index for the input file
+
+    # set number of bits
+    nbits = myawsm.nbits
+
+    # making initial conditions file
+    myawsm._logger.debug("making initial conds img for iSnobal")
+    # if we were not given an init file, make one
+    if myawsm.init_file is None:
+        make_init_file(myawsm, offset)
+        init_file = os.path.join(myawsm.pathinit, 'init%04d.ipw' % offset)
+    else:
+        init_file = myawsm.init_file
+
     # develop the command to run the model
     myawsm._logger.debug("Developing command and running iSnobal")
     nthreads = int(myawsm.ithreads)
@@ -223,9 +229,9 @@ def run_isnobal(myawsm):
         tmstps = 1001
 
     run_cmd = 'isnobal -v -P %d -b %d -t 60 -T %s -n %d \
-    -I %s/init%04d.ipw -d %f -i %s/in' % (nthreads, myawsm.nbits,
+    -I %s -d %f -i %s/in' % (nthreads, myawsm.nbits,
                                           mass_thresh, tmstps,
-                                          myawsm.pathinit, offset,
+                                          init_file,
                                           myawsm.active_layer,
                                           myawsm.pathi)
     if offset > 0:

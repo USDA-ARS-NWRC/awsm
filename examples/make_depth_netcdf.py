@@ -10,7 +10,9 @@ import numpy as np
 import netCDF4 as nc
 import os
 from datetime import datetime
+import pytz
 import matplotlib.pyplot as plt
+from smrf.utils import utils
 from awsm.utils.utilities import get_topo_stats
 
 print("This utility takes geoTiff files for depth updates in AWSM and sticks"
@@ -45,7 +47,7 @@ def arcticks(Z, R):
     return x,y
 
 
-def read_flight(fp_lst, topo_stats, nanval = None):
+def read_flight(fp_lst, topo_stats, nanval = None, nanup = None):
     """
     args:
         fp_lst - list of paths to flight ascii
@@ -60,9 +62,12 @@ def read_flight(fp_lst, topo_stats, nanval = None):
     data_array = np.zeros((len(fp_lst), ny, nx))
 
     for fp in fp_lst:
-        D = np.genfromtxt(fp, dtype = float, skip_header=6)
+        D = np.genfromtxt(fp, dtype = float, skip_header=6, filling_values=np.nan)
         if nanval is not None:
             D[D==nanval] = np.nan
+        if nanup is not None:
+            D[D>nanup] = np.nan
+        D[D > 100] = np.nan
         # store value
         data_array[0,:] = D
 
@@ -150,7 +155,6 @@ def output_timestep(ds, data, tstep, idt, start_date):
         start_date: start date datetime
     """
 
-
     # offset to match same convention as iSnobal
     tunits = 'hours since %s' % start_date
     calendar = 'standard'
@@ -169,28 +173,39 @@ def output_timestep(ds, data, tstep, idt, start_date):
 def run():
 
     # user inputs
-    fp_lst = ['/home/micahsandusky/Code/awsfTesting/initUpdate/TB20150608_SUPERsnow_depth.asc']
+    #fp_lst = ['/home/micahsandusky/Code/awsfTesting/initUpdate/TB20150608_SUPERsnow_depth.asc']
+    fp_lst = ['/home/micahsandusky/Code/awsfTesting/newupdatetest/TB20170129_SUPERsnow_depth.asc']
     dem_fp = '/data/blizzard/tuolumne/common_data/topo/tuolx_dem_50m.ipw'
-    date_lst = ['2015-06-08']
+    #date_lst = ['2015-06-08']
+    date_lst = ['2017-01-29']
     output_path = './'
     fname = 'flight_depths'
+    nanval = -9999.0
+    nanup = 10000.0
 
     date_lst = [pd.to_datetime(dd) for dd in date_lst]
     print(date_lst)
 
-    # get wy start of first date in list
-    start_date = pd.to_datetime('2014-10-01 00:00:00')
+    # get wy start based on first date in list
+    # start_date = pd.to_datetime('2014-10-01 00:00:00')
+    tzinfo = pytz.timezone('UTC')
+    # date to use for finding wy
+    tmp_date = date_lst[0]
+    tmp_date = tmp_date.replace(tzinfo=tzinfo)
+    # find start of water year
+    tmpwy = utils.water_day(tmp_date)[1]
+    start_date = pd.to_datetime('{:d}-10-01'.format(tmpwy-1))
+    fname = fname+'_{}'.format(tmpwy)
 
     # get topo stats from dem
     ts = get_topo_stats(dem_fp, filetype = 'ipw')
-    print(ts['ny'], ts['nx'])
-
-    # get depth array
-    depth_arr = read_flight(fp_lst, ts, nanval = -9999.0)
-    #print(depth_arr)
-    # create netcdfs
     x = ts['v'] + ts['dv']*np.arange(ts['nx'])
     y = ts['u'] + ts['du']*np.arange(ts['ny'])
+
+    # get depth array
+    depth_arr = read_flight(fp_lst, ts, nanval = nanval, nanup = nanup)
+    #print(depth_arr)
+    # create netcdfs
     ds = output_files(output_path, fname, start_date, x,  y)
 
     # write to file

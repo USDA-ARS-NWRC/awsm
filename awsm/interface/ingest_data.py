@@ -163,7 +163,7 @@ def calc_offsets_nsteps(myawsm, update_info):
 
     runstesps = np.zeros_like(offsets)
     for ido, offs in enumerate(offsets):
-        if ido == len(offsets) - 1
+        if ido == len(offsets) - 1:
             runsteps[ido] = myawsm.end_wyhr - offs
         else:
             runsteps[ido] = offsets[ido+1] - offsets

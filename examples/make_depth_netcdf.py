@@ -13,6 +13,7 @@ from datetime import datetime
 import pytz
 import matplotlib.pyplot as plt
 from smrf.utils import utils
+from smrf import ipw
 from awsm.utils.utilities import get_topo_stats
 
 print("This utility takes geoTiff files for depth updates in AWSM and sticks"
@@ -21,31 +22,6 @@ print("This utility takes geoTiff files for depth updates in AWSM and sticks"
 fmt = '%Y-%m-%d %H:%M:%S'
 # chunk size
 cs = (6, 10, 10)
-
-# =========================================================================
-# Read in tif
-# =========================================================================
-
-def arcticks(Z, R):
-    '''
-    ARCTICKS   return vectors of x- and y-directions from arcgridread
-      referencing matrix
-    [x,y] = ARCTICKS(Z,R) reads the referencing matrix created by reading
-    in an Arc ASCII grid using ARCGRIDREAD or ARCGRIDREAD_V2.  x and y
-    correspond to the easting and northing coordinates, respectively, of
-    each grid cell CENTER that was read. Remember that ESRI ARC/INFO ASCII
-    GRID files store the lower left corner of the lower left pixel!!
-    Dimensionally:
-    [length(y),length(x)]=size(Z)
-    but
-    (len(x), len(y)) = Z.shape
-    '''
-    (n,m) = Z.shape
-    x = np.arange(R[2] + (R[1] / 2), R[2] + (R[1] * n) + 1, R[1])  # Counts from W to E.
-    y = np.arange(R[5] + (R[3] / 2), R[5] + (R[3] * m) + 1, R[3])  # If R[3] is negative, northing will count from N to S.
-
-    return x,y
-
 
 def read_flight(fp_lst, topo_stats, nanval = None, nanup = None):
     """
@@ -61,15 +37,18 @@ def read_flight(fp_lst, topo_stats, nanval = None, nanup = None):
     nx = topo_stats['nx']
     data_array = np.zeros((len(fp_lst), ny, nx))
 
-    for fp in fp_lst:
+    for idf, fp in enumerate(fp_lst):
+        print(fp)
         D = np.genfromtxt(fp, dtype = float, skip_header=6, filling_values=np.nan)
         if nanval is not None:
             D[D==nanval] = np.nan
         if nanup is not None:
             D[D>nanup] = np.nan
+            print(np.any(D>nanup))
         D[D > 100] = np.nan
+        print(np.any(np.isnan(D)))
         # store value
-        data_array[0,:] = D
+        data_array[idf,:] = D
 
     # plt.imshow(D)
     # plt.show()
@@ -174,10 +153,22 @@ def run():
 
     # user inputs
     #fp_lst = ['/home/micahsandusky/Code/awsfTesting/initUpdate/TB20150608_SUPERsnow_depth.asc']
-    fp_lst = ['/home/micahsandusky/Code/awsfTesting/newupdatetest/TB20170129_SUPERsnow_depth.asc']
+    fp_lst = ['/home/micahsandusky/Code/awsfTesting/newupdatetest/TB20170129_SUPERsnow_depth.asc',
+              '/home/micahsandusky/Code/awsfTesting/newupdatetest/TB20170303_SUPERsnow_depth.asc',
+              '/home/micahsandusky/Code/awsfTesting/newupdatetest/TB20170401_SUPERsnow_depth.asc',
+              '/home/micahsandusky/Code/awsfTesting/newupdatetest/TB20170502_SUPERsnow_depth.asc',
+              '/home/micahsandusky/Code/awsfTesting/newupdatetest/TB20170604_SUPERsnow_depth.asc',
+              '/home/micahsandusky/Code/awsfTesting/newupdatetest/TB20170709_SUPERsnow_depth.asc',
+              '/home/micahsandusky/Code/awsfTesting/newupdatetest/TB20170717_SUPERsnow_depth.asc',
+              '/home/micahsandusky/Code/awsfTesting/newupdatetest/TB20170816_SUPERsnow_depth.asc']
+
     dem_fp = '/data/blizzard/tuolumne/common_data/topo/tuolx_dem_50m.ipw'
+    gisPath = '/home/micahsandusky/Code/awsfTesting/initUpdate/'
+    maskPath = os.path.join(gisPath, 'tuolx_mask_50m.ipw')
+    mask = ipw.IPW(maskPath).bands[0].data[:]
     #date_lst = ['2015-06-08']
-    date_lst = ['2017-01-29']
+    date_lst = ['2017-01-29', '2017-03-03', '2017-04-01', '2017-05-02',
+                '2017-06-04', '2017-07-09', '2017-07-17', '2017-08-16']
     output_path = './'
     fname = 'flight_depths'
     nanval = -9999.0
@@ -210,7 +201,7 @@ def run():
 
     # write to file
     for idt, dt in enumerate(date_lst):
-        data = depth_arr[idt,:]
+        data = depth_arr[idt,:]*mask
         output_timestep(ds, data, dt, idt, start_date)
 
     # close file

@@ -265,7 +265,7 @@ def run_isnobal(myawsm, offset=None):
     tt = myawsm.start_date - myawsm.wy_start
 
     # allow offset to be passed in for depth updating procedure
-    if offset = None:
+    if offset is None:
         offset = tt.days*24 + tt.seconds//3600  # start index for the input file
 
     # set number of bits

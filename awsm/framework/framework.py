@@ -263,10 +263,10 @@ class AWSM():
             self.tmp_log.append('Restart date is {}'.format(self.start_date))
 
         # read in update depth parameters
-        myawsm.update_depth = self.config['update depth']['update']
-        if myawsm.update_depth:
-            myawsm.update_file = self.config['update depth']['update_file']
-            myawsm.update_buffer = self.config['update depth']['buffer']
+        self.update_depth = self.config['update depth']['update']
+        if self.update_depth:
+            self.update_file = self.config['update depth']['update_file']
+            self.update_buffer = self.config['update depth']['buffer']
 
         # list of sections releated to AWSM
         # These will be removed for smrf config

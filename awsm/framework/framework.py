@@ -16,6 +16,7 @@ from smrf.utils import utils, io
 from awsm.convertFiles import convertFiles as cvf
 from awsm.interface import interface as smin
 from awsm.interface import smrf_ipysnobal as smrf_ipy
+from awsm.interface import ingest_data
 from awsm.utils import utilities as awsm_utils
 
 from smrf import __core_config__ as __smrf_core_config__
@@ -265,6 +266,7 @@ class AWSM():
         myawsm.update_depth = self.config['update depth']['update']
         if myawsm.update_depth:
             myawsm.update_file = self.config['update depth']['update_file']
+            myawsm.update_buffer = self.config['update depth']['buffer']
 
         # list of sections releated to AWSM
         # These will be removed for smrf config
@@ -405,12 +407,18 @@ class AWSM():
         """
         cvf.ipw2nc_mea(self, runtype)
 
-    def run_isnobal(self):
+    def run_isnobal(self, offset=None):
         """
         Run isnobal. Calls :mod: `awsm.interface.interface.run_isnobal`
         """
 
-        smin.run_isnobal(self)
+        smin.run_isnobal(self, offset=offset)
+
+    def run_isnobal_update(self):
+        """
+        Run iSnobal with update procedure
+        """
+        ingest_data.run_update_procedure(self)
 
     def run_smrf_ipysnobal(self):
         """

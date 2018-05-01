@@ -148,7 +148,7 @@ def make_init_file(myawsm, offset):
         i_out.add_geo_hdr([myawsm.u, myawsm.v], [myawsm.du, myawsm.dv],
                           myawsm.units, myawsm.csys)
         i_out.write(os.path.join(myawsm.pathinit,
-                                 'init%04d.ipw' % (offset)), nbits)
+                                 'init%04d.ipw' % (offset)), myawsm.nbits)
 
     else:
         zs0 = np.zeros((myawsm.ny, myawsm.nx))
@@ -167,11 +167,13 @@ def make_init_file(myawsm, offset):
         i_out.add_geo_hdr([myawsm.u, myawsm.v], [myawsm.du, myawsm.dv],
                           myawsm.units, myawsm.csys)
 
-        init_file = os.path.join(myawsm.pathinit,
-                                 'init%04d.ipw' % (offset))
-        i_out.write(init_file, nbits)
+    init_file = os.path.join(myawsm.pathinit,
+                             'init%04d.ipw' % (offset))
+    i_out.write(init_file, myawsm.nbits)
 
-        return init_file
+    myawsm._logger.debug('Wrote init file {}'.format(init_file))
+
+    return init_file
 
 def make_init_restart(myawsm):
     # find water year hour and file paths
@@ -279,6 +281,7 @@ def run_isnobal(myawsm, offset=None):
             init_file = make_init_restart(myawsm)
         else:
             init_file = make_init_file(myawsm, offset)
+            print('init', init_file)
     else:
         myawsm._logger.info('Initializing iSnobal with given init file')
         init_file = myawsm.init_file

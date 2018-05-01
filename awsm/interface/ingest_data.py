@@ -5,8 +5,10 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from netCDF4 import Dataset
 import netCDF4 as nc
+from collections import OrderedDict
+import glob
 
-
+from smrf.utils import utils
 # ###outline
 """
 Initialize the updates, stick them in a dictionary or list with the key as the
@@ -43,11 +45,12 @@ def run_update_procedure(myawsm):
         myawsm.run_isnobal(offset=None)
 
     # do each update and run again
-    for ido, off in enumerate(offsets):
+    for idu, k in enumerate(update_info.keys()):
+        off = offsets[idu]
         # find update output file
         # if we're starting with an update
-        if firststeps == 0 and ido == 0:
-            if mywasm.restart_crash:
+        if firststeps == 0 and idu == 0:
+            if myawsm.restart_crash:
                 name_crash = 'snow.%04d' % myawsm.restart_hr
                 update_snow = os.path.join(myawsm.pathro, name_crash)
             else:
@@ -57,11 +60,11 @@ def run_update_procedure(myawsm):
             update_snow = find_update_snow(myawsm, off)
 
         # perform the update and set the init file for iSnobal
-        myawsm.init_file = do_update(myawsm, update_info.index[ido],
+        myawsm.init_file = do_update(myawsm, update_info[k],
                                      update_snow, x, y)
 
         # set nsteps
-        mywasm.run_for_nsteps = runsteps[ido]
+        myawsm.run_for_nsteps = runsteps[ido]
 
         # run isnobal again
         myawsm.run_isnobal(offset=off)
@@ -78,7 +81,7 @@ def initialize_aso_updates(myawsm, update_fp):
 
     Buf = myawsm.update_buffer  # Buffer size (in cells) for the interpolation to search over.
 
-    last_snow_image = ipw.IPW('/home/micahsandusky/Code/awsfTesting/newupdatetest/snow.2879')
+    # last_snow_image = ipw.IPW('/home/micahsandusky/Code/awsfTesting/newupdatetest/snow.2879')
 
     ##  Update the snow depths in the initialization file using ASO lidar:
     fp = update_fp
@@ -104,15 +107,17 @@ def initialize_aso_updates(myawsm, update_fp):
     t_wyhr = np.array(t_wyhr)
 
     # make dictionary of updates
-    update_info = pd.DataFrame()
+    update_info = OrderedDict()
     keys = range(1,len(t_wyhr)+1)
-    # for idk, k in keys:
-    #     update_info[k]
-    # set update number
-    update_info['number'] = keys
-    update_info['date_time'] = t
-    update_info['wyhr'] = t_wyhr
-    update_info['depth'] = D_all
+    for idk, k in enumerate(keys):
+        # make dictionary for each update
+        update_info[k] = {}
+        # set update number
+        #update_info[k]['number'] = k
+        update_info[k]['date_time'] = t[idk]
+        update_info[k]['wyhr'] = t_wyhr[idk]
+        # set depth
+        update_info[k]['depth'] = D_all[idk,:]
 
     return update_info, x, y
 
@@ -131,42 +136,50 @@ def calc_offsets_nsteps(myawsm, update_info):
         firststeps:  number of steps to run before first update, if any
     """
 
-    t_wyhr = update_info['wyhr'].values
-    update_number = update_info['number'].values
+    #t_wyhr = update_info['wyhr'].values
+    update_number = update_info.keys()
     filter_number = update_number
     # filter to correct hourse
     for un in update_number:
         if un not in filter_number:
-            update_info = update_info[update_info['number'] != un]
+            # delete update if not in desired update inputs
+            update_info.pop(un)
 
     # filter so we are in the dates
-    for tw in t_wyhr:
+    for un in update_info.keys():
+        tw = update_info[un]['wyhr']
+        # get rid of updates more than a day before start date
         if tw < myawsm.start_wyhr - 24:
-            update_info = update_info[update_info['wyhr'] != tw]
-        if tw > mywasm.end_wyhr:
-            update_info = update_info[update_info['wyhr'] != tw]
+            update_info.pop(un)
+        # get rid of updates past the end of the run
+        elif tw > myawsm.end_wyhr:
+            update_info.pop(un)
 
     # now we are down to the correct wyhrs and update numbers
-    t_wyhr = update_info['wyhr'].values
-    update_number = update_info['number'].values
+    update_number = np.array(update_info.keys())
+    t_wyhr = np.array([update_info[k]['wyhr'] for k in update_number])
 
     # this is where each run will start from
     offsets = t_wyhr
     # check if a first run with no update is needed to get us up to the first update
-    if mywasm.restart_crash:
+    if myawsm.restart_crash:
         test_start_wyhr = myawsm.restart_hr
+    else:
+        test_start_wyhr = myawsm.start_wyhr
     # do we need to do that run?
     if offsets[0] - test_start_wyhr <= 0:
         firststeps = 0
     else:
         firststeps = offsets[0] - test_start_wyhr
 
-    runstesps = np.zeros_like(offsets)
+    runsteps = np.zeros_like(offsets)
     for ido, offs in enumerate(offsets):
         if ido == len(offsets) - 1:
             runsteps[ido] = myawsm.end_wyhr - offs
         else:
-            runsteps[ido] = offsets[ido+1] - offsets
+            runsteps[ido] = offsets[ido+1] - offs
+
+    myawsm._logger.debug('Filtered to updates on: {}'.format(t_wyhr))
 
     return update_info, runsteps, offsets, firststeps
 
@@ -188,8 +201,11 @@ def find_update_snow(myawsm, offset):
         hr.append(int(nm.split('.')[1]))
 
     hr = np.array(hr)
+    print(hr)
     # filter to outputs less than offset
-    hr = [h for h in hr if h < offset]
+    hr = hr[hr < offset]
+    print(hr)
+    #hr = [h for h in hr if h < offset]
     # find closest
     idx = (np.abs(hr - offset)).argmin()
     offset_hr = int(hr[idx])
@@ -211,7 +227,7 @@ def do_update(myawsm, update_info, update_snow, x, y):
     """
     Function to read in an output file and update it with the lidar depth field
     Argument:
-        mywasm: instantiated awsm class
+        myawsm: instantiated awsm class
         update_info: update info pandas at correct index
         update_snow: file pointer to snow update image
         x: x vector
@@ -219,11 +235,13 @@ def do_update(myawsm, update_info, update_snow, x, y):
     Returns:
         init_file: file pointer to init image
     """
-    D = update_info['depth'].values[0,:]
+    update_number = update_info.keys()
+    D = update_info['depth']
+    #D = update_info['depth'].values[0,:]
     print('Shape', D.shape)
-    date = update_info['date_time'].values[0]
-    wyhr = update_info['wyhr'].values[0]
-    update_number = update_info['number'].values[0]
+    date = update_info['date_time']
+    wyhr = update_info['wyhr']
+
 
     # mask = myawsm.mask
 

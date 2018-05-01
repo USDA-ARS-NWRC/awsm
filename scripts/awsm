@@ -39,7 +39,7 @@ def run():
             if a.do_isnobal:
                 # run iSnobal
                 if a.update_depth:
-                    a.run_isboal_update()
+                    a.run_isnobal_update()
                 else:
                     a.run_isnobal()
 

@@ -235,7 +235,9 @@ class AWSM():
         self.em_name = self.config['awsm system']['em_name']
 
         # options for restarting iSnobal
+        self.restart_crash = False
         if self.config['isnobal restart']['restart_crash']:
+            self.restart_crash = True
             # self.new_init = self.config['isnobal restart']['new_init']
             self.depth_thresh = self.config['isnobal restart']['depth_thresh']
             self.restart_hr = \

@@ -9,8 +9,7 @@ from netCDF4 import Dataset
 from smrf.utils import utils
 # import reporting module if installed
 try:
-    from snowav.plotting.framework import SNOWAV
-    from snowav.report.report import report
+    import snowav
 except:
     print('no snowav to import, not installed')
 
@@ -19,29 +18,29 @@ def plot_dashboard(myawsm):
     Function to plot summary information and make reports after an AWSM run
     """
     # initialize reporting tool
-    snow = SNOWAV(myawsm = myawsm)
+    config_file = '/home/markrobertson/wkspace/config/snowav/snowav_brb_wy2018.ini'
+    print(myawsm.basin)
+    snow = snowav.plotting.framework.SNOWAV(config_file = config_file)
 
     # process the data
     snow.process()
 
-    # SNOWAV.snowav.accumulated(snow)
     if myawsm.dashboard != False or myawsm.report != None:
         myawsm._logger.info('Plotting summary information as requested')
-        snow.current_image()
-        snow.accumulated()
-        snow.state_by_elev()
-        snow.image_change()
-        snow.basin_total()
-        if myawsm.basin == 'brb':
-            snow.stn_validate()
+        snowav.plotting.accumulated.accumulated(snow)
+        snowav.plotting.current_image.current_image(snow)
+        snowav.plotting.state_by_elev.state_by_elev(snow)
+        snowav.plotting.image_change.image_change(snow)
+        snowav.plotting.basin_total.basin_total(snow)
+        snowav.plotting.pixel_swe.pixel_swe(snow)
+        snowav.plotting.density.density(snow)
+        snowav.plotting.water_balance.water_balance(snow)
+        snowav.plotting.stn_validate.stn_validate(snow)
 
-    if myawsm.report != False:
+    print(snow.report_flag)
+    if snow.report_flag == 'True':
         myawsm._logger.info('Creating report')
-        report(snow)
-
-    # if myawsm.dashboard != False:
-    #     myawsm._logger.info('Plotting water balance')
-    #     plot_waterbalance(myawsm)
+        snowav.report.report.report(snow)
 
 
 def plot_waterbalance(myawsm):

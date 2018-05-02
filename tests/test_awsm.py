@@ -65,8 +65,9 @@ class TestStandardRME(unittest.TestCase):
 
         # Remove any potential files to ensure fresh run
         if os.path.isdir(self.output):
-            os.remove(self.output_snow)
-            os.remove(self.output_em)
+            for f in [self.output_snow,self.output_em]:
+                if os.path.isfile(f):
+                    os.remove(f)
 
         config = os.path.join(run_dir, 'config.ini')
 

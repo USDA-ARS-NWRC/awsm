@@ -80,7 +80,7 @@ setup(
 
 
     include_package_data=True,
-    package_data={'awsm':['./framework/CoreConfig.ini']},
+    package_data={'awsm':['./framework/CoreConfig.ini','./framework/recipes.ini']},
     scripts=['./scripts/awsm'],
     install_requires=requirements,
     license="GPL-3.0",

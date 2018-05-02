@@ -26,8 +26,11 @@ __config_titles__ = {'awsm master': 'Configurations for AWSM Master section',
                       'ipysnobal constants': 'Input constants for PySnobal'
                       }
 
+from . import utils
+
+__config_header__ = utils.utilities.get_config_header()
+
 from . import convertFiles
 from . import interface
-from . import framework
 from . import knn
-from . import utils
+from . import framework

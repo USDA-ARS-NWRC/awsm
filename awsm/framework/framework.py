@@ -48,7 +48,7 @@ class AWSM():
                             .format(configFile))
         try:
             # get both master configs
-            smrf_mcfg = MasterConfig(module = 'smrf')
+            smrf_mcfg = MasterConfig(module='smrf')
             awsm_mcfg = MasterConfig(module='awsm')
             combined_mcfg = copy.deepcopy(awsm_mcfg)
             combined_mcfg.merge(smrf_mcfg)

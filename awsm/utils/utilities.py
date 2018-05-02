@@ -1,6 +1,8 @@
 from .gitinfo import __gitVersion__, __gitPath__
 import os
 from smrf import ipw
+import awsm
+import smrf
 
 def getgitinfo():
     """gitignored file that contains specific AWSM version and path
@@ -56,3 +58,19 @@ def get_topo_stats(fp, filetype='netcdf'):
         ts['csys'] = i.bands[0].coord_sys_ID
 
     return ts
+
+
+def get_config_header():
+    """
+    Produces the string for the main header for the config file.
+    """
+    hdr = ("Configuration File for AWSM v{0}\n"
+           "Using SMRF v{1}\n"
+           "\n"
+           "For AWSM related help see:\n"
+           "http://awsm.readthedocs.io/en/latest/\n"
+           "\nFor SMRF related help see:\n"
+           "http://smrf.readthedocs.io/en/latest/\n").format(awsm.__version__,
+                                                           smrf.__version__)
+
+    return hdr

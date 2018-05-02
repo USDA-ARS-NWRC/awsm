@@ -16,6 +16,7 @@ from smrf.utils import utils, io
 from awsm.convertFiles import convertFiles as cvf
 from awsm.interface import interface as smin
 from awsm.interface import smrf_ipysnobal as smrf_ipy
+from awsm.utils import utilities as awsm_utils
 
 from smrf import __core_config__ as __smrf_core_config__
 from awsm import __core_config__ as __awsm_core_config__
@@ -54,6 +55,10 @@ class AWSM():
         except UnicodeDecodeError:
             raise Exception(('The configuration file is not encoded in '
                              'UTF-8, please change and retry'))
+
+        # get the git version
+        # find output of 'git describe'
+        self.gitVersion = awsm_utils.getgitinfo()
 
         # create blank log and error log because logger is not initialized yet
         self.tmp_log = []
@@ -291,23 +296,23 @@ class AWSM():
         Now that the directory structure is done, create log file and print out
         saved logging statements.
         '''
-        
+
         level_styles = {'info': {'color': 'white'},
-                        'notice': {'color': 'magenta'}, 
-                        'verbose': {'color': 'blue'}, 
-                        'success': {'color': 'green', 'bold': True}, 
-                        'spam': {'color': 'green', 'faint': True}, 
-                        'critical': {'color': 'red', 'bold': True}, 
-                        'error': {'color': 'red'}, 
-                        'debug': {'color': 'green'}, 
+                        'notice': {'color': 'magenta'},
+                        'verbose': {'color': 'blue'},
+                        'success': {'color': 'green', 'bold': True},
+                        'spam': {'color': 'green', 'faint': True},
+                        'critical': {'color': 'red', 'bold': True},
+                        'error': {'color': 'red'},
+                        'debug': {'color': 'green'},
                         'warning': {'color': 'yellow'}}
-        
+
         field_styles =  {'hostname': {'color': 'magenta'},
-                         'programname': {'color': 'cyan'}, 
-                         'name': {'color': 'white'}, 
-                         'levelname': {'color': 'white', 'bold': True}, 
+                         'programname': {'color': 'cyan'},
+                         'name': {'color': 'white'},
+                         'levelname': {'color': 'white', 'bold': True},
                          'asctime': {'color': 'green'}}
-        
+
         # start logging
         loglevel = self.config['awsm system']['log_level'].upper()
 

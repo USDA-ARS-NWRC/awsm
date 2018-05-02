@@ -47,21 +47,18 @@ class AWSM():
             raise Exception('Configuration file does not exist --> {}'
                             .format(configFile))
         try:
-            # get both master configs
-            smrf_mcfg = MasterConfig(module='smrf')
-            awsm_mcfg = MasterConfig(module='awsm')
-            combined_mcfg = copy.deepcopy(awsm_mcfg)
-            combined_mcfg.merge(smrf_mcfg)
+            combined_mcfg = MasterConfig(modules = ['smrf','awsm'])
+            awsm_mcfg = MasterConfig(modules = 'awsm')
 
             # Read in the original users config
             self.ucfg = get_user_config(configFile, mcfg=combined_mcfg)
             self.configFile = configFile
+
         except UnicodeDecodeError:
             raise Exception(('The configuration file is not encoded in '
                              'UTF-8, please change and retry'))
 
         # get the git version
-        # find output of 'git describe'
         self.gitVersion = awsm_utils.getgitinfo()
 
         # create blank log and error log because logger is not initialized yet

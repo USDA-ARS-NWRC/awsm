@@ -25,6 +25,7 @@ from smrf.utils import utils, io
 from awsm.convertFiles import convertFiles as cvf
 from awsm.interface import interface as smin
 from awsm.interface import smrf_ipysnobal as smrf_ipy
+from awsm.utils import utilities as awsm_utils
 
 class AWSM():
     """
@@ -58,6 +59,10 @@ class AWSM():
         except UnicodeDecodeError:
             raise Exception(('The configuration file is not encoded in '
                              'UTF-8, please change and retry'))
+
+        # get the git version
+        # find output of 'git describe'
+        self.gitVersion = awsm_utils.getgitinfo()
 
         # create blank log and error log because logger is not initialized yet
         self.tmp_log = []

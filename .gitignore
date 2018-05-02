@@ -84,3 +84,4 @@ test_data/RME_run/output/rme
 
 #Integration tests
 tests/RME/output/rme/*
+awsm/utils/gitinfo.py

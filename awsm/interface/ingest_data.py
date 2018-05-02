@@ -40,7 +40,8 @@ def run_update_procedure(myawsm):
 
     # run iSnobal up to first update if needed
     if firststeps > 0:
-        myawsm.run_for_nsteps = firststeps
+        if myawsm.run_for_nsteps is None:
+            myawsm.run_for_nsteps = firststeps
         # run isnobal Once
         myawsm.run_isnobal(offset=None)
 
@@ -64,7 +65,7 @@ def run_update_procedure(myawsm):
                                      update_snow, x, y)
 
         # set nsteps
-        myawsm.run_for_nsteps = runsteps[ido]
+        myawsm.run_for_nsteps = runsteps[idu]
 
         # run isnobal again
         myawsm.run_isnobal(offset=off)
@@ -79,8 +80,6 @@ def initialize_aso_updates(myawsm, update_fp):
             update_info: dictionary of updates
     """
 
-    Buf = myawsm.update_buffer  # Buffer size (in cells) for the interpolation to search over.
-
     # last_snow_image = ipw.IPW('/home/micahsandusky/Code/awsfTesting/newupdatetest/snow.2879')
 
     ##  Update the snow depths in the initialization file using ASO lidar:
@@ -89,14 +88,16 @@ def initialize_aso_updates(myawsm, update_fp):
     ds = Dataset(fp, 'r')
     # get all depths, x, y, time
     D_all = ds.variables['depth'][:]
+    if np.any(D_all) > 100:
+        print('Check D_all')
     x = ds.variables['x'][:]
     y = ds.variables['y'][:]
     times = ds.variables['time']
     ts = times[:]
     # convert time index to dates
     t = nc.num2date(ts, times.units, times.calendar)
-
     # find wyhr of dates
+
     t_wyhr = []
     for t1 in t:
         tmp_date = t1.replace(tzinfo=myawsm.tzinfo)
@@ -113,7 +114,7 @@ def initialize_aso_updates(myawsm, update_fp):
         # make dictionary for each update
         update_info[k] = {}
         # set update number
-        #update_info[k]['number'] = k
+        update_info[k]['number'] = k
         update_info[k]['date_time'] = t[idk]
         update_info[k]['wyhr'] = t_wyhr[idk]
         # set depth
@@ -138,18 +139,30 @@ def calc_offsets_nsteps(myawsm, update_info):
 
     #t_wyhr = update_info['wyhr'].values
     update_number = update_info.keys()
-    filter_number = update_number
+    # filter to desired flights if user input
+    if myawsm.flight_numbers is not None:
+        filter_number = myawsm.flight_numbers
+    else:
+        filter_number = update_number
+
+    myawsm._logger.debug('Will update with flights {}'.format(filter_number))
     # filter to correct hourse
     for un in update_number:
         if un not in filter_number:
             # delete update if not in desired update inputs
             update_info.pop(un)
 
+    # check if a first run with no update is needed to get us up to the first update
+    if myawsm.restart_crash:
+        test_start_wyhr = myawsm.restart_hr+1
+    else:
+        test_start_wyhr = myawsm.start_wyhr
+
     # filter so we are in the dates
     for un in update_info.keys():
         tw = update_info[un]['wyhr']
         # get rid of updates more than a day before start date
-        if tw < myawsm.start_wyhr - 24:
+        if tw < test_start_wyhr - 24:
             update_info.pop(un)
         # get rid of updates past the end of the run
         elif tw > myawsm.end_wyhr:
@@ -161,11 +174,7 @@ def calc_offsets_nsteps(myawsm, update_info):
 
     # this is where each run will start from
     offsets = t_wyhr
-    # check if a first run with no update is needed to get us up to the first update
-    if myawsm.restart_crash:
-        test_start_wyhr = myawsm.restart_hr
-    else:
-        test_start_wyhr = myawsm.start_wyhr
+
     # do we need to do that run?
     if offsets[0] - test_start_wyhr <= 0:
         firststeps = 0
@@ -201,10 +210,8 @@ def find_update_snow(myawsm, offset):
         hr.append(int(nm.split('.')[1]))
 
     hr = np.array(hr)
-    print(hr)
     # filter to outputs less than offset
     hr = hr[hr < offset]
-    print(hr)
     #hr = [h for h in hr if h < offset]
     # find closest
     idx = (np.abs(hr - offset)).argmin()
@@ -235,15 +242,33 @@ def do_update(myawsm, update_info, update_snow, x, y):
     Returns:
         init_file: file pointer to init image
     """
-    update_number = update_info.keys()
+    activeLayer = 0.25
+    Buf = myawsm.update_buffer  # Buffer size (in cells) for the interpolation to search over.
+    # get dem and roughness
+    if myawsm.topotype == 'ipw':
+        i_dem = ipw.IPW(myawsm.fp_dem)
+        dem = i_dem.bands[0].data
+    elif myawsm.topotype == 'netcdf':
+        dem_file = nc.Dataset(myawsm.fp_dem, 'r')
+        dem = dem_file['dem'][:]
+
+    if myawsm.roughness_init is not None:
+        z0 = ipw.IPW(myawsm.roughness_init).bands[1].data
+    elif myawsm.init_file is not None:
+        z0 = ipw.IPW(myawsm.init_file).bands[1].data
+    else:
+        myawsm._logger.warning('No roughness given from old init,'
+                               ' using value of 0.005 m')
+        z0 = 0.005*np.ones((myawsm.ny, myawsm.nx))
+
+    update_number = update_info['number']
     D = update_info['depth']
     #D = update_info['depth'].values[0,:]
     print('Shape', D.shape)
     date = update_info['date_time']
     wyhr = update_info['wyhr']
 
-
-    # mask = myawsm.mask
+    mask = ipw.IPW(myawsm.config['topo']['mask']).bands[0].data
 
     XX,YY = np.meshgrid(x,y)
 
@@ -298,8 +323,8 @@ def do_update(myawsm, update_info, update_snow, x, y):
 
     rho = density.copy()
     D[D < 0.05] = 0.0 # Set shallow snow (less than 5cm) to 0.
-    # D[mask == 0] = np.nan # Set out of watershed cells to NaN
-    # rho[mask == 0] = np.nan # Set out of watershed cells to NaN
+    D[mask == 0] = np.nan # Set out of watershed cells to NaN
+    rho[mask == 0] = np.nan # Set out of watershed cells to NaN
     tot_pix = ncols * nrows # Get number of pixels in domain.
 
     I_model = np.where(z_s == 0) # Snow-free pixels in the model.
@@ -328,17 +353,17 @@ def do_update(myawsm, update_info, update_snow, x, y):
     T_s[T_s <= -75.0] = np.nan # Change isnobal no-values to NaN.
 
     h2o_sat[D == 0.0] = np.nan # Find cells without lidar snow and set the h2o saturation to NaN.
-    # h2o_sat[mask == 0] = np.nan
+    h2o_sat[mask == 0] = np.nan
     # h2o_sat[h2o_sat == -75.0] = np.nan # Change isnobal no-values to NaN.
 
     I_rho = np.where( np.isnan(rho) ) # Snow-free pixels before interpolation
     #modelDensity = tot_pix - size(I_rho, 1)
     modelDensity = tot_pix - len(I_rho[0])
 
-    print('\nBefore Interpolation.\n \
-            Number of modeled cells with snow depth: {0}\n \
-            Number of modeled cells with density: {1}\n \
-            Number of lidar cells measuring snow: {2}'.format(modelDepth, modelDensity, lidarDepth ) )
+    myawsm._logger.debug('\nBefore Interpolation.\n \
+                          Number of modeled cells with snow depth: {0}\n \
+                          Number of modeled cells with density: {1}\n \
+                          Number of lidar cells measuring snow: {2}'.format(modelDepth, modelDensity, lidarDepth ) )
 
     ##  Now find cells where lidar measured snow, but Isnobal simulated no snow:
     I = np.where( (np.isnan(rho)) & (D > 0) )
@@ -406,7 +431,7 @@ def do_update(myawsm, update_info, update_snow, x, y):
                 break
 
     # ##################### hopefully fixed for loop logic below
-
+    myawsm._logger.debug('Done with loop 1')
     # Now loop over cells with D > activelayer > z_s.  These cells were being
     # assigned no temperature in their lower layer (-75) when they needed to
     # have a real temperature.  Solution is to interpolate from nearby cells
@@ -429,6 +454,8 @@ def do_update(myawsm, update_info, update_snow, x, y):
             if not np.any(np.isnan(T_s_l[ix,iy])):
                 break
 
+    myawsm._logger.debug('Done with loop 2')
+
     iq = (np.isnan(D)) & (np.isfinite(rho))
     rho[iq] = np.nan # Once more, change cells with no lidar snow to have np.nan density.
 
@@ -447,10 +474,10 @@ def do_update(myawsm, update_info, update_snow, x, y):
     I_lidaridx = (D == 0) | (np.isnan(D) )  # Snow-free pixels from lidar.
     I_rhoidx = np.isnan(rho)  # Snow-free pixels upon importing.
 
-    print('\nAfter Interpolation.\n \
-            Number of modeled cells with snow depth: {}\n \
-            Number of modeled cells with density: {}\n \
-            Number of lidar cells measuring snow: {}'.format(modelDepth,modelDensity,lidarDepth ) )
+    myawsm._logger.debug('\nAfter Interpolation.\n \
+                          Number of modeled cells with snow depth: {}\n \
+                          Number of modeled cells with density: {}\n \
+                          Number of lidar cells measuring snow: {}'.format(modelDepth,modelDensity,lidarDepth ) )
 
     ##  Reset NaN's to the proper values for Isnobal:
     #if size(I_lidar, 1) ~= size(I_rho, 1)
@@ -472,10 +499,21 @@ def do_update(myawsm, update_info, update_snow, x, y):
 
     #
     # #chdir(initDir)
+
     #
-    outfile = 'init_{}_wyhr{:04d}.ipw'.format(update_number, wyhr)
+    # grab unmasked cells again
+    nmask = mask == 0
+    m_s[nmask] = last_snow_image.bands[2].data[nmask] # Get SWE image.
+    T_s_0[nmask] = last_snow_image.bands[4].data[nmask] # Get active snow layer temperature image
+    T_s_l[nmask] = last_snow_image.bands[5].data[nmask] # Get lower snow layer temperature image
+    T_s[nmask] = last_snow_image.bands[6].data[nmask] # Get average snowpack temperature image
+    h2o_sat[nmask] = last_snow_image.bands[8].data[nmask] # Get liquid water saturation image
+    D[nmask] = last_snow_image.bands[0].data[nmask]
+
+    # write init file
+    out_file = 'init_update_{}_wyhr{:04d}.ipw'.format(update_number, wyhr)
     init_file = os.path.join(myawsm.pathinit,out_file)
-    i_out = ipw.IPW(init_file)
+    i_out = ipw.IPW()
     i_out.new_band(dem)
     i_out.new_band(z0)
     i_out.new_band(D)
@@ -484,10 +522,12 @@ def do_update(myawsm, update_info, update_snow, x, y):
     i_out.new_band(T_s_l)
     i_out.new_band(T_s)
     i_out.new_band(h2o_sat)
-    i_out.add_geo_hdr([u, v], [du, dv], units, csys)
-    i_out.write(os.path.join(pathinit,out_file+'.ipw'), nbits)
+    #i_out.add_geo_hdr([u, v], [du, dv], units, csys)
+    i_out.add_geo_hdr([myawsm.u, myawsm.v], [myawsm.du, myawsm.dv],
+                      myawsm.units, myawsm.csys)
+    i_out.write(init_file, myawsm.nbits)
 
     ##  Import newly-created init file and look at images to make sure they line up:
-    os.path.info('Wrote ipw image for update {}'.format(wyhr))
+    myawsm._logger.info('Wrote ipw image for update {}'.format(wyhr))
 
-    return initfile
+    return init_file

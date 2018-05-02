@@ -279,6 +279,7 @@ def run_isnobal(myawsm, offset=None):
     if myawsm.init_file is None:
         if myawsm.restart_crash:
             init_file = make_init_restart(myawsm)
+            offset = myawsm.restart_hr+1
         else:
             init_file = make_init_file(myawsm, offset)
             print('init', init_file)

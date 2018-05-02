@@ -269,6 +269,11 @@ class AWSM():
         if self.update_depth:
             self.update_file = self.config['update depth']['update_file']
             self.update_buffer = self.config['update depth']['buffer']
+            self.flight_numbers = self.config['update depth']['flight_numbers']
+            # if flights to use is not list, make it a list
+            if self.flight_numbers is not None:
+                if not isinstance(self.flight_numbers, list):
+                    self.flight_numbers = [self.flight_numbers]
 
         # list of sections releated to AWSM
         # These will be removed for smrf config

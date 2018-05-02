@@ -1,6 +1,7 @@
 from .gitinfo import __gitVersion__, __gitPath__
 import os
 from smrf import ipw
+from netCDF4 import Dataset
 
 def getgitinfo():
     """gitignored file that contains specific AWSM version and path

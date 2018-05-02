@@ -54,7 +54,10 @@ def run():
         else:
             if a.do_isnobal:
                 # restart iSnobal from crash
-                a.run_isnobal()
+                if a.update_depth:
+                    a.run_isnobal_update()
+                else:
+                    a.run_isnobal()
                 # convert ipw back to netcdf for processing
             elif a.do_ipysnobal:
                 # run iPySnobal

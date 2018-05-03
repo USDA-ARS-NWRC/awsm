@@ -544,8 +544,8 @@ class AWSM():
                     self.make_rigid_directories(path_names_att)
 
             else:
-                self.tmp_warn.append('This has the potential to overwrite '
-                                     'results in {}!!!'.format(check_if_data))
+                self.tmp_warn.append('Directory structure leading to '
+                                     '{} already exists.'.format(check_if_data))
 
             # make sure runs exists
             if not os.path.exists(os.path.join(self.path_wy, 'runs/')):

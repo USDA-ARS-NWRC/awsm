@@ -9,7 +9,11 @@ import glob
 
 def nc2ipw_mea(myawsm, runtype):
     '''
-    Function to create iSnobal forcing and precip images from smrf ouputs
+    Function to create iSnobal forcing and precip images from smrf ouputs. Reads
+    in all of the SMRF forcing outputs and converts them into input and ppt
+    images in the 'input' and 'ppt_4b' directories. Also writes the  ppt_desc
+    file.
+
     Args:
         myawsm: AWSM instance
         runtype: either 'smrf' for standard run or 'forecast' for gridded data run
@@ -147,7 +151,9 @@ def nc2ipw_mea(myawsm, runtype):
 
 def ipw2nc_mea(myawsm, runtype):
     '''
-    Function to create netcdf files from iSnobal output
+    Function to create netcdf files from iSnobal output. Reads the snow and em
+    ouptuts in the 'output' folder and stores them in snow.nc and em.nc one
+    directory up. 
 
     Args:
         myawsm: AWSM instance

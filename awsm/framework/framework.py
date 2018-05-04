@@ -104,6 +104,9 @@ class AWSM():
         # prompt for making directories
         self.prompt_dirs = self.config['awsm master']['prompt_dirs']
 
+        # store smrf version if running smrf
+        self.smrf_version = utils.getgitinfo()
+
         # ################ Time information ##################
         self.start_date = pd.to_datetime(self.config['time']['start_date'])
         self.end_date = pd.to_datetime(self.config['time']['end_date'])

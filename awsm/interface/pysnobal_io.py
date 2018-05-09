@@ -274,16 +274,10 @@ def output_timestep(s, tstep, options, output_vars):
                 'water_saturation': 'h2o_sat'}
 
     # preallocate
-#     all_zeros = np.zeros(s['elevation'].shape)
-#     em = {key: all_zeros for key in em_out.keys()}
-#     snow = {key: all_zeros for key in snow_out.keys()}
     em = {}
     snow = {}
 
     # gather all the data together
-#     for index, si in np.ndenumerate(s):
-#
-#         if si is not None:
     for key, value in em_out.items():
         em[key] = copy(s[value])
 

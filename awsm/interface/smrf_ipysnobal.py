@@ -89,7 +89,6 @@ def run_ipysnobal(myawsm):
         input1 = input2.copy()
 
         # output at the frequency and the last time step
-        # if (j % options['output']['frequency'] == 0) or (j == len(options['time']['date_time'])):
         if ((j)*(data_tstep/3600.0) % options['output']['frequency'] == 0) \
                 or (j == len(options['time']['date_time']) - 1):
             myawsm._logger.info('Outputting {}'.format(tstep))
@@ -165,9 +164,6 @@ def run_smrf_ipysnobal_single(myawsm, s):
 
     """
 
-    # tzinfo = pytz.timezone(s.config['time']['time_zone'])
-    # # start date that is tz aware for comparing with datetime array
-    # compare_start = s.start_date.replace(tzinfo=tzinfo)
     # -------------------------------------
     # Initialize the distibution
     for v in s.distribute:
@@ -349,10 +345,6 @@ def run_smrf_ipysnobal_threaded(myawsm, s):
     # start all the threads
     for i in range(len(t)):
         t[i].start()
-
-    # wait for all the threads to stop
-#         for v in q:
-#             q[v].join()
 
     for i in range(len(t)):
         t[i].join()

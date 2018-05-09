@@ -326,12 +326,9 @@ def restart_crash_image(myawsm):
 
     z_s[idz] = 0.0
     rho[idz] = 0.0
-    # m_s[idz] = 0.0
-    # h20[idz] = 0.0
     T_s_0[idz] = -75.0
     T_s_l[idz] = -75.0
     T_s[idz] = -75.0
-    # z_s_l[idz] = 0.0
     h20_sat[idz] = 0.0
 
     # fill in init image

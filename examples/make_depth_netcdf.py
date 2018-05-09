@@ -26,26 +26,6 @@ cs = (6, 10, 10)
 # Read in tif
 # =========================================================================
 
-def arcticks(Z, R):
-    '''
-    ARCTICKS   return vectors of x- and y-directions from arcgridread
-      referencing matrix
-    [x,y] = ARCTICKS(Z,R) reads the referencing matrix created by reading
-    in an Arc ASCII grid using ARCGRIDREAD or ARCGRIDREAD_V2.  x and y
-    correspond to the easting and northing coordinates, respectively, of
-    each grid cell CENTER that was read. Remember that ESRI ARC/INFO ASCII
-    GRID files store the lower left corner of the lower left pixel!!
-    Dimensionally:
-    [length(y),length(x)]=size(Z)
-    but
-    (len(x), len(y)) = Z.shape
-    '''
-    (n,m) = Z.shape
-    x = np.arange(R[2] + (R[1] / 2), R[2] + (R[1] * n) + 1, R[1])  # Counts from W to E.
-    y = np.arange(R[5] + (R[3] / 2), R[5] + (R[3] * m) + 1, R[3])  # If R[3] is negative, northing will count from N to S.
-
-    return x,y
-
 
 def read_flight(fp_lst, topo_stats, nanval = None, nanup = None):
     """
@@ -88,7 +68,8 @@ def output_files(output_path, fname, start_date, x, y):
         x:           vector of x coords
         y:           vector of y coords
 
-
+    Returns:
+        ds: dataset
     """
     fmt = '%Y-%m-%d %H:%M:%S'
     # chunk size

@@ -171,15 +171,26 @@ class AWSM():
                 print(self.tmp_err)
                 sys.exit()
 
+        # ################ Topo information ##################
+        self.topotype = self.config['topo']['type']
+        # pull in location of the dem
+        if self.topotype == 'ipw':
+            self.fp_dem = os.path.abspath(self.config['topo']['dem'])
+        elif self.topotype == 'netcdf':
+            self.fp_dem = os.path.abspath(self.config['topo']['filename'])
+
         # ################ Grid data for iSnobal ##################
-        self.u = int(self.config['grid']['u'])
-        self.v = int(self.config['grid']['v'])
-        self.du = int(self.config['grid']['du'])
-        self.dv = int(self.config['grid']['dv'])
-        self.units = self.config['grid']['units']
+        # get topo stats
+        ts = awsm_utils.get_topo_stats(self.fp_dem, filetype=self.topotype)
+        # assign topo stats
+        self.u = int(ts['u'])
+        self.v = int(ts['v'])
+        self.du = int(ts['du'])
+        self.dv = int(ts['dv'])
+        self.nx = int(ts['nx'])
+        self.ny = int(ts['ny'])
+        self.units = ts['units']
         self.csys = self.config['grid']['csys']
-        self.nx = int(self.config['grid']['nx'])
-        self.ny = int(self.config['grid']['ny'])
         self.nbits = int(self.config['grid']['nbits'])
         self.soil_temp = self.config['soil_temp']['temp']
 
@@ -188,14 +199,6 @@ class AWSM():
         self.mass_thresh.append(self.config['grid']['thresh_normal'])
         self.mass_thresh.append(self.config['grid']['thresh_medium'])
         self.mass_thresh.append(self.config['grid']['thresh_small'])
-
-        # ################ Topo information ##################
-        self.topotype = self.config['topo']['type']
-        # pull in location of the dem
-        if self.topotype == 'ipw':
-            self.fp_dem = os.path.abspath(self.config['topo']['dem'])
-        elif self.topotype == 'netcdf':
-            self.fp_dem = os.path.abspath(self.config['topo']['filename'])
 
         # init file just for surface roughness
         if self.config['files']['roughness_init'] is not None:

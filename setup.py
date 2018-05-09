@@ -80,8 +80,10 @@ setup(
 
 
     include_package_data=True,
-    package_data={'awsm':['./framework/CoreConfig.ini','./framework/recipes.ini']},
-    scripts=['./scripts/awsm','./scripts/wyhr'],
+    package_data={'awsm':['./framework/CoreConfig.ini',
+				  './framework/recipes.ini']},
+    scripts=['./scripts/awsm','./scripts/wyhr',
+			 './scripts/plot_stations_by_date'],
     install_requires=requirements,
     license="GPL-3.0",
     zip_safe=False,

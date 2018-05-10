@@ -151,25 +151,28 @@ def output_timestep(ds, data, tstep, idt, start_date):
 
 def run():
 
+    fpdir = '/home/micahsandusky/Code/awsfTesting/newupdatetest'
+    wy = 2018
     # user inputs
     #fp_lst = ['/home/micahsandusky/Code/awsfTesting/initUpdate/TB20150608_SUPERsnow_depth.asc']
-    fp_lst = ['/home/micahsandusky/Code/awsfTesting/newupdatetest/TB20170129_SUPERsnow_depth.asc',
-              '/home/micahsandusky/Code/awsfTesting/newupdatetest/TB20170303_SUPERsnow_depth.asc',
-              '/home/micahsandusky/Code/awsfTesting/newupdatetest/TB20170401_SUPERsnow_depth.asc',
-              '/home/micahsandusky/Code/awsfTesting/newupdatetest/TB20170502_SUPERsnow_depth.asc',
-              '/home/micahsandusky/Code/awsfTesting/newupdatetest/TB20170604_SUPERsnow_depth.asc',
-              '/home/micahsandusky/Code/awsfTesting/newupdatetest/TB20170709_SUPERsnow_depth.asc',
-              '/home/micahsandusky/Code/awsfTesting/newupdatetest/TB20170717_SUPERsnow_depth.asc',
-              '/home/micahsandusky/Code/awsfTesting/newupdatetest/TB20170816_SUPERsnow_depth.asc']
+    # fp_lst = ['/home/micahsandusky/Code/awsfTesting/newupdatetest/TB20170129_SUPERsnow_depth.asc',
+    #           '/home/micahsandusky/Code/awsfTesting/newupdatetest/TB20170303_SUPERsnow_depth.asc',
+    #           '/home/micahsandusky/Code/awsfTesting/newupdatetest/TB20170401_SUPERsnow_depth.asc',
+    #           '/home/micahsandusky/Code/awsfTesting/newupdatetest/TB20170502_SUPERsnow_depth.asc',
+    #           '/home/micahsandusky/Code/awsfTesting/newupdatetest/TB20170604_SUPERsnow_depth.asc',
+    #           '/home/micahsandusky/Code/awsfTesting/newupdatetest/TB20170709_SUPERsnow_depth.asc',
+    #           '/home/micahsandusky/Code/awsfTesting/newupdatetest/TB20170717_SUPERsnow_depth.asc',
+    #           '/home/micahsandusky/Code/awsfTesting/newupdatetest/TB20170816_SUPERsnow_depth.asc']
+    fp_lst = ['wy{}/TB20180423_SUPERsnow_depth.asc'.format(wy)
+              ]
 
     dem_fp = '/data/blizzard/tuolumne/common_data/topo/tuolx_dem_50m.ipw'
     gisPath = '/home/micahsandusky/Code/awsfTesting/initUpdate/'
     maskPath = os.path.join(gisPath, 'tuolx_mask_50m.ipw')
     mask = ipw.IPW(maskPath).bands[0].data[:]
     #date_lst = ['2015-06-08']
-    date_lst = ['2017-01-29', '2017-03-03', '2017-04-01', '2017-05-02',
-                '2017-06-04', '2017-07-09', '2017-07-17', '2017-08-16']
-    output_path = './'
+    date_lst = ['2017-04-23']
+    output_path = os.path.join(fpdir, 'wy{}'.format(wy))
     fname = 'flight_depths'
     nanval = -9999.0
     nanup = 10000.0

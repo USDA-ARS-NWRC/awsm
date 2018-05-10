@@ -81,7 +81,7 @@ setup(
 
     include_package_data=True,
     package_data={'awsm':['./framework/CoreConfig.ini']},
-    scripts=['./scripts/awsm'],
+    scripts=['./scripts/awsm', './scripts/plot_ipw'],
     install_requires=requirements,
     license="GPL-3.0",
     zip_safe=False,

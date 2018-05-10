@@ -144,6 +144,10 @@ def calc_offsets_nsteps(myawsm, update_info):
         filter_number = myawsm.flight_numbers
     else:
         filter_number = update_number
+        # # make list if not list
+        # if not isinstance(filter_number, list):
+        #     filter_number = [filter_number]
+        #     update_number = [update_number]
 
     myawsm._logger.debug('Will update with flights {}'.format(filter_number))
     # filter to correct hourse
@@ -169,8 +173,8 @@ def calc_offsets_nsteps(myawsm, update_info):
             update_info.pop(un)
 
     # now we are down to the correct wyhrs and update numbers
-    update_number = np.array(update_info.keys())
-    t_wyhr = np.array([update_info[k]['wyhr'] for k in update_number])
+    update_number = update_info.keys()
+    t_wyhr = [update_info[k]['wyhr'] for k in update_number]
 
     # this is where each run will start from
     offsets = t_wyhr
@@ -263,12 +267,14 @@ def do_update(myawsm, update_info, update_snow, x, y):
 
     update_number = update_info['number']
     D = update_info['depth']
-    #D = update_info['depth'].values[0,:]
-    print('Shape', D.shape)
+
     date = update_info['date_time']
     wyhr = update_info['wyhr']
 
-    mask = ipw.IPW(myawsm.config['topo']['mask']).bands[0].data
+    #mask = ipw.IPW(myawsm.config['topo']['mask']).bands[0].data
+    # make mask
+    mask = np.ones_like(D)
+    mask[np.isnan(D)] = 0.0
 
     XX,YY = np.meshgrid(x,y)
 
@@ -283,30 +289,30 @@ def do_update(myawsm, update_info, update_snow, x, y):
     ##  Special case - 20160607
     # I am trying an update with only Tuolumne Basin data where I will mask in
     # Cherry and Eleanor to create a hybrid iSnobal/ASO depth image.
-    # tempASO = D.copy()
-    # tempASO[np.isnan(D)] = 0.0
-    # tempiSnobal = z_s.copy()
-    # tuolx_mask = myawsm.mask
-    # tempASO[tuolx_mask == 1] = 0.0
-    # #tempiSnobal[tuolx_mask == 1] = 0.0
-    # I_ASO = (tempASO == 0.0)
-    # tempASO[I_ASO] = tempiSnobal[I_ASO]
-    # tempASO[tuolx_mask == 1] = D[tuolx_mask == 1]
-    # D = tempASO.copy()
+    tempASO = D.copy()
+    tempASO[np.isnan(D)] = 0.0
+    tempiSnobal = z_s.copy()
+    tuolx_mask = mask
+    tempASO[tuolx_mask == 1] = 0.0
+    #tempiSnobal[tuolx_mask == 1] = 0.0
+    I_ASO = (tempASO == 0.0)
+    tempASO[I_ASO] = tempiSnobal[I_ASO]
+    tempASO[tuolx_mask == 1] = D[tuolx_mask == 1]
+    D = tempASO.copy()
 
 
     ##  Continue as before:
-    density = last_snow_image.bands[1].data # Get density image.
+    density = last_snow_image.bands[1].data.copy() # Get density image.
     ## ## ## ## ## ## ## ## ## %
     # SPECIAL CASE... insert adjusted densities here:
     # density = arcgridread_v2(['/Volumes/data/blizzard/Tuolumne/lidar/snowon/2017' ...
     #                 '/adjusted_rho/TB2017' date_mmdd '_operational_rho_ARSgrid_50m.asc']);
     ## ## ## ## ## ## ## ## ## %
-    m_s = last_snow_image.bands[2].data # Get SWE image.
-    T_s_0 = last_snow_image.bands[4].data # Get active snow layer temperature image
-    T_s_l = last_snow_image.bands[5].data # Get lower snow layer temperature image
-    T_s = last_snow_image.bands[6].data # Get average snowpack temperature image
-    h2o_sat = last_snow_image.bands[8].data # Get liquid water saturation image
+    m_s = last_snow_image.bands[2].data.copy() # Get SWE image.
+    T_s_0 = last_snow_image.bands[4].data.copy() # Get active snow layer temperature image
+    T_s_l = last_snow_image.bands[5].data.copy() # Get lower snow layer temperature image
+    T_s = last_snow_image.bands[6].data.copy() # Get average snowpack temperature image
+    h2o_sat = last_snow_image.bands[8].data.copy() # Get liquid water saturation image
 
     # Address problem of bit resolution where cells have mass and density,
     # but no depth is reported (less than minimum depth above zero).
@@ -401,10 +407,10 @@ def do_update(myawsm, update_info, update_snow, x, y):
         n = range(11,Buf+2,10) # Number of cells in averaging window
         for n1 in n: # Loop through changing buffer windows until enough
                           # cells are found to calculate an average.
-            xl = xt - (n1 - 1) / 2
-            xh = xt + (n1 - 1) / 2
-            yl = yt - (n1 - 1) / 2
-            yh = yt + (n1 - 1) / 2
+            xl = xt - int((n1 - 1) / 2)
+            xh = xt + int((n1 - 1) / 2)
+            yl = yt - int((n1 - 1) / 2)
+            yh = yt + int((n1 - 1) / 2)
             window = rho_buf[yl:yh,xl:xh]
             qq = np.where(np.isnan(window)) # find number of pixels with a value.
             if len(qq[0]) > 10:
@@ -442,10 +448,10 @@ def do_update(myawsm, update_info, update_snow, x, y):
         n = range(11,Buf+2,10)
         for jj in n: # Loop through changing buffer windows until enough
                           # cells are found to calculate an average.
-            xl = xt - (jj-1)/2
-            xh = xt + (jj-1)/2
-            yl = yt - (jj-1)/2
-            yh = yt + (jj-1)/2
+            xl = xt - int((jj-1)/2)
+            xh = xt + int((jj-1)/2)
+            yl = yt - int((jj-1)/2)
+            yh = yt + int((jj-1)/2)
             window = T_s_l_buf[yl:yh,xl:xh]
             val = np.nanmean(window[:])
             T_s_l[ix,iy] = val # Interpolate for lower layer temp
@@ -503,12 +509,14 @@ def do_update(myawsm, update_info, update_snow, x, y):
     #
     # grab unmasked cells again
     nmask = mask == 0
+    #fill_mask_image = ipw.IPW(update_snow)
     m_s[nmask] = last_snow_image.bands[2].data[nmask] # Get SWE image.
     T_s_0[nmask] = last_snow_image.bands[4].data[nmask] # Get active snow layer temperature image
     T_s_l[nmask] = last_snow_image.bands[5].data[nmask] # Get lower snow layer temperature image
     T_s[nmask] = last_snow_image.bands[6].data[nmask] # Get average snowpack temperature image
     h2o_sat[nmask] = last_snow_image.bands[8].data[nmask] # Get liquid water saturation image
     D[nmask] = last_snow_image.bands[0].data[nmask]
+    rho[nmask] = last_snow_image.bands[1].data[nmask]
 
     # write init file
     out_file = 'init_update_{}_wyhr{:04d}.ipw'.format(update_number, wyhr)

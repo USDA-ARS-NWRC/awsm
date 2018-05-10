@@ -1,4 +1,4 @@
-Welcome to awsm's documentation!
+Welcome to AWSM's documentation!
 ======================================
 
 Contents:
@@ -9,8 +9,8 @@ Contents:
    readme
    installation
    usage
-   modules
    contributing
+   api
    authors
    history
 

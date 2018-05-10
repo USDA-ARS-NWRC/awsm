@@ -36,7 +36,7 @@ class Mock(MagicMock):
     def __getattr__(cls, name):
             return Mock()
 MOCK_MODULES = ['netCDF4', 'matplotlib', 'matplotlib.pyplot',
-                'pandas', 'smrf', 'ipw']
+                'pandas', 'smrf', 'ipw', 'smrf.utils','smrf.envphys']
 
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 os.environ['IPW'] = '.' # set a temporary IPW environment variable

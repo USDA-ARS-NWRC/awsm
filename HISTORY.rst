@@ -7,7 +7,7 @@ History
 
 * Create package
 
-0.2.0 (2018-01-104)
+0.2.0 (2018-01-04)
 ------------------
 
 * Incorporation scripts used to run SMRF and iSnobal

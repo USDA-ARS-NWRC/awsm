@@ -3,6 +3,7 @@ import os
 from smrf import ipw
 import awsm
 import smrf
+from netCDF4 import Dataset
 
 def getgitinfo():
     """gitignored file that contains specific AWSM version and path
@@ -21,6 +22,7 @@ def getgitinfo():
     else:
         version = 'v'+__version__
         return version
+
 
 def get_topo_stats(fp, filetype='netcdf'):
     """

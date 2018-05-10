@@ -128,6 +128,7 @@ def run_isnobal(myawsm):
         dem_file = nc.Dataset(myawsm.fp_dem, 'r')
         i_dem = dem_file['dem'][:]
         i_out.new_band(i_dem)
+        dem_file.close()
 
     if myawsm.mask_isnobal:
         i_mask = ipw.IPW(myawsm.fp_mask).bands[0].data
@@ -292,6 +293,7 @@ def restart_crash_image(myawsm):
         dem_file = nc.Dataset(myawsm.fp_dem, 'r')
         i_dem = dem_file['dem'][:]
         i_out.new_band(i_dem)
+        dem_file.close()
 
     if myawsm.roughness_init is not None:
         i_out.new_band(ipw.IPW(myawsm.roughness_init).bands[1].data)
@@ -324,12 +326,9 @@ def restart_crash_image(myawsm):
 
     z_s[idz] = 0.0
     rho[idz] = 0.0
-    # m_s[idz] = 0.0
-    # h20[idz] = 0.0
     T_s_0[idz] = -75.0
     T_s_l[idz] = -75.0
     T_s[idz] = -75.0
-    # z_s_l[idz] = 0.0
     h20_sat[idz] = 0.0
 
     # fill in init image

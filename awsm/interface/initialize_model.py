@@ -252,9 +252,6 @@ def open_init_files(myawsm, options, dem):
         init[key] = init[key].astype(np.float64)
 
     # convert temperatures to K
-    # init['T_s'][init['T_s'] <= -75.0] = 0.0
-    # init['T_s_0'][init['T_s_0'] <= -75.0] = 0.0
-    # init['T_s_l'][init['T_s_l'] <= -75.0] = 0.0
     init['T_s'] += FREEZE
     init['T_s_0'] += FREEZE
     if 'T_s_l' in init:
@@ -716,9 +713,5 @@ def initialize(params, tstep_info, init):
     for key, val in init.items():
         if key in flds:
             s[key] = val
-
-#     for key, val in mh.items():
-#         if key in flds:
-#             s[key] = val
 
     return s

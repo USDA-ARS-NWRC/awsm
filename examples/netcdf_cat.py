@@ -64,8 +64,12 @@ def avoid_duplicate(dates, var):
 
 def combine_nc(tot, old):
     """
-    tot: total netcdf for all stuff
-    old: dictionary off netcdf to combine
+    Combine netcdfs
+    Args:
+        tot: total netcdf for all stuff
+        old: dictionary of netcdf to combine
+    Returns:
+        total netcdf
     """
     dont_do = ['time', 'x', 'y']
     # set global parameters

@@ -15,6 +15,7 @@
 
 import sys
 import os
+from inicheck.tools import config_documentation
 
 # If extensions (or modules to document with autodoc) are in another
 # directory, add these directories to sys.path here. If the directory is
@@ -22,8 +23,13 @@ import os
 # absolute, like shown here.
 #sys.path.insert(0, os.path.abspath('.'))
 
-# Get the project root dir, which is the parent dir of this
+# Call auto documentation for our config files
 
+config_documentation('./auto_config.rst',
+                     modules=['smrf','awsm'])
+
+
+# Get the project root dir, which is the parent dir of this
 if os.environ.get('READTHEDOCS') == 'True':
     sys.path.insert(0, os.path.abspath('.'))
 else:

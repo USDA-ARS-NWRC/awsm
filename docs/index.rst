@@ -1,7 +1,7 @@
 Welcome to AWSM's documentation!
 ======================================
 
-Contents:
+.. include:: ../README.rst
 
 .. toctree::
    :maxdepth: 2
@@ -9,7 +9,9 @@ Contents:
    readme
    installation
    usage
+   configuration
    contributing
+   auto_config
    api
    authors
    history

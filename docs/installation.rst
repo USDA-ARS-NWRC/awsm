@@ -18,7 +18,7 @@ The source code for SMRF is stored on on GitHub_.
 .. _GitHub: https://github.com/USDA-ARS-NWRC/smrf
 
 If you would like to use the PySnobal within AWSM, you can download
-and install it following the guidelines on the `PySnobal repo`_ .
+and install the package following the guidelines on the `PySnobal repo`_ .
 **This is optional**.
 
 .. _PySnobal repo: https://github.com/USDA-ARS-NWRC/pysnobal

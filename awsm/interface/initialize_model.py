@@ -44,6 +44,7 @@ def check_range(value, min_val, max_val, descrip):
         min_val: minimum value
         max_val: maximum value
         descrip: short description of input
+
     Returns:
         True if within range
     """
@@ -548,34 +549,33 @@ def get_tstep_info(options, config, thresh):
 
 def get_args(myawsm):
     """
-    Parse the configuration file
+    Parse the configuration file and returns a dictionary called options.
+    Options contains the following keys:
+
+    * z - site elevation (m)
+    * t - time steps: data [normal, [,medium [,small]]] (minutes)
+    * m - snowcover's maximum h2o content as volume ratio,
+    * d - maximum depth for active layer (m),
+    * s - snow properties input data file,
+    * h - measurement heights input data file,
+    * p - precipitation input data file,
+    * i - input data file,
+    * I - initial conditions
+    * o - optional output data file,
+    * O - how often output records written (data, normal, all),
+    * c - continue run even when no snowcover,
+    * K - accept temperatures in degrees K,
+    * T - run timesteps' thresholds for a layer's mass (kg/m^2)
+
+    To-do: take all the rest of the defualt and check ranges for the
+    input arguements, i.e. rewrite the rest of getargs.c
 
     Args:
         myawsm: AWSM instance
 
     Returns:
-        options: options structure with defaults if not set
+        dict: dictionary of options structure with defaults if not set
 
-        options = {
-            z: site elevation (m),
-            t: time steps: data [normal, [,medium [,small]]] (minutes),
-            m: snowcover's maximum h2o content as volume ratio,
-            d: maximum depth for active layer (m),
-
-            s: snow properties input data file,
-            h: measurement heights input data file,
-            p: precipitation input data file,
-            i: input data file,
-            I: initial conditions
-            o: optional output data file,
-            O: how often output records written (data, normal, all),
-            c: continue run even when no snowcover,
-            K: accept temperatures in degrees K,
-            T: run timesteps' thresholds for a layer's mass (kg/m^2),
-        }
-
-    To-do: take all the rest of the defualt and check ranges for the
-    input arguements, i.e. rewrite the rest of getargs.c
     """
     # -------------------------------------------------------------------------
     # these are the default options

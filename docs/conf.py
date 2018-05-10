@@ -26,7 +26,7 @@ from inicheck.tools import config_documentation
 # Call auto documentation for our config files
 
 config_documentation('./auto_config.rst',
-                     modules=['smrf','awsm'])
+                     paths=['../awsm/framework/CoreConfig.ini','../awsm/framework/recipes.ini'])
 
 
 # Get the project root dir, which is the parent dir of this

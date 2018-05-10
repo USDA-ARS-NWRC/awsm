@@ -11,7 +11,7 @@ Welcome to AWSM's documentation!
    usage
    configuration
    contributing
-   auto_config
+   config_ref
    api
    authors
    history

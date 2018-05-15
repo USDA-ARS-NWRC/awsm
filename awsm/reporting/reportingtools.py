@@ -18,14 +18,15 @@ def plot_dashboard(myawsm):
     Function to plot summary information and make reports after an AWSM run
     """
     # initialize reporting tool
-    config_file = '/home/markrobertson/wkspace/config/snowav/snowav_brb_wy2018.ini'
-    print(myawsm.basin)
-    snow = snowav.plotting.framework.SNOWAV(config_file = config_file)
+    # config_file = '/home/markrobertson/wkspace/config/snowav/snowav_brb_wy2018.ini'
+    # snow = snowav.plotting.framework.SNOWAV(config_file = config_file)
+
+    snow = snowav.plotting.framework.SNOWAV(myawsm = myawsm)
 
     # process the data
     snow.process()
 
-    if myawsm.dashboard != False or myawsm.report != None:
+    if myawsm.dashboard != False:
         myawsm._logger.info('Plotting summary information as requested')
         snowav.plotting.accumulated.accumulated(snow)
         snowav.plotting.current_image.current_image(snow)
@@ -38,7 +39,7 @@ def plot_dashboard(myawsm):
         snowav.plotting.stn_validate.stn_validate(snow)
 
     print(snow.report_flag)
-    if snow.report_flag == 'True':
+    if snow.report_flag == True:
         myawsm._logger.info('Creating report')
         snowav.report.report.report(snow)
 

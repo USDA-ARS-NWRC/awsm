@@ -104,6 +104,7 @@ class AWSM():
         self.do_make_nc = self.config['awsm master']['make_nc']
         # do report?
         self.do_report = self.config['awsm master']['run_report']
+        print(self.do_report)
 
         # options for masking isnobal
         self.mask_isnobal = self.config['awsm master']['mask_isnobal']

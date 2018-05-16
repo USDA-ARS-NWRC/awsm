@@ -12,7 +12,7 @@ is assigned a value.
 A brief description of the syntax is:
 
 * Sections are noted by being in a line by themselves and are bracketed.
-* Items are denoted by colon (**:**).
+* Items are denoted by colon ( **:** ).
 * Values are simply written in, and values that are lists are comma separated.
 * Comments are preceeded by a **#**
 
@@ -45,8 +45,10 @@ underneath are assigned values by using the colon.
 Editing/Checking Configuration Files
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Use any test editor to make changes to a config file. We like to use atom with
+Use any text editor to make changes to a config file. We like to use atom_ with
 the .ini syntax package installed.
+
+.. _atom: https://atom.io/
 
 If you are unsure of what to use various entries in your config file refer to
 the :ref:`config-file-reference` or use the inicheck command for command line help.

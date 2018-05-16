@@ -11,7 +11,7 @@ water basins. AWSM standardizes the steps needed to distribute met. data with
 SMRF, run an energy and mass balance with iSnobal, and process the results,
 while maintaining the flexibility of each program.
 
-.. image:: ./_static/ModelSystemOverview_new.png
+.. image:: _static/ModelSystemOverview_new.png
 
 
 Quick Start

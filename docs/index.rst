@@ -1,7 +1,7 @@
-Welcome to AWSM's documentation!
+Welcome to AWSM's Documentation!
 ======================================
 
-.. include:: ../README.rst
+.. include:: readme.rst
 
 .. toctree::
    :maxdepth: 2

@@ -24,6 +24,7 @@ def plot_dashboard(myawsm):
     snow = snowav.plotting.framework.SNOWAV(myawsm = myawsm)
 
     # process the data
+    snow.preprocess()
     snow.process()
 
     if myawsm.dashboard != False:

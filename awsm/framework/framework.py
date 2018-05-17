@@ -104,7 +104,6 @@ class AWSM():
         self.do_make_nc = self.config['awsm master']['make_nc']
         # do report?
         self.do_report = self.config['awsm master']['run_report']
-        print(self.do_report)
 
         # options for masking isnobal
         self.mask_isnobal = self.config['awsm master']['mask_isnobal']
@@ -306,27 +305,6 @@ class AWSM():
         # get all relevant options
         # self.report = self.config['reporting']['report']
         self.dashboard = self.config['reporting']['dashboard']
-
-        if 'snowband' in self.config['reporting'].keys():
-            self.snowband = self.config['reporting']['snowband']
-        else:
-            self.snowband = 2
-
-        if 'emband' in self.config['reporting'].keys():
-            self.emband = self.config['reporting']['emband']
-        else:
-            self.emband = 8
-
-        self.report_units = self.config['reporting']['units']
-        self.report_dempath = self.config['reporting']['dempath']
-        self.report_mask = self.config['reporting']['total_mask']
-        self.subbasin1 = self.config['reporting']['subbasin1']
-        self.subbasin2 = self.config['reporting']['subbasin2']
-        self.subbasin3 = self.config['reporting']['subbasin3']
-        self.total_lbl = self.config['reporting']['total_lbl']
-        self.sub1_lbl = self.config['reporting']['sub1_lbl']
-        self.sub2_lbl = self.config['reporting']['sub2_lbl']
-        self.sub3_lbl = self.config['reporting']['sub3_lbl']
 
         # make reporting directory
         self.path_report_o = os.path.join(self.path_wy, 'reports')

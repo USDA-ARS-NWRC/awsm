@@ -33,6 +33,8 @@ def plot_dashboard(myawsm):
         snowav.plotting.density.density(snow)
         snowav.plotting.water_balance.water_balance(snow)
         snowav.plotting.stn_validate.stn_validate(snow)
+        snowav.plotting.write_summary.write_summary(snow,'accum_summary')
+        snowav.plotting.write_summary.write_summary(snow,'state_summary')
         # snowav.plotting.basin_detail.basin_detail(snow)
 
     if snow.report_flag == True:

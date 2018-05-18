@@ -22,24 +22,25 @@ def plot_dashboard(myawsm):
         myawsm._logger.info('Plotting summary information as requested')
         snow = snowav.plotting.framework.SNOWAV(config_file = myawsm.configFile)
 
-        # process and plot the data
-        snow.process()
-        snowav.plotting.accumulated.accumulated(snow)
-        snowav.plotting.current_image.current_image(snow)
-        snowav.plotting.state_by_elev.state_by_elev(snow)
-        snowav.plotting.image_change.image_change(snow)
-        snowav.plotting.basin_total.basin_total(snow)
-        snowav.plotting.pixel_swe.pixel_swe(snow)
-        snowav.plotting.density.density(snow)
-        snowav.plotting.water_balance.water_balance(snow)
-        snowav.plotting.stn_validate.stn_validate(snow)
-        snowav.plotting.write_summary.write_summary(snow,'accum_summary')
-        snowav.plotting.write_summary.write_summary(snow,'state_summary')
-        # snowav.plotting.basin_detail.basin_detail(snow)
+        if not hasattr(snow,'error'):
+            # process and plot the data
+            snow.process()
+            snowav.plotting.accumulated.accumulated(snow)
+            snowav.plotting.current_image.current_image(snow)
+            snowav.plotting.state_by_elev.state_by_elev(snow)
+            snowav.plotting.image_change.image_change(snow)
+            snowav.plotting.basin_total.basin_total(snow)
+            snowav.plotting.pixel_swe.pixel_swe(snow)
+            snowav.plotting.density.density(snow)
+            snowav.plotting.water_balance.water_balance(snow)
+            snowav.plotting.stn_validate.stn_validate(snow)
+            snowav.plotting.write_summary.write_summary(snow,'accum_summary')
+            snowav.plotting.write_summary.write_summary(snow,'state_summary')
+            # snowav.plotting.basin_detail.basin_detail(snow)
 
-    if snow.report_flag == True:
-        myawsm._logger.info('Creating report')
-        snowav.report.report.report(snow)
+            if snow.report_flag == True:
+                myawsm._logger.info('Creating report')
+                snowav.report.report.report(snow)
 
 
 def plot_waterbalance(myawsm):

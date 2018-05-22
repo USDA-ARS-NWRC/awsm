@@ -2,6 +2,7 @@ from .gitinfo import __gitVersion__, __gitPath__
 import os
 from smrf import ipw
 import awsm
+from awsm import __version__
 import smrf
 from netCDF4 import Dataset
 

@@ -42,44 +42,42 @@ For Linux:
 
 .. code-block:: console
 
-  docker run -v <path>:/data -it scotthavens/awsm [/bin/bash]
+  docker run -v <path>:/data -it usdaarsnwrc/awsm [/bin/bash]
 
 
 For MacOSX:
 
 .. code-block:: console
 
-  docker run -v /Users/<path>:/data -it scotthavens/awsm [/bin/bash]
+  docker run -v /Users/<path>:/data -it usdaarsnwrc/awsm [/bin/bash]
 
 For Windows:
 
 .. code-block:: console
 
-  docker run -v /c/Users/<path>:/data -it scotthavens/awsm [/bin/bash]
+  docker run -v /c/Users/<path>:/data -it usdaarsnwrc/awsm [/bin/bash]
 
 Running the test
 ----------------
 
 .. code-block:: console
 
-  docker run -it scotthavens/awsm /bin/bash
-  cd /code/smrf
-  gen_maxus --out_maxus test_data/topo/maxus.nc test_data/topo/dem.ipw
+  docker run -it usdaarsnwrc/awsm /bin/bash
   cd /code/awsm
   awsm test_data/RME_run/config_pysnobal.ini
 
 
-The output netCDF files will be placed in the `/code/awsm/test_data/RME_run/output/rme/devel/wy1998/rme_test/runs/run1464_1680/output` location.
+The output netCDF files will be placed in the `/code/awsm/test_data/RME_run/output/rme/devel/wy1998/rme_test/runs/run1464_1670/output` location.
 
 
 .. |docs| image:: https://readthedocs.org/projects/awsm/badge/
     :alt: Documentation Status
     :target: https://awsm.readthedocs.io
 
-.. |docker build| image:: https://img.shields.io/docker/build/scotthavens/awsm.svg
+.. |docker build| image:: https://img.shields.io/docker/build/usdaarsnwrc/awsm.svg
     :alt: Docker Build Status
-    :target: https://hub.docker.com/r/scotthavens/awsm/
+    :target: https://hub.docker.com/r/usdaarsnwrc/awsm/
 
-.. |docker automated| image:: https://img.shields.io/docker/automated/scotthavens/awsm.svg
+.. |docker automated| image:: https://img.shields.io/docker/automated/usdaarsnwrc/awsm.svg
     :alt: Automated Docker Build Status
-    :target: https://hub.docker.com/r/scotthavens/awsm/
+    :target: https://hub.docker.com/r/usdaarsnwrc/awsm/

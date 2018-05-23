@@ -1,8 +1,8 @@
 # Automated Water Supply Model
 
 [![DOI](https://readthedocs.org/projects/awsm/badge/)](https://awsm.readthedocs.io)
-[![Docker Build Status](https://img.shields.io/docker/build/scotthavens/awsm.svg)](https://hub.docker.com/r/scotthavens/awsm/)
-[![Docker Automated build](https://img.shields.io/docker/automated/scotthavens/awsm.svg)](https://hub.docker.com/r/scotthavens/awsm/)
+[![Docker Build Status](https://img.shields.io/docker/build/usdaarsnwrc/awsm.svg)](https://hub.docker.com/r/usdaarsnwrc/awsm/)
+[![Docker Automated build](https://img.shields.io/docker/automated/usdaarsnwrc/awsm.svg)](https://hub.docker.com/r/usdaarsnwrc/awsm/)
 
 
 Automated Water Supply Model (AWSM) was developed at
@@ -33,23 +33,21 @@ command `/bin/bash` can be appended to the end of docker run to enter into the d
 in the `/data` location with AWSM code in `/code/awsm`.
 
 For Linux
-`docker run -v <path>:/data -it scotthavens/awsm [/bin/bash]`
+`docker run -v <path>:/data -it usdaarsnwrc/awsm [/bin/bash]`
 
 For MacOSX:
-`docker run -v /Users/<path>:/data -it scotthavens/awsm [/bin/bash]`
+`docker run -v /Users/<path>:/data -it usdaarsnwrc/awsm [/bin/bash]`
 
 For Windows:
-`docker run -v /c/Users/<path>:/data -it scotthavens/awsm [/bin/bash]`
+`docker run -v /c/Users/<path>:/data -it usdaarsnwrc/awsm [/bin/bash]`
 
 
 #### Running the test
 
 ```
-docker run -it scotthavens/awsm /bin/bash
-cd /code/smrf
-gen_maxus --out_maxus test_data/topo/maxus.nc test_data/topo/dem.ipw
+docker run -it usdaarsnwrc/awsm /bin/bash
 cd /code/awsm
 awsm test_data/RME_run/config_pysnobal.ini
 ```
 
-The output netCDF files will be placed in the `/code/awsm/test_data/RME_run/output/rme/devel/wy1998/rme_test/runs/run1464_1680/output` location.
+The output netCDF files will be placed in the `/code/awsm/test_data/RME_run/output/rme/devel/wy1998/rme_test/runs/run1464_1470/output` location.

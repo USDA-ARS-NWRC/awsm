@@ -5,6 +5,7 @@ include LICENSE
 include README.rst
 
 awsm/framework/CoreConfig.ini
+awsm/framework/recipes.ini
 
 recursive-include tests *
 recursive-include scripts *

@@ -3,6 +3,8 @@ import numpy as np
 import os
 import pandas as pd
 from matplotlib import pyplot as plt
+from netCDF4 import Dataset
+import netCDF4 as nc
 
 # User inputs:
 date_mmdd = '0608' # date in MMDD format for lidar file.
@@ -18,7 +20,7 @@ runDir = 'runs'
 dataDir = 'data'
 initDir = 'init'
 
-out_file = 'init{}_update'.format(wyhr)
+out_file = 'init{}_update_new'.format(wyhr)
 filetype = 'ipw' # Either 'ipw' or 'ascii' at this point.
 
 activeLayer = 0.25 # Set the active layer depth to be used for iSnobal model run.
@@ -33,7 +35,8 @@ ny = 1339
 nbits =  16
 units = 'm'
 csys = 'UTM'
-pathinit = '/home/micahsandusky/Code/awsfTesting/initUpdate/'
+# pathinit = '/home/micahsandusky/Code/awsfTesting/initUpdate/'
+pathinit = '/home/micahsandusky/Code/awsfTesting/newupdatetest'
 
 # End User input.**************************
 ##  Begin opening files and assigning names.
@@ -59,7 +62,9 @@ gisPath = '/home/micahsandusky/Code/awsfTesting/initUpdate/'
 ###chdir(os.path.join(basePath,dataDir))
 ###runPath = os.path.join(basePath,runDir,previous_update_dir,output_dir)
 #last_snow_image = ipw.IPW(os.path.join(runPath, 'snow.{}'.format(wyhr)))
-last_snow_image = ipw.IPW('/home/micahsandusky/Code/awsfTesting/initUpdate/snow.5999')
+#last_snow_image = ipw.IPW('/home/micahsandusky/Code/awsfTesting/initUpdate/snow.5999')
+#last_snow_image = ipw.IPW('/home/micahsandusky/Code/awsfTesting/newupdatetest/snow.5999')
+last_snow_image = ipw.IPW('/home/micahsandusky/Code/awsfTesting/newupdatetest/snow.2879')
 
 demPath = os.path.join(gisPath,'tuolx_dem_50m.{}'.format(filetype[0:3]) )
 if int(wy) <= 2015: # Model domain was only above Hetchy before 2016.
@@ -83,24 +88,27 @@ elif strcmp(filetype, 'ascii'):
     z0 = np.genfromtxt(z0Path, dtype = 'float', skip_header=6)
     # [x, y] = arcticks(dem, R)
 
-x = v + dv * np.arange(nx)
-y = u + du * np.arange(ny)
+##  Update the snow depths in the initialization file using ASO lidar:
+fp = './flight_depths_2017.nc'
+ds = Dataset(fp, 'r')
+D_all = ds.variables['depth'][:]
+x = ds.variables['x'][:]
+y = ds.variables['y'][:]
+times = ds.variables['time']
+ts = times[:]
+t = nc.num2date(ts, times.units, times.calendar)
+time1 = t[0]
+D = D_all[0,:]
+
 XX,YY = np.meshgrid(x,y)
 
-# nrows = length(y)
-# ncols = length(x)
-nrows = ny
-ncols = nx
+nrows = len(y)
+ncols = len(x)
 
-
-##  Update the snow depths in the initialization file using ASO lidar:
 # Path='/data/blizzard/Tuolumne/lidar/snowon/{}/gridded_asc/'.format(wy2)
-Path = '/home/micahsandusky/Code/awsfTesting/initUpdate/'
-filename = 'TB{}{}_SUPERsnow_depth'.format(wy2, date_mmdd)
-# [D, R] = arcgridread_v2([Path filename '.asc'])
-# [xs, ys] = arcticks(D, R)
-D = np.genfromtxt(os.path.join(Path,'{}.asc'.format(filename) ), dtype = 'float', skip_header=6)
-# [xs, ys] = arcticks(D, R)
+# Path = '/home/micahsandusky/Code/awsfTesting/initUpdate/'
+# filename = 'TB{}{}_SUPERsnow_depth'.format(wy2, date_mmdd)
+# D = np.genfromtxt(os.path.join(Path,'{}.asc'.format(filename) ), dtype = 'float', skip_header=6)
 
 # Just for experimentation, change the last_snow_image to the image before
 # the previous flight (troubleshooting update 5.6 in 2014:
@@ -181,7 +189,8 @@ T_s[D == 0.0] = np.nan # Find cells without lidar snow and set the snow temp to 
 T_s[T_s <= -75.0] = np.nan # Change isnobal no-values to NaN.
 
 h2o_sat[D == 0.0] = np.nan # Find cells without lidar snow and set the h2o saturation to NaN.
-h2o_sat[h2o_sat == -75.0] = np.nan # Change isnobal no-values to NaN.
+h2o_sat[mask == 0] = np.nan
+#h2o_sat[h2o_sat == -75.0] = np.nan # Change isnobal no-values to NaN.
 
 I_rho = np.where( np.isnan(rho) ) # Snow-free pixels before interpolation
 #modelDensity = tot_pix - size(I_rho, 1)
@@ -221,16 +230,26 @@ T_s_0_buf = np.concatenate( (tmp1,np.concatenate( (tmp2,T_s_0,tmp2) ,axis=0),tmp
 T_s_l_buf = np.concatenate( (tmp1,np.concatenate( (tmp2,T_s_l,tmp2) ,axis=0),tmp1 ),axis=1)
 T_s_buf = np.concatenate( (tmp1,np.concatenate( (tmp2,T_s,tmp2) ,axis=0),tmp1 ),axis=1)
 h2o_buf = np.concatenate( (tmp1,np.concatenate( (tmp2,h2o_sat,tmp2) ,axis=0),tmp1 ),axis=1)
+plt.imshow(h2o_buf)
+plt.colorbar()
+plt.show()
+plt.imshow(h2o_sat)
+plt.colorbar()
+plt.show()
+plt.imshow(T_s_buf)
+plt.colorbar()
+plt.show()
 
+print(h2o_buf.shape)
 ###################### hopefully fixed for loop logic below
 
-for ix, iy in zip(I[0], I[1]): # Loop through cells with D > 0 and no iSnobal density,
+for idx, (ix, iy) in enumerate(zip(I[0], I[1])): # Loop through cells with D > 0 and no iSnobal density,
                   # active layer temp, snow temp, and h2o saturation.
     xt = X[ix,iy]+Buf # Add the buffer to the x coords.
     yt = Y[ix,iy]+Buf # Add the buffer to the y coords.
     # n=11:10:(Buf+1): # Number of cells in averaging window
     #n = range(10,Buf+1,10) # Number of cells in averaging window
-    n = range(11,Buf+1,10) # Number of cells in averaging window
+    n = range(11,Buf+2,10) # Number of cells in averaging window
     for n1 in n: # Loop through changing buffer windows until enough
                       # cells are found to calculate an average.
         xl = xt - (n1 - 1) / 2
@@ -254,13 +273,16 @@ for ix, iy in zip(I[0], I[1]): # Loop through cells with D > 0 and no iSnobal de
             h2o_sat[ix,iy] = val # Interpolate for liquid water saturation
         # what is this doing?
         elif (np.sum(qq[0])*ncols + np.sum( qq[1])*nrows ) <= 10:
+        #else:
             break
 
         # if np.isnan( rho[ix,iy] ) == 0:
         #     break
-        if np.isnan( rho[ix,iy] ) == False:
+        if not np.isnan( rho[ix,iy] ):
             break
-
+plt.imshow(h2o_sat)
+plt.colorbar()
+plt.show()
 ###################### hopefully fixed for loop logic below
 
 # Now loop over cells with D > activelayer > z_s.  These cells were being
@@ -270,7 +292,7 @@ for ix, iy in zip(I[0], I[1]): # Loop through cells with D > 0 and no iSnobal de
 for ix, iy in zip(I_25[0], I_25[1]):
     xt = X[ix,iy] + Buf # Add the buffer to the x coords.
     yt = Y[ix,iy] + Buf # Add the buffer to the y coords.
-    n = range(11,Buf+1,10)
+    n = range(11,Buf+2,10)
     for jj in n: # Loop through changing buffer windows until enough
                       # cells are found to calculate an average.
         xl = xt - (jj-1)/2
@@ -282,7 +304,7 @@ for ix, iy in zip(I_25[0], I_25[1]):
         T_s_l[ix,iy] = val # Interpolate for lower layer temp
         ################ fix this to be pyton logic
         #if np.isnan(T_s_l[ii]) == False:
-        if np.any(np.isnan(T_s_l[ix,iy])) == False:
+        if not np.any(np.isnan(T_s_l[ix,iy])):
             break
 
 iq = (np.isnan(D)) & (np.isfinite(rho))
@@ -332,6 +354,7 @@ snow_mask = D.copy()
 snow_mask[D > 0] = 1
 plt.figure(1)
 plt.imshow(snow_mask)
+plt.title('ASO snow mask')
 plt.colorbar()
 plt.show()
 
@@ -339,6 +362,7 @@ rho_mask = rho.copy()
 rho_mask[rho>0] = 1
 plt.figure(2)
 plt.imshow(snow_mask - rho_mask)
+plt.title('ASO_snowmask - density mask')
 plt.colorbar()
 plt.show()
 
@@ -347,6 +371,7 @@ T_s_0_mask[T_s_0 > -75] = 1
 T_s_0_mask[T_s_0 == -75] = 0
 plt.figure(3)
 plt.imshow(snow_mask - T_s_0_mask)
+plt.title('snow_mask - T_s_0 mask')
 plt.colorbar()
 plt.show()
 
@@ -356,6 +381,7 @@ T_s_l_mask[T_s_l > -75] = 1
 T_s_l_mask[T_s_l == -75] = 0
 plt.figure(4)
 plt.imshow(snow_mask - T_s_l_mask)
+plt.title('snow_mask - T_s_l mask')
 plt.colorbar()
 plt.show()
 
@@ -364,14 +390,19 @@ T_s_mask[T_s_l <= -75] = 0
 T_s_mask[T_s > -75] = 1;
 plt.figure(5)
 plt.imshow(snow_mask - T_s_mask)
+plt.title('snow_mask - T_s mask')
 plt.colorbar()
 plt.show()
 
 h2o_mask = h2o_sat.copy()
 h2o_mask[rho == 0] = 0
 h2o_mask[h2o_sat > 0] = 1
+plt.imshow(h2o_sat)
+plt.colorbar()
+plt.show()
 plt.figure(6)
 plt.imshow(snow_mask - h2o_mask)
+plt.title('snow_mask - h2o mask')
 plt.colorbar()
 plt.show()
 
@@ -396,7 +427,7 @@ i_out.write(os.path.join(pathinit,out_file+'.ipw'), nbits)
 ##  Import newly-created init file and look at images to make sure they line up:
 
 d=ipw.IPW(os.path.join(pathinit,out_file+'.ipw'))
-
+print('wrote ipw image')
 
 z = d.bands[0].data
 z_0 = d.bands[1].data

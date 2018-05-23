@@ -111,4 +111,8 @@ Tips
 To run a subset of tests::
 
 
-    $ python -m unittest tests.test_awsm
+    $ python -m unittest discover -v
+
+If any code edits you add require new configuration file items, then they must
+be added to the core configuration file to be registered with AWSM. Please see
+:ref:`core-config` to learn more.

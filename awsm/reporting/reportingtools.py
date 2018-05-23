@@ -11,40 +11,40 @@ from smrf.utils import utils
 try:
     import snowav
 except:
-    print('no snowav to import, not installed')
+    print('No snowav to import, not installed')
 
 def plot_dashboard(myawsm):
     """
     Function to plot summary information and make reports after an AWSM run
     """
-    if myawsm.dashboard != False:
-        # initialize reporting tool
-        myawsm._logger.info('Plotting summary information as requested')
-        snow = snowav.plotting.framework.SNOWAV(config_file = myawsm.configFile)
 
-        if not hasattr(snow,'error'):
-            # process and plot the data
-            snow.process()
-            snowav.plotting.accumulated.accumulated(snow)
-            snowav.plotting.current_image.current_image(snow)
-            snowav.plotting.state_by_elev.state_by_elev(snow)
-            snowav.plotting.image_change.image_change(snow)
-            snowav.plotting.basin_total.basin_total(snow)
-            snowav.plotting.pixel_swe.pixel_swe(snow)
-            snowav.plotting.density.density(snow)
-            snowav.plotting.water_balance.water_balance(snow)
-            snowav.plotting.stn_validate.stn_validate(snow)
-            # If options exist in config file
-            if hasattr(snow,'flt_flag'):
-                snowav.plotting.flt_image_change.flt_image_change(snow)
-                           
-            snowav.plotting.write_summary.write_summary(snow,'accum_summary')
-            snowav.plotting.write_summary.write_summary(snow,'state_summary')
-            # snowav.plotting.basin_detail.basin_detail(snow)
+    # initialize reporting tool
+    myawsm._logger.info('Plotting summary information as requested')
+    snow = snowav.plotting.framework.SNOWAV(config_file = myawsm.configFile)
 
-            if snow.report_flag == True:
-                myawsm._logger.info('Creating report')
-                snowav.report.report.report(snow)
+    if not hasattr(snow,'error'):
+        # process and plot the data
+        snow.process()
+        snowav.plotting.accumulated.accumulated(snow)
+        snowav.plotting.current_image.current_image(snow)
+        snowav.plotting.state_by_elev.state_by_elev(snow)
+        snowav.plotting.image_change.image_change(snow)
+        snowav.plotting.basin_total.basin_total(snow)
+        snowav.plotting.pixel_swe.pixel_swe(snow)
+        snowav.plotting.density.density(snow)
+        snowav.plotting.water_balance.water_balance(snow)
+        snowav.plotting.stn_validate.stn_validate(snow)
+        # If options exist in config file
+        if hasattr(snow,'flt_flag'):
+            snowav.plotting.flt_image_change.flt_image_change(snow)
+
+        snowav.plotting.write_summary.write_summary(snow,'accum_summary')
+        snowav.plotting.write_summary.write_summary(snow,'state_summary')
+        # snowav.plotting.basin_detail.basin_detail(snow)
+
+        if snow.report_flag == True:
+            myawsm._logger.info('Creating report')
+            snowav.report.report.report(snow)
 
 
 def plot_waterbalance(myawsm):

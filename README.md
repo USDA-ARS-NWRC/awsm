@@ -33,19 +33,19 @@ command `/bin/bash` can be appended to the end of docker run to enter into the d
 in the `/data` location with AWSM code in `/code/awsm`.
 
 For Linux
-`docker run -v <path>:/data -it usdaarsnwrc/awsm [/bin/bash]`
+`docker run -v <path>:/code/awsm/test_data/RME_run/output/rme/devel/wy1998/rme_test/runs/run1464_1470/output -it usdaarsnwrc/awsm [/bin/bash]`
 
 For MacOSX:
-`docker run -v /Users/<path>:/data -it usdaarsnwrc/awsm [/bin/bash]`
+`docker run -v /Users/<path>:/code/awsm/test_data/RME_run/output/rme/devel/wy1998/rme_test/runs/run1464_1470/output -it usdaarsnwrc/awsm [/bin/bash]`
 
 For Windows:
-`docker run -v /c/Users/<path>:/data -it usdaarsnwrc/awsm [/bin/bash]`
+`docker run -v /c/Users/<path>:/code/awsm/test_data/RME_run/output/rme/devel/wy1998/rme_test/runs/run1464_1470/output -it usdaarsnwrc/awsm [/bin/bash]`
 
 
 #### Running the test
 
 ```
-docker run -it usdaarsnwrc/awsm /bin/bash
+docker run -it usdaarsnwrc/awsm
 cd /code/awsm
 awsm test_data/RME_run/config_pysnobal.ini
 ```

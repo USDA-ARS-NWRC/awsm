@@ -293,6 +293,12 @@ class AWSM():
         if not os.path.exists(self.path_report_i):
             os.makedirs(self.path_report_i)
 
+        # fill in some of the config options
+        self.config['Report']['report_path'] = self.pathro
+        self.config['Basin']['save_path'] = self.pathro
+        self.config['Basin']['wy'] = self.wy
+        self.config['Runs']['run_dir1'] = self.pathro
+
     def createLog(self):
         '''
         Now that the directory structure is done, create log file and print out

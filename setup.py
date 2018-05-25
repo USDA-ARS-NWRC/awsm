@@ -44,7 +44,7 @@ with open(fname,'w') as f:
 	f.write("__gitVersion__='{0}'\n".format(gitVersion[:nchars]))
 	f.close()
 
-with open('README.rst') as readme_file:
+with open('README.md') as readme_file:
     readme = readme_file.read()
 
 with open('HISTORY.rst') as history_file:

@@ -124,8 +124,8 @@ def plot_waterbalance(myawsm):
     tt = myawsm.end_date-myawsm.start_date
     tdiff = tt.days*24 +  tt.seconds//3600 # number of timesteps
     offset = utils.water_day(startdate)[0]
-    print offset
-    print tdiff
+    # print(offset)
+    # print(tdiff)
     day_hr = range(int(offset+23), int(tdiff+offset+23), int(24))
 
     ppt_hr = df_ppt['hour'].values

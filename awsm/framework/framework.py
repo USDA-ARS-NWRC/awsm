@@ -294,10 +294,13 @@ class AWSM():
             os.makedirs(self.path_report_i)
 
         # fill in some of the config options
-        self.config['report']['rep_path'] = self.pathro
-        self.config['basin']['save_path'] = self.pathro
+        self.config['report']['rep_path'] = self.path_report_i
+        self.config['basin']['save_path'] = self.path_report_i
         self.config['basin']['wy'] = self.wy
         self.config['runs']['run_dir1'] = self.pathro
+        # create updated config for report
+        self.report_config = os.path.join(self.path_report_o, 'snowav_cfg.ini')
+        generate_config(self.ucfg, self.report_config)
 
     def createLog(self):
         '''

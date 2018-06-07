@@ -20,7 +20,7 @@ def plot_dashboard(myawsm):
 
     # initialize reporting tool
     myawsm._logger.info('Plotting summary information as requested')
-    snow = snowav.plotting.framework.SNOWAV(config_file = myawsm.configFile)
+    snow = snowav.plotting.framework.SNOWAV(config_file = myawsm.report_config)
 
     if not hasattr(snow,'error'):
         # process and plot the data

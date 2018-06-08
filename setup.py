@@ -85,7 +85,7 @@ setup(
     scripts=['./scripts/awsm','./scripts/wyhr',
 			 './scripts/plot_stations_by_date'],
     install_requires=requirements,
-    license="GPL-3.0",
+    license="CC0 1.0",
     zip_safe=False,
     keywords='awsm',
     classifiers=[

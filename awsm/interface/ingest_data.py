@@ -61,7 +61,7 @@ def run_update_procedure(myawsm):
             update_snow = find_update_snow(myawsm, off)
 
         # perform the update and set the init file for iSnobal
-        myawsm.init_file = do_update(myawsm, update_info[k],
+        myawsm.init_file = do_update_isnobal(myawsm, update_info[k],
                                      update_snow, x, y)
 
         # set nsteps
@@ -234,9 +234,10 @@ def find_update_snow(myawsm, offset):
     return update_snow
 
 
-def do_update(myawsm, update_info, update_snow, x, y):
+def do_update_isnobal(myawsm, update_info, update_snow, x, y):
     """
     Function to read in an output file and update it with the lidar depth field
+
     Argument:
         myawsm: instantiated awsm class
         update_info: update info pandas at correct index
@@ -246,7 +247,89 @@ def do_update(myawsm, update_info, update_snow, x, y):
     Returns:
         init_file: file pointer to init image
     """
-    activeLayer = 0.25
+    # get some info
+    update_number = update_info['number']
+    date = update_info['date_time']
+    wyhr = update_info['wyhr']
+
+    last_snow_image = ipw.IPW(update_snow)
+    z_s = last_snow_image.bands[0].data # Get modeled depth image.
+    # z_s(mask==0) = NaN;
+
+    ##  Continue as before:
+    density = last_snow_image.bands[1].data.copy() # Get density image.
+    ## ## ## ## ## ## ## ## ## %
+    # SPECIAL CASE... insert adjusted densities here:
+    # density = arcgridread_v2(['/Volumes/data/blizzard/Tuolumne/lidar/snowon/2017' ...
+    #                 '/adjusted_rho/TB2017' date_mmdd '_operational_rho_ARSgrid_50m.asc']);
+    ## ## ## ## ## ## ## ## ## %
+    m_s = last_snow_image.bands[2].data.copy() # Get SWE image.
+    T_s_0 = last_snow_image.bands[4].data.copy() # Get active snow layer temperature image
+    T_s_l = last_snow_image.bands[5].data.copy() # Get lower snow layer temperature image
+    T_s = last_snow_image.bands[6].data.copy() # Get average snowpack temperature image
+    h2o_sat = last_snow_image.bands[8].data.copy() # Get liquid water saturation image
+
+    updated_fields = hedrick_updating_procedure(m_s, T_s_0, T_s_l, T_s,
+                                                h2o_sat, density, z_s,
+                                                x, y, myawsm, update_info)
+
+    # write init file
+    out_file = 'init_update_{}_wyhr{:04d}.ipw'.format(update_number, wyhr)
+    init_file = os.path.join(myawsm.pathinit,out_file)
+    i_out = ipw.IPW()
+    i_out.new_band(updated_fields['dem'])
+    i_out.new_band(updated_fields['z0'])
+    i_out.new_band(updated_fields['D'])
+    i_out.new_band(updated_fields['rho'])
+    i_out.new_band(updated_fields['T_s_0'])
+    i_out.new_band(updated_fields['T_s_l'])
+    i_out.new_band(updated_fields['T_s'])
+    i_out.new_band(updated_fields['h2o_sat'])
+    #i_out.add_geo_hdr([u, v], [du, dv], units, csys)
+    i_out.add_geo_hdr([myawsm.u, myawsm.v], [myawsm.du, myawsm.dv],
+                      myawsm.units, myawsm.csys)
+    i_out.write(init_file, myawsm.nbits)
+
+    ##  Import newly-created init file and look at images to make sure they line up:
+    myawsm._logger.info('Wrote ipw image for update {}'.format(wyhr))
+
+    return init_file
+
+
+def hedrick_updating_procedure(m_s, T_s_0, T_s_l, T_s, h2o_sat, density, z_s,
+                               x, y, myawsm, update_info):
+    """
+    This function performs the direct insertion procedure and returns the
+    updated fields.
+
+    Argument:
+        m_s:    swe array to be updated
+        T_s_0:  surface layer temperature array to be updated
+        T_s_l:  lower layer temperature array to be updated
+        T_s:    bulk temperature array to be updated
+        h2o_sat: h2o_sat array to be updated
+        density: density array to be updated
+        z_s:     snow height array to be updated
+        x:       x vector
+        y:       y vector
+        myawsm:  awsm instance
+        update_info: necessary update info
+    Returns:
+        updated_fields:  dictionary of updated fields including dem, z0, D,
+                         rho, T_s_0, T_s_l, T_s, h2o_sta, dnsity, z_s
+    """
+
+    # keep a copy of the original inputs
+    original_fields = {}
+    original_fields['m_s'] = m_s.copy()
+    original_fields['T_s_0'] = T_s_0.copy()
+    original_fields['T_s_l'] = T_s_l.copy()
+    original_fields['T_s'] = T_s.copy()
+    original_fields['h2o_sat'] = h2o_sat.copy()
+    original_fields['density'] = density.copy()
+    original_fields['z_s'] = z_s.copy()
+
+    activeLayer = myawsm.active_layer
     Buf = myawsm.update_buffer  # Buffer size (in cells) for the interpolation to search over.
     # get dem and roughness
     if myawsm.topotype == 'ipw':
@@ -265,11 +348,8 @@ def do_update(myawsm, update_info, update_snow, x, y):
                                ' using value of 0.005 m')
         z0 = 0.005*np.ones((myawsm.ny, myawsm.nx))
 
-    update_number = update_info['number']
+    # New depth field
     D = update_info['depth']
-
-    date = update_info['date_time']
-    wyhr = update_info['wyhr']
 
     #mask = ipw.IPW(myawsm.config['topo']['mask']).bands[0].data
     # make mask
@@ -280,11 +360,6 @@ def do_update(myawsm, update_info, update_snow, x, y):
 
     nrows = len(y)
     ncols = len(x)
-
-    last_snow_image = ipw.IPW(update_snow)
-
-    z_s = last_snow_image.bands[0].data # Get modeled depth image.
-    # z_s(mask==0) = NaN;
 
     ##  Special case - 20160607
     # I am trying an update with only Tuolumne Basin data where I will mask in
@@ -299,20 +374,6 @@ def do_update(myawsm, update_info, update_snow, x, y):
     tempASO[I_ASO] = tempiSnobal[I_ASO]
     tempASO[tuolx_mask == 1] = D[tuolx_mask == 1]
     D = tempASO.copy()
-
-
-    ##  Continue as before:
-    density = last_snow_image.bands[1].data.copy() # Get density image.
-    ## ## ## ## ## ## ## ## ## %
-    # SPECIAL CASE... insert adjusted densities here:
-    # density = arcgridread_v2(['/Volumes/data/blizzard/Tuolumne/lidar/snowon/2017' ...
-    #                 '/adjusted_rho/TB2017' date_mmdd '_operational_rho_ARSgrid_50m.asc']);
-    ## ## ## ## ## ## ## ## ## %
-    m_s = last_snow_image.bands[2].data.copy() # Get SWE image.
-    T_s_0 = last_snow_image.bands[4].data.copy() # Get active snow layer temperature image
-    T_s_l = last_snow_image.bands[5].data.copy() # Get lower snow layer temperature image
-    T_s = last_snow_image.bands[6].data.copy() # Get average snowpack temperature image
-    h2o_sat = last_snow_image.bands[8].data.copy() # Get liquid water saturation image
 
     # Address problem of bit resolution where cells have mass and density,
     # but no depth is reported (less than minimum depth above zero).
@@ -503,39 +564,28 @@ def do_update(myawsm, update_info, update_snow, x, y):
     T_s_l[np.isnan(T_s_l)] = -75
     h2o_sat[rho == 0] = 0
 
-    #
-    # #chdir(initDir)
-
-    #
     # grab unmasked cells again
     nmask = mask == 0
-    #fill_mask_image = ipw.IPW(update_snow)
-    m_s[nmask] = last_snow_image.bands[2].data[nmask] # Get SWE image.
-    T_s_0[nmask] = last_snow_image.bands[4].data[nmask] # Get active snow layer temperature image
-    T_s_l[nmask] = last_snow_image.bands[5].data[nmask] # Get lower snow layer temperature image
-    T_s[nmask] = last_snow_image.bands[6].data[nmask] # Get average snowpack temperature image
-    h2o_sat[nmask] = last_snow_image.bands[8].data[nmask] # Get liquid water saturation image
-    D[nmask] = last_snow_image.bands[0].data[nmask]
-    rho[nmask] = last_snow_image.bands[1].data[nmask]
+    # Make sure non-updated cells stay the same as original
+    m_s[nmask] = original_fields['m_s'][nmask] # Get SWE image.
+    T_s_0[nmask] = original_fields['T_s_0'][nmask] # Get active snow layer temperature image
+    T_s_l[nmask] = original_fields['T_s_l'][nmask] # Get lower snow layer temperature image
+    T_s[nmask] = original_fields['T_s'][nmask] # Get average snowpack temperature image
+    h2o_sat[nmask] = original_fields['h2o_sat'][nmask] # Get liquid water saturation image
+    D[nmask] = original_fields['z_s'][nmask]
+    rho[nmask] = original_fields['density'][nmask]
 
-    # write init file
-    out_file = 'init_update_{}_wyhr{:04d}.ipw'.format(update_number, wyhr)
-    init_file = os.path.join(myawsm.pathinit,out_file)
-    i_out = ipw.IPW()
-    i_out.new_band(dem)
-    i_out.new_band(z0)
-    i_out.new_band(D)
-    i_out.new_band(rho)
-    i_out.new_band(T_s_0)
-    i_out.new_band(T_s_l)
-    i_out.new_band(T_s)
-    i_out.new_band(h2o_sat)
-    #i_out.add_geo_hdr([u, v], [du, dv], units, csys)
-    i_out.add_geo_hdr([myawsm.u, myawsm.v], [myawsm.du, myawsm.dv],
-                      myawsm.units, myawsm.csys)
-    i_out.write(init_file, myawsm.nbits)
+    # create dictionary to return with updated arrays
+    updated_fields = {}
+    updated_fields['dem'] = dem
+    updated_fields['z0'] = z0
+    updated_fields['D'] = D
+    updated_fields['rho'] = rho
+    updated_fields['T_s_0'] = T_s_0
+    updated_fields['T_s_l'] = T_s_l
+    updated_fields['T_s'] = T_s
+    updated_fields['h2o_sat'] = h2o_sat
+    updated_fields['density'] = density
+    updated_fields['z_s'] = z_s
 
-    ##  Import newly-created init file and look at images to make sure they line up:
-    myawsm._logger.info('Wrote ipw image for update {}'.format(wyhr))
-
-    return init_file
+    return updated_fields

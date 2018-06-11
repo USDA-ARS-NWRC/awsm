@@ -16,6 +16,11 @@ try:
 except NameError:
     pass
 
+try:
+    import snowav
+except:
+    print('snowav not installed')
+
 from smrf import __core_config__ as __smrf_core_config__
 from smrf import __recipes__ as __smrf_recipes__
 from awsm import __core_config__ as __awsm_core_config__
@@ -48,8 +53,14 @@ class AWSM():
             raise Exception('Configuration file does not exist --> {}'
                             .format(configFile))
         try:
-            combined_mcfg = MasterConfig(modules = ['smrf','awsm'])
+            if self.config['awsm master']['run_report']:
+                snowav_mcfg = MasterConfig(modules = 'snowav')
+                combined_mcfg = MasterConfig(modules = ['smrf','awsm','snowav'])
+            else:
+                combined_mcfg = MasterConfig(modules = ['smrf','awsm'])
+
             awsm_mcfg = MasterConfig(modules = 'awsm')
+            smrf_mcfg = MasterConfig(modules = 'smrf')
 
             # Read in the original users config
             self.ucfg = get_user_config(configFile, mcfg=combined_mcfg)
@@ -260,6 +271,7 @@ class AWSM():
         # list of sections releated to AWSM
         # These will be removed for smrf config
         self.sec_awsm = awsm_mcfg.cfg.keys()
+        self.sec_smrf = smrf_mcfg.cfg.keys()
 
         # Make rigid directory structure
         self.mk_directories()
@@ -286,7 +298,7 @@ class AWSM():
         # get all relevant options
         # self.report = self.config['reporting']['report']
         # self.dashboard = self.config['reporting']['dashboard']
-
+        self.sec_snowav = snowav_mcfg.cfg.keys()
         # make reporting directory
         self.path_report_o = os.path.join(self.path_wy, 'reports')
         self.path_report_i = os.path.join(self.path_report_o, 'report_{}'.format(self.folder_date_stamp))
@@ -300,7 +312,18 @@ class AWSM():
         self.config['runs']['run_dir1'] = self.pathro
         # create updated config for report
         self.report_config = os.path.join(self.path_report_o, 'snowav_cfg.ini')
-        generate_config(self.ucfg, self.report_config)
+        #generate_config(self.ucfg, self.report_config)
+
+        ##### new stuff
+        # Write out config file to run smrf
+        # make copy and delete only awsm sections
+        snowav_cfg = copy.deepcopy(myawsm.ucfg)
+        for key in myawsm.ucfg.cfg.keys():
+            if key in myawsm.sec_awsm or key in myawsm.sec_smrf:
+                del snowav_cfg.cfg[key]
+
+        myawsm._logger.info('Writing the config file for snowav')
+        generate_config(snowav_cfg, self.report_config)
 
     def createLog(self):
         '''

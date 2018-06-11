@@ -53,10 +53,10 @@ class AWSM():
             raise Exception('Configuration file does not exist --> {}'
                             .format(configFile))
         try:
-            if self.config['awsm master']['run_report']:
+            try:
                 snowav_mcfg = MasterConfig(modules = 'snowav')
                 combined_mcfg = MasterConfig(modules = ['smrf','awsm','snowav'])
-            else:
+            except:
                 combined_mcfg = MasterConfig(modules = ['smrf','awsm'])
 
             awsm_mcfg = MasterConfig(modules = 'awsm')
@@ -296,8 +296,7 @@ class AWSM():
         Parse the options related to reporting
         """
         # get all relevant options
-        # self.report = self.config['reporting']['report']
-        # self.dashboard = self.config['reporting']['dashboard']
+        snowav_mcfg = MasterConfig(modules = 'snowav')
         self.sec_snowav = snowav_mcfg.cfg.keys()
         # make reporting directory
         self.path_report_o = os.path.join(self.path_wy, 'reports')
@@ -309,7 +308,7 @@ class AWSM():
         self.config['report']['rep_path'] = self.path_report_i
         self.config['basin']['save_path'] = self.path_report_i
         self.config['basin']['wy'] = self.wy
-        self.config['runs']['run_dir1'] = self.pathro
+        self.config['runs']['run_dirs'] = [self.pathro]
         # create updated config for report
         self.report_config = os.path.join(self.path_report_o, 'snowav_cfg.ini')
         #generate_config(self.ucfg, self.report_config)
@@ -317,12 +316,12 @@ class AWSM():
         ##### new stuff
         # Write out config file to run smrf
         # make copy and delete only awsm sections
-        snowav_cfg = copy.deepcopy(myawsm.ucfg)
-        for key in myawsm.ucfg.cfg.keys():
-            if key in myawsm.sec_awsm or key in myawsm.sec_smrf:
+        snowav_cfg = copy.deepcopy(self.ucfg)
+        for key in self.ucfg.cfg.keys():
+            if key in self.sec_awsm or key in self.sec_smrf:
                 del snowav_cfg.cfg[key]
 
-        myawsm._logger.info('Writing the config file for snowav')
+        self.tmp_log.append('Writing the config file for snowav')
         generate_config(snowav_cfg, self.report_config)
 
     def createLog(self):

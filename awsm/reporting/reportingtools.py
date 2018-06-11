@@ -39,8 +39,8 @@ def plot_dashboard(myawsm):
         if hasattr(snow,'flt_flag'):
             snowav.plotting.flt_image_change.flt_image_change(snow)
 
-        snowav.plotting.write_summary.write_summary(snow,'accum_summary')
-        snowav.plotting.write_summary.write_summary(snow,'state_summary')
+        snowav.plotting.write_summary.write_summary(snow,'accum')
+        snowav.plotting.write_summary.write_summary(snow,'state')
         # snowav.plotting.basin_detail.basin_detail(snow)
 
         if snow.report_flag == True:

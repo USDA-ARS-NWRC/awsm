@@ -16,10 +16,9 @@ def open_files_nc(myawsm):
     """
     Open the netCDF files for initial conditions and inputs
     - Reads in the initial_conditions file
-        Required variables are x,y,z,z_0
-        The others z_s, rho, T_s_0, T_s, h2o_sat, mask can be specified
-        but will be set to default of 0's or 1's for mask
-
+    - Required variables are x,y,z,z_0
+    - The others z_s, rho, T_s_0, T_s, h2o_sat, mask can be specified
+    but will be set to default of 0's or 1's for mask
     - Open the files for the inputs and store the file identifier
 
     Args:
@@ -54,7 +53,7 @@ def open_files_nc(myawsm):
 
 def open_files_ipw(myawsm):
     """
-    - Compile list of input data hours from ipw files stored in standard AWSM
+    Compile list of input data hours from ipw files stored in standard AWSM
     file structure. These are only list of integer water year hours, the actual
     reading of ipw files happens from the standard directory structure.
 
@@ -274,16 +273,10 @@ def output_timestep(s, tstep, options, output_vars):
                 'water_saturation': 'h2o_sat'}
 
     # preallocate
-#     all_zeros = np.zeros(s['elevation'].shape)
-#     em = {key: all_zeros for key in em_out.keys()}
-#     snow = {key: all_zeros for key in snow_out.keys()}
     em = {}
     snow = {}
 
     # gather all the data together
-#     for index, si in np.ndenumerate(s):
-#
-#         if si is not None:
     for key, value in em_out.items():
         em[key] = copy(s[value])
 

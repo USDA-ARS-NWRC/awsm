@@ -56,8 +56,8 @@ def nc2ipw_mea(myawsm, runtype):
     ps_var = 'percent_snow'
     rho = os.path.join(smrfpath, 'snow_density.nc')
     rho_var = 'snow_density'
-    tp = os.path.join(smrfpath, 'dew_point.nc')
-    tp_var = 'dew_point'
+    tp = os.path.join(smrfpath, 'precip_temp.nc')
+    tp_var = 'precip_temp'
 
     in_pathp = os.path.join(datapath, 'ppt_4b')
 

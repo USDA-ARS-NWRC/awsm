@@ -178,7 +178,7 @@ def run_smrf_ipysnobal_single(myawsm, s):
     # create variable list
     force_variables = ['thermal', 'air_temp', 'vapor_pressure', 'wind_speed',
                        'net_solar', 'soil_temp', 'precip', 'percent_snow',
-                       'snow_density', 'dew_point']
+                       'snow_density', 'precip_temp']
     variable_list = {}
     for v in force_variables:
         for m in s.modules:
@@ -251,7 +251,7 @@ def run_smrf_ipysnobal_single(myawsm, s):
         # self, data, dpt, time, wind, temp, mask=None
         # 4. Precipitation
         s.distribute['precip'].distribute(s.data.precip.ix[t],
-                                          s.distribute['vapor_pressure'].dew_point,
+                                          s.distribute['vapor_pressure'].precip_temp,
                                           t,
                                           s.data.wind_speed.ix[t],
                                           s.data.air_temp.ix[t],

@@ -67,7 +67,8 @@ def output_files(output_path, fname, start_date, x, y):
         x:           vector of x coords
         y:           vector of y coords
 
-
+    Returns:
+        ds: dataset
     """
     fmt = '%Y-%m-%d %H:%M:%S'
     # chunk size

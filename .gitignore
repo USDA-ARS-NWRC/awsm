@@ -71,6 +71,7 @@ coverage.xml
 
 # Sphinx documentation
 docs/_build/
+docs/auto_config.rst
 
 # PyBuilder
 target/
@@ -81,4 +82,7 @@ target/
 
 test_data/AWSM_test_config_tuol.ini
 test_data/RME_run/output/rme
+
+#Integration tests
+tests/RME/output/rme/*
 awsm/utils/gitinfo.py

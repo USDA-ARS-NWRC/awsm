@@ -6,11 +6,20 @@ from datetime import datetime
 import pandas as pd
 import pytz
 import copy
+from inicheck.config import MasterConfig
+from inicheck.tools import get_user_config, check_config
+from inicheck.output import print_config_report, generate_config
+
 # make input the same as raw input if python 2
 try:
     input = raw_input
 except NameError:
     pass
+
+from smrf import __core_config__ as __smrf_core_config__
+from smrf import __recipes__ as __smrf_recipes__
+from awsm import __core_config__ as __awsm_core_config__
+from awsm import __config_titles__
 
 from smrf.utils import utils, io
 from awsm.convertFiles import convertFiles as cvf
@@ -18,10 +27,6 @@ from awsm.interface import interface as smin
 from awsm.interface import smrf_ipysnobal as smrf_ipy
 from awsm.interface import ingest_data
 from awsm.utils import utilities as awsm_utils
-
-from smrf import __core_config__ as __smrf_core_config__
-from awsm import __core_config__ as __awsm_core_config__
-
 
 class AWSM():
     """
@@ -43,22 +48,18 @@ class AWSM():
             raise Exception('Configuration file does not exist --> {}'
                             .format(configFile))
         try:
-            # get both master configs
-            # smrf_mcfg = io.get_master_config()
-            smrf_mcfg = io.MasterConfig(__smrf_core_config__).cfg
-            awsm_mcfg = io.MasterConfig(__awsm_core_config__).cfg
-            # combine master configs
-            combined_mcfg = copy.deepcopy(smrf_mcfg)
-            combined_mcfg.update(awsm_mcfg)
+            combined_mcfg = MasterConfig(modules = ['smrf','awsm'])
+            awsm_mcfg = MasterConfig(modules = 'awsm')
+
             # Read in the original users config
-            self.config = io.get_user_config(configFile, mcfg=combined_mcfg)
+            self.ucfg = get_user_config(configFile, mcfg=combined_mcfg)
             self.configFile = configFile
+
         except UnicodeDecodeError:
             raise Exception(('The configuration file is not encoded in '
                              'UTF-8, please change and retry'))
 
         # get the git version
-        # find output of 'git describe'
         self.gitVersion = awsm_utils.getgitinfo()
 
         # create blank log and error log because logger is not initialized yet
@@ -66,25 +67,18 @@ class AWSM():
         self.tmp_err = []
         self.tmp_warn = []
 
-        # Add defaults.
-        self.tmp_log.append("Adding defaults to config...")
-        self.config = io.add_defaults(self.config, combined_mcfg)
-
         # Check the user config file for errors and report issues if any
         self.tmp_log.append("Checking config file for issues...")
-        warnings, errors = io.check_config_file(self.config, combined_mcfg,
-                                                user_cfg_path=configFile)
-        io.print_config_report(warnings, errors)
+        warnings, errors = check_config(self.ucfg)
+        print_config_report(warnings, errors)
+
+        self.config = self.ucfg.cfg
 
         # Exit AWSM if config file has errors
         if len(errors) > 0:
             print("Errors in the config file. "
                   "See configuration status report above.")
             sys.exit()
-
-        # update config paths to be absolute
-        self.config = io.update_config_paths(self.config, configFile,
-                                             combined_mcfg)
 
         # ################## Decide which modules to run #####################
         self.do_smrf = self.config['awsm master']['run_smrf']
@@ -110,6 +104,9 @@ class AWSM():
             self.fp_mask = os.path.abspath(self.config['topo']['mask'])
         # prompt for making directories
         self.prompt_dirs = self.config['awsm master']['prompt_dirs']
+
+        # store smrf version if running smrf
+        self.smrf_version = utils.getgitinfo()
 
         # ################ Time information ##################
         self.start_date = pd.to_datetime(self.config['time']['start_date'])
@@ -175,15 +172,26 @@ class AWSM():
                 print(self.tmp_err)
                 sys.exit()
 
+        # ################ Topo information ##################
+        self.topotype = self.config['topo']['type']
+        # pull in location of the dem
+        if self.topotype == 'ipw':
+            self.fp_dem = os.path.abspath(self.config['topo']['dem'])
+        elif self.topotype == 'netcdf':
+            self.fp_dem = os.path.abspath(self.config['topo']['filename'])
+
         # ################ Grid data for iSnobal ##################
-        self.u = int(self.config['grid']['u'])
-        self.v = int(self.config['grid']['v'])
-        self.du = int(self.config['grid']['du'])
-        self.dv = int(self.config['grid']['dv'])
-        self.units = self.config['grid']['units']
+        # get topo stats
+        ts = awsm_utils.get_topo_stats(self.fp_dem, filetype=self.topotype)
+        # assign topo stats
+        self.u = int(ts['u'])
+        self.v = int(ts['v'])
+        self.du = int(ts['du'])
+        self.dv = int(ts['dv'])
+        self.nx = int(ts['nx'])
+        self.ny = int(ts['ny'])
+        self.units = ts['units']
         self.csys = self.config['grid']['csys']
-        self.nx = int(self.config['grid']['nx'])
-        self.ny = int(self.config['grid']['ny'])
         self.nbits = int(self.config['grid']['nbits'])
         self.soil_temp = self.config['soil_temp']['temp']
 
@@ -192,14 +200,6 @@ class AWSM():
         self.mass_thresh.append(self.config['grid']['thresh_normal'])
         self.mass_thresh.append(self.config['grid']['thresh_medium'])
         self.mass_thresh.append(self.config['grid']['thresh_small'])
-
-        # ################ Topo information ##################
-        self.topotype = self.config['topo']['type']
-        # pull in location of the dem
-        if self.topotype == 'ipw':
-            self.fp_dem = os.path.abspath(self.config['topo']['dem'])
-        elif self.topotype == 'netcdf':
-            self.fp_dem = os.path.abspath(self.config['topo']['filename'])
 
         # init file just for surface roughness
         if self.config['files']['roughness_init'] is not None:
@@ -277,37 +277,18 @@ class AWSM():
 
         # list of sections releated to AWSM
         # These will be removed for smrf config
-        self.sec_awsm = awsm_mcfg.keys()
+        self.sec_awsm = awsm_mcfg.cfg.keys()
 
         # Make rigid directory structure
         self.mk_directories()
 
         # ################ Generate config backup ##################
         if self.config['output']['input_backup']:
-            # order in which to output awsm config sections
-            order_lst = ['awsm master', 'paths', 'grid', 'files',
-                         'awsm system', 'isnobal restart', 'ipysnobal',
-                         'ipysnobal initial conditions', 'ipysnobal constants']
-            # section titles
-            titles = {'awsm master': 'Configurations for AWSM Master section',
-                      'paths': 'Configurations for PATHS section'
-                               ' for rigid directory work',
-                      'grid': 'Configurations for GRID data to run iSnobal',
-                      'files': 'Input files to run AWSM',
-                      'awsm system': 'System parameters',
-                      'isnobal restart': 'Parameters for restarting'
-                                         ' from crash',
-                      'ipysnobal': 'Running Python wrapped iSnobal',
-                      'ipysnobal initial conditions': 'Initial condition'
-                                                      ' parameters for'
-                                                      ' PySnobal',
-                      'ipysnobal constants': 'Input constants for PySnobal'
-                      }
+
             # set location for backup and output backup of awsm sections
             config_backup_location = \
                 os.path.join(self.pathdd, 'awsm_config_backup.ini')
-            io.generate_config(self.config, config_backup_location,
-                               order_lst=order_lst, titles=titles)
+            generate_config(self.ucfg, config_backup_location)
 
         # create log now that directory structure is done
         self.createLog()
@@ -596,8 +577,8 @@ class AWSM():
                     self.make_rigid_directories(path_names_att)
 
             else:
-                self.tmp_warn.append('This has the potential to overwrite '
-                                     'results in {}!!!'.format(check_if_data))
+                self.tmp_warn.append('Directory structure leading to '
+                                     '{} already exists.'.format(check_if_data))
 
             # make sure runs exists
             if not os.path.exists(os.path.join(self.path_wy, 'runs/')):

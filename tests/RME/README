@@ -1,0 +1,19 @@
+AWSM PROJECT SUMMARY:
+=====================
+
+PROJECT NAME:        reynolds_mountain_east_test     
+DATE CREATED:        2018-04-19                    
+AUTHOR:              micah johnson                 
+PATH:        	     AWSM/tests/RME
+DESCRIPTION:         creating a baseline run for scientific testing and software consistency checking using rme data from 1983-2008
+VERSION:             v0.4.9             
+NOTES:
+		     * DEM was downloaded from ASTER Global DEM via https://earthexplorer.usgs.gov/
+		     * topo.nc was generated using basin_setup -f raw_data/rme_basin_outline.shp -dm ~/Downloads/ASTGTM2_N43W117/ASTGTM2_N43W117_dem.tif --cell_size 50
+		     * Station data was generate from a publish data set using the script ./setup_scripts/convert_rem.py to put data in SMRF compatible format
+		     * The exception to the above is cloud_factor which was generated using an automated script that lives in Mark Robertsons auto cleaning repo (contact Mark R.)
+		     * Maxus generated using gen_maxus ./topo/topo.nc 
+		     * This is designed to be a test and therefore is stripped of a lot of details that might be important to this datas origins
+
+			
+

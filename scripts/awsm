@@ -4,12 +4,17 @@
 import awsm
 from datetime import datetime
 import sys
-
+import os
 
 def run():
     start = datetime.now()
 
+    # Path for Docker use only
     configFile = '/code/awsm/test_data/RME_run/config_pysnobal.ini'
+
+    if not os.path.isfile(configFile):
+        configFile = './test_data/RME_run/config_pysnobal.ini'
+
     if len(sys.argv) > 1:
         configFile = sys.argv[1]
 

@@ -265,7 +265,9 @@ class AWSM():
             self.tmp_log.append('Restart date is {}'.format(self.start_date))
 
         # read in update depth parameters
-        self.update_depth = self.config['update depth']['update']
+        self.update_depth = False
+        if 'update_depth' in self.config:
+            self.update_depth = self.config['update depth']['update']
         if self.update_depth:
             self.update_file = self.config['update depth']['update_file']
             self.update_buffer = self.config['update depth']['buffer']

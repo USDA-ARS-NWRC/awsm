@@ -306,8 +306,8 @@ class AWSM():
 
         # fill in some of the config options
         self.config['report']['rep_path'] = self.path_report_i
-        self.config['basin']['save_path'] = self.path_report_i
-        self.config['basin']['wy'] = self.wy
+        self.config['snowav system']['save_path'] = self.path_report_i
+        self.config['snowav system']['wy'] = self.wy
         self.config['runs']['run_dirs'] = [self.pathro]
         # create updated config for report
         self.report_config = os.path.join(self.path_report_o, 'snowav_cfg.ini')

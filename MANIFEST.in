@@ -1,11 +1,11 @@
 include AUTHORS.rst
 include CONTRIBUTING.rst
 include HISTORY.rst
-include LICENSE
+include LICENSE.md
 include README.md
 
-awsm/framework/CoreConfig.ini
-awsm/framework/recipes.ini
+include awsm/framework/CoreConfig.ini
+include awsm/framework/recipes.ini
 
 recursive-include tests *
 recursive-include scripts *

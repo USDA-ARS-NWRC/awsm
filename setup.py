@@ -44,10 +44,10 @@ with open(fname,'w') as f:
 	f.write("__gitVersion__='{0}'\n".format(gitVersion[:nchars]))
 	f.close()
 
-with open('README.md') as readme_file:
+with open('README.md',encoding='utf-8') as readme_file:
     readme = readme_file.read()
 
-with open('HISTORY.rst') as history_file:
+with open('HISTORY.rst', encoding='utf-8') as history_file:
     history = history_file.read()
 
 requirements = [
@@ -86,7 +86,7 @@ setup(
     scripts=['./scripts/awsm','./scripts/wyhr',
 			 './scripts/plot_stations_by_date'],
     install_requires=requirements,
-    license="GPL-3.0",
+    license="CC0 1.0",
     zip_safe=False,
     keywords='awsm',
     classifiers=[

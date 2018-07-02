@@ -32,3 +32,12 @@ History
 * Improved user configuration
 * Fast user test cases and unit test capability
 * Repeatable runs from station data with git version tracking
+
+
+0.5.0 (2018-07-02)
+------------------
+
+* Inicheck integration
+* SNOWAV interface established
+* API Documentation 
+

@@ -44,10 +44,10 @@ with open(fname,'w') as f:
 	f.write("__gitVersion__='{0}'\n".format(gitVersion[:nchars]))
 	f.close()
 
-with open('README.md') as readme_file:
+with open('README.md',encoding='utf-8') as readme_file:
     readme = readme_file.read()
 
-with open('HISTORY.rst') as history_file:
+with open('HISTORY.rst', encoding='utf-8') as history_file:
     history = history_file.read()
 
 requirements = [
@@ -64,7 +64,7 @@ test_requirements = [
 
 setup(
     name='awsm',
-    version='0.3.0',
+    version='0.5.0',
     description="Automated Water Supply Forecasting",
     long_description=readme + '\n\n' + history,
     author="Micah Sandusky",
@@ -75,15 +75,18 @@ setup(
 			  'awsm.interface',
 			  'awsm.framework',
               'awsm.knn',
-			  'awsm.utils'
+			  'awsm.utils',
+			  'awsm.reporting'
 			  ],
 
 
     include_package_data=True,
-    package_data={'awsm':['./framework/CoreConfig.ini']},
-    scripts=['./scripts/awsm'],
+    package_data={'awsm':['./framework/CoreConfig.ini',
+				  './framework/recipes.ini']},
+    scripts=['./scripts/awsm','./scripts/wyhr',
+			 './scripts/plot_stations_by_date'],
     install_requires=requirements,
-    license="GPL-3.0",
+    license="CC0 1.0",
     zip_safe=False,
     keywords='awsm',
     classifiers=[

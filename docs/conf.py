@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
 # awsm documentation build configuration file, created by
@@ -15,6 +15,7 @@
 
 import sys
 import os
+from inicheck.tools import config_documentation
 
 # If extensions (or modules to document with autodoc) are in another
 # directory, add these directories to sys.path here. If the directory is
@@ -22,8 +23,13 @@ import os
 # absolute, like shown here.
 #sys.path.insert(0, os.path.abspath('.'))
 
-# Get the project root dir, which is the parent dir of this
+# Call auto documentation for our config files
 
+config_documentation('./auto_config.rst',
+                     paths=['../awsm/framework/CoreConfig.ini','../awsm/framework/recipes.ini'])
+
+
+# Get the project root dir, which is the parent dir of this
 if os.environ.get('READTHEDOCS') == 'True':
     sys.path.insert(0, os.path.abspath('.'))
 else:
@@ -36,7 +42,7 @@ class Mock(MagicMock):
     def __getattr__(cls, name):
             return Mock()
 MOCK_MODULES = ['netCDF4', 'matplotlib', 'matplotlib.pyplot',
-                'pandas', 'smrf', 'ipw']
+                'pandas', 'smrf', 'ipw', 'smrf.utils','smrf.envphys']
 
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 os.environ['IPW'] = '.' # set a temporary IPW environment variable

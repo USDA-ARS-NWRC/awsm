@@ -8,7 +8,7 @@ from datetime import datetime
 import pandas as pd
 import subprocess
 import copy
-
+from inicheck.output import generate_config
 
 def create_smrf_config(myawsm):
     """
@@ -20,32 +20,37 @@ def create_smrf_config(myawsm):
     # ### read in base and write out the specific config file for smrf #######
     # ########################################################################
 
+    # append snowav keys if we're doing reporting
+    if myawsm.do_report:
+        delete_keys = myawsm.sec_awsm.append(myawsm.sec_snowav)
+    else:
+        delete_keys = myawsm.sec_awsm
+
     # Write out config file to run smrf
     # make copy and delete only awsm sections
-    # smrf_cfg = copy.deepcopy(myawsm.config)
-    smrf_cfg = myawsm.config.copy()
-    for key in myawsm.config:
-        if key in myawsm.sec_awsm:
-            del smrf_cfg[key]
+    smrf_cfg = copy.deepcopy(myawsm.ucfg)
+    for key in myawsm.ucfg.cfg.keys():
+        if key in delete_keys:
+            del smrf_cfg.cfg[key]
 
     # make sure start and end date are correcting
-    smrf_cfg['time']['start_date'] = myawsm.start_date
-    smrf_cfg['time']['end_date'] = myawsm.end_date
+    smrf_cfg.cfg['time']['start_date'] = myawsm.start_date
+    smrf_cfg.cfg['time']['end_date'] = myawsm.end_date
 
     # change start date if using smrf_ipysnobal and restarting
     if myawsm.restart_run and myawsm.run_smrf_ipysnobal:
-        smrf_cfg['time']['start_date'] = myawsm.restart_date
+        smrf_cfg.cfg['time']['start_date'] = myawsm.restart_date
 
     # set ouput location in smrf config
-    smrf_cfg['output']['out_location'] = os.path.join(myawsm.paths)
-    smrf_cfg['system']['temp_dir'] = os.path.join(myawsm.paths, 'tmp')
+    smrf_cfg.cfg['output']['out_location'] = os.path.join(myawsm.paths)
+    #smrf_cfg.cfg['system']['temp_dir'] = os.path.join(myawsm.paths, 'tmp')
     if myawsm.do_forecast:
         fp_smrfini = myawsm.forecastini
     else:
         fp_smrfini = myawsm.smrfini
 
     myawsm._logger.info('Writing the config file for SMRF')
-    io.generate_config(smrf_cfg, fp_smrfini, inicheck=False)
+    generate_config(smrf_cfg, fp_smrfini)
 
     return fp_smrfini
 
@@ -129,6 +134,7 @@ def run_isnobal(myawsm):
         dem_file = nc.Dataset(myawsm.fp_dem, 'r')
         i_dem = dem_file['dem'][:]
         i_out.new_band(i_dem)
+        dem_file.close()
 
     if myawsm.mask_isnobal:
         i_mask = ipw.IPW(myawsm.fp_mask).bands[0].data
@@ -293,6 +299,7 @@ def restart_crash_image(myawsm):
         dem_file = nc.Dataset(myawsm.fp_dem, 'r')
         i_dem = dem_file['dem'][:]
         i_out.new_band(i_dem)
+        dem_file.close()
 
     if myawsm.roughness_init is not None:
         i_out.new_band(ipw.IPW(myawsm.roughness_init).bands[1].data)
@@ -325,12 +332,9 @@ def restart_crash_image(myawsm):
 
     z_s[idz] = 0.0
     rho[idz] = 0.0
-    # m_s[idz] = 0.0
-    # h20[idz] = 0.0
     T_s_0[idz] = -75.0
     T_s_l[idz] = -75.0
     T_s[idz] = -75.0
-    # z_s_l[idz] = 0.0
     h20_sat[idz] = 0.0
 
     # fill in init image

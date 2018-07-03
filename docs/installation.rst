@@ -7,21 +7,21 @@ Installation
 Installing Dependencies
 -----------------------
 
-AWSM utilizes many of the utilities within SMRF. The first step to installing
-AWSM is to follow the installation instructions for SMRF, which can be found
-here:
+AWSM utilizes many of the utilities within SMRF. The first step is to read and
+follow the install instructions for SMRF, found here_. Make sure to follow all
+instructions, including installing IPW.
 
-https://smrf.readthedocs.io/en/develop/install.html
+.. _here: https://smrf.readthedocs.io/en/develop/install.html
 
-Make sure to follow all instructions, including installing IPW. The source code
-for SMRF can be found here:
+The source code for SMRF is stored on on GitHub_.
 
-https://github.com/USDA-ARS-NWRC/smrf
+.. _GitHub: https://github.com/USDA-ARS-NWRC/smrf
 
-If you would like to use the PySnobal functions within AWSM, you can download
-and install PySnobal from the link below. This is optional.
+If you would like to use the PySnobal within AWSM, you can download
+and install the package following the guidelines on the `PySnobal repo`_ .
+**This is optional**.
 
-https://github.com/USDA-ARS-NWRC/pysnobal
+.. _PySnobal repo: https://github.com/USDA-ARS-NWRC/pysnobal
 
 Installing AWSM
 ---------------
@@ -47,14 +47,14 @@ and off your virtual environment.
 
 2. Clone AWSM source code from the ARS-NWRC github.
 
-  .. code:: bash
+  .. code:: console
 
     git clone https://github.com/USDA-ARS-NWRC/AWSM.git
 
 3. Change directories into the AWSM directory. Install the python requirements.
    After the requirements are done, install AWSM.
 
-  .. code:: bash
+  .. code:: console
 
     cd AWSM
     pip install -r requirements_dev.txt
@@ -62,7 +62,7 @@ and off your virtual environment.
 
 4. (Optional) Generate a local copy of the documentation.
 
-  .. code:: bash
+  .. code:: console
 
     cd docs
     make html
@@ -71,7 +71,7 @@ and off your virtual environment.
   This can be done from the browser by opening the index.rst file directly or
   by the commandline like the following:
 
-  .. code:: bash
+  .. code:: console
 
     google-chrome _build/html/index.html
 
@@ -83,20 +83,20 @@ catchment in Idaho called Reynolds Mountain East (RME).
 
 1. Move to config file and run case. Start in your AWSM directory
 
-  .. code:: bash
+  .. code:: console
 
     cd test_data/RME_run/
     awsm config.ini
 
 2. Wait for the test run to finish and then view the results.
 
-  .. code:: bash
+  .. code:: console
 
     cd output/rme/devel/wy1998/rme_test/
 
 The iSnobal model outputs will be in the "runs" folder and the distributed
 SMRF data will be in the "data" folder. Navigate around and see what the
 outputs look like. You can visualize the .nc (netCDF) files with
-the `Ncview`_ utility.
+the `ncview`_ utility.
 
-.. _Ncview: http://meteora.ucsd.edu/~pierce/ncview_home_page.html
+.. _ncview: http://meteora.ucsd.edu/~pierce/ncview_home_page.html

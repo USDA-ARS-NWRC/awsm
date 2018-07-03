@@ -10,4 +10,5 @@ Development Lead
 Contributors
 ------------
 
-None yet. Why not be the first?
+* Micah Johnson <micah.johnson150@gmail.com>
+

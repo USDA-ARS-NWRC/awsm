@@ -390,7 +390,6 @@ class PySnobal():
         self.input1 = self.input2.copy()
 
         # output at the frequency and the last time step
-        # if (self.j*(self.data_tstep/3600.0) % self.options['output']['frequency'] == 0) or (self.j == len(self.options['time']['date_time'])):
         if ((self.j)*(self.data_tstep/3600.0) % self.options['output']['frequency'] == 0)\
                 or (self.j == len(self.options['time']['date_time']) - 1):
             io_mod.output_timestep(self.output_rec, tstep, self.options,

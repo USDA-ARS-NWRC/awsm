@@ -54,8 +54,8 @@ class TestStandardRME(unittest.TestCase):
         # Gold paths
         self.gold = os.path.abspath(os.path.join(os.path.dirname(awsm.__file__),
                                                 '..', 'tests', 'RME', 'gold'))
-        self.gold_em = os.path.join(self.gold, 'normal_em.nc')
-        self.gold_snow = os.path.join(self.gold, 'normal_snow.nc')
+        self.gold_em = os.path.join(self.gold, 'em.nc')
+        self.gold_snow = os.path.join(self.gold, 'snow.nc')
 
         # Output
         self.output = os.path.join(run_dir,

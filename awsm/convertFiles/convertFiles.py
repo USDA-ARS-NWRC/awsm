@@ -297,6 +297,8 @@ def ipw2nc_mea(myawsm, runtype):
                key=os.path.getmtime)
 
     d.sort(key=lambda f: os.path.splitext(f))
+    # find a drop any netcdfs in directory
+    d = [ddp for ddp in d if '.nc' not in ddp]
     # pbar = progressbar.ProgressBar(max_value=len(d)).start()
     j = 0
 

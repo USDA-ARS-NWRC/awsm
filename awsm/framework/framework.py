@@ -16,6 +16,11 @@ try:
 except NameError:
     pass
 
+try:
+    import snowav
+except:
+    print('snowav not installed')
+
 from smrf import __core_config__ as __smrf_core_config__
 from smrf import __recipes__ as __smrf_recipes__
 from awsm import __core_config__ as __awsm_core_config__
@@ -48,8 +53,14 @@ class AWSM():
             raise Exception('Configuration file does not exist --> {}'
                             .format(configFile))
         try:
-            combined_mcfg = MasterConfig(modules = ['smrf','awsm'])
+            try:
+                snowav_mcfg = MasterConfig(modules = 'snowav')
+                combined_mcfg = MasterConfig(modules = ['smrf','awsm','snowav'])
+            except:
+                combined_mcfg = MasterConfig(modules = ['smrf','awsm'])
+
             awsm_mcfg = MasterConfig(modules = 'awsm')
+            smrf_mcfg = MasterConfig(modules = 'smrf')
 
             # Read in the original users config
             self.ucfg = get_user_config(configFile, mcfg=combined_mcfg)
@@ -260,6 +271,7 @@ class AWSM():
         # list of sections releated to AWSM
         # These will be removed for smrf config
         self.sec_awsm = awsm_mcfg.cfg.keys()
+        self.sec_smrf = smrf_mcfg.cfg.keys()
 
         # Make rigid directory structure
         self.mk_directories()
@@ -284,29 +296,33 @@ class AWSM():
         Parse the options related to reporting
         """
         # get all relevant options
-        # self.report = self.config['reporting']['report']
-        self.dashboard = self.config['reporting']['dashboard']
-
-        self.snowband = self.config['reporting']['snowband']
-        self.emband = self.config['reporting']['emband']
-
-        self.report_units = self.config['reporting']['units']
-        self.report_dempath = self.config['reporting']['dempath']
-        self.report_mask = self.config['reporting']['total_mask']
-        self.subbasin1 = self.config['reporting']['subbasin1']
-        self.subbasin2 = self.config['reporting']['subbasin2']
-        self.subbasin3 = self.config['reporting']['subbasin3']
-
-        self.total_lbl = self.config['reporting']['total_lbl']
-        self.sub1_lbl = self.config['reporting']['sub1_lbl']
-        self.sub2_lbl = self.config['reporting']['sub2_lbl']
-        self.sub3_lbl = self.config['reporting']['sub3_lbl']
-
+        snowav_mcfg = MasterConfig(modules = 'snowav')
+        self.sec_snowav = snowav_mcfg.cfg.keys()
         # make reporting directory
         self.path_report_o = os.path.join(self.path_wy, 'reports')
         self.path_report_i = os.path.join(self.path_report_o, 'report_{}'.format(self.folder_date_stamp))
         if not os.path.exists(self.path_report_i):
             os.makedirs(self.path_report_i)
+
+        # fill in some of the config options
+        self.config['report']['rep_path'] = self.path_report_i
+        self.config['snowav system']['save_path'] = self.path_report_i
+        self.config['snowav system']['wy'] = self.wy
+        self.config['runs']['run_dirs'] = [self.pathro]
+        # create updated config for report
+        self.report_config = os.path.join(self.path_report_o, 'snowav_cfg.ini')
+        #generate_config(self.ucfg, self.report_config)
+
+        ##### new stuff
+        # Write out config file to run smrf
+        # make copy and delete only awsm sections
+        snowav_cfg = copy.deepcopy(self.ucfg)
+        for key in self.ucfg.cfg.keys():
+            if key in self.sec_awsm or key in self.sec_smrf:
+                del snowav_cfg.cfg[key]
+
+        self.tmp_log.append('Writing the config file for snowav')
+        generate_config(snowav_cfg, self.report_config)
 
     def createLog(self):
         '''

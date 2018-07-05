@@ -20,11 +20,17 @@ def create_smrf_config(myawsm):
     # ### read in base and write out the specific config file for smrf #######
     # ########################################################################
 
+    # append snowav keys if we're doing reporting
+    if myawsm.do_report:
+        delete_keys = myawsm.sec_awsm.append(myawsm.sec_snowav)
+    else:
+        delete_keys = myawsm.sec_awsm
+
     # Write out config file to run smrf
     # make copy and delete only awsm sections
     smrf_cfg = copy.deepcopy(myawsm.ucfg)
     for key in myawsm.ucfg.cfg.keys():
-        if key in myawsm.sec_awsm:
+        if key in delete_keys:
             del smrf_cfg.cfg[key]
 
     # make sure start and end date are correcting

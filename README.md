@@ -66,7 +66,6 @@ the image, using the following command:
 
 ```
   docker run -v /c/Users/<path>:/data -it usdaarsnwrc/awsm:develop
-
 ```
 
 The output netCDF files will be placed in the location you mounted (using the
@@ -98,6 +97,7 @@ My_Basin
 ```
 
 Then the command would be:
+
 ```
 docker run -v <path>/My_Basin:/data -it usdaarsnwrc/awsm:develop <path>/My_Basin/config.ini
 ```

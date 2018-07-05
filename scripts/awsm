@@ -10,7 +10,7 @@ def run():
     start = datetime.now()
 
     # Path for Docker use only
-    configFile = '/code/awsm/test_data/RME_run/config_pysnobal.ini'
+    configFile = '/code/awsm/test_data/RME_run/docker_pysnobal.ini'
 
     if not os.path.isfile(configFile):
         configFile = './test_data/RME_run/config_pysnobal.ini'

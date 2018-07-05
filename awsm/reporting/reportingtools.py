@@ -9,39 +9,43 @@ from netCDF4 import Dataset
 from smrf.utils import utils
 # import reporting module if installed
 try:
-    from snowav.plotting.framework import SNOWAV
-    from snowav.report.report import report
+    import snowav
 except:
-    print('no snowav to import, not installed')
+    print('No snowav to import, not installed')
 
 def plot_dashboard(myawsm):
     """
     Function to plot summary information and make reports after an AWSM run
     """
+
     # initialize reporting tool
-    snow = SNOWAV(myawsm = myawsm)
+    myawsm._logger.info('Plotting summary information as requested')
+    snow = snowav.plotting.framework.SNOWAV(config_file = myawsm.report_config,
+                                            external_logger=myawsm._logger)
 
-    # process the data
-    snow.process()
+    if not hasattr(snow,'error'):
+        # process and plot the data
+        snow.process()
+        snowav.plotting.accumulated.accumulated(snow)
+        snowav.plotting.current_image.current_image(snow)
+        snowav.plotting.state_by_elev.state_by_elev(snow)
+        snowav.plotting.image_change.image_change(snow)
+        snowav.plotting.basin_total.basin_total(snow)
+        snowav.plotting.pixel_swe.pixel_swe(snow)
+        snowav.plotting.density.density(snow)
+        snowav.plotting.water_balance.water_balance(snow)
+        snowav.plotting.stn_validate.stn_validate(snow)
+        # If options exist in config file
+        if hasattr(snow,'flt_flag'):
+            snowav.plotting.flt_image_change.flt_image_change(snow)
 
-    # SNOWAV.snowav.accumulated(snow)
-    if myawsm.dashboard != False or myawsm.report != None:
-        myawsm._logger.info('Plotting summary information as requested')
-        snow.current_image()
-        snow.accumulated()
-        snow.state_by_elev()
-        snow.image_change()
-        snow.basin_total()
-        if myawsm.basin == 'brb':
-            snow.stn_validate()
+        snowav.plotting.write_summary.write_summary(snow,'accum')
+        snowav.plotting.write_summary.write_summary(snow,'state')
+        # snowav.plotting.basin_detail.basin_detail(snow)
 
-    if myawsm.report != False:
-        myawsm._logger.info('Creating report')
-        report(snow)
-
-    # if myawsm.dashboard != False:
-    #     myawsm._logger.info('Plotting water balance')
-    #     plot_waterbalance(myawsm)
+        if snow.report_flag == True:
+            myawsm._logger.info('Creating report')
+            snowav.report.report.report(snow)
 
 
 def plot_waterbalance(myawsm):
@@ -121,8 +125,8 @@ def plot_waterbalance(myawsm):
     tt = myawsm.end_date-myawsm.start_date
     tdiff = tt.days*24 +  tt.seconds//3600 # number of timesteps
     offset = utils.water_day(startdate)[0]
-    print offset
-    print tdiff
+    # print(offset)
+    # print(tdiff)
     day_hr = range(int(offset+23), int(tdiff+offset+23), int(24))
 
     ppt_hr = df_ppt['hour'].values

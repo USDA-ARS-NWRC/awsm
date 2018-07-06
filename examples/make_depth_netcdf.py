@@ -13,6 +13,7 @@ from datetime import datetime
 import pytz
 import matplotlib.pyplot as plt
 from smrf.utils import utils
+from smrf import ipw
 from awsm.utils.utilities import get_topo_stats
 
 print("This utility takes geoTiff files for depth updates in AWSM and sticks"
@@ -21,11 +22,6 @@ print("This utility takes geoTiff files for depth updates in AWSM and sticks"
 fmt = '%Y-%m-%d %H:%M:%S'
 # chunk size
 cs = (6, 10, 10)
-
-# =========================================================================
-# Read in tif
-# =========================================================================
-
 
 def read_flight(fp_lst, topo_stats, nanval = None, nanup = None):
     """
@@ -41,15 +37,18 @@ def read_flight(fp_lst, topo_stats, nanval = None, nanup = None):
     nx = topo_stats['nx']
     data_array = np.zeros((len(fp_lst), ny, nx))
 
-    for fp in fp_lst:
+    for idf, fp in enumerate(fp_lst):
+        print(fp)
         D = np.genfromtxt(fp, dtype = float, skip_header=6, filling_values=np.nan)
         if nanval is not None:
             D[D==nanval] = np.nan
         if nanup is not None:
             D[D>nanup] = np.nan
         D[D > 100] = np.nan
+        # Make sure we assigned nans
+        print('There are Nans?: ',np.any(np.isnan(D)))
         # store value
-        data_array[0,:] = D
+        data_array[idf,:] = D
 
     # plt.imshow(D)
     # plt.show()
@@ -153,29 +152,48 @@ def output_timestep(ds, data, tstep, idt, start_date):
 
 def run():
 
-    # user inputs
-    #fp_lst = ['/home/micahsandusky/Code/awsfTesting/initUpdate/TB20150608_SUPERsnow_depth.asc']
-    fp_lst = ['/home/micahsandusky/Code/awsfTesting/newupdatetest/TB20170129_SUPERsnow_depth.asc']
-    dem_fp = '/data/blizzard/tuolumne/common_data/topo/tuolx_dem_50m.ipw'
-    #date_lst = ['2015-06-08']
-    date_lst = ['2017-01-29']
-    output_path = './'
-    fname = 'flight_depths'
-    nanval = -9999.0
-    nanup = 10000.0
+    fmt_file = fmt = '%Y%m%d'
+    basin = 'SJ'
+    fpdir = '/home/micahsandusky/Code/awsfTesting/newupdatetest'
+    # date_lst = ['2016-03-26', '2016-04-01', '2016-04-07', '2016-04-16',
+    #             '2016-04-26', '2016-05-09', '2016-05-27', '2016-06-07',
+    #             '2016-06-13', '2016-06-20', '2016-06-25', '2016-07-01',
+    #             '2016-07-08']
+    date_lst = ['2018-04-23']
 
-    date_lst = [pd.to_datetime(dd) for dd in date_lst]
-    print(date_lst)
 
-    # get wy start based on first date in list
-    # start_date = pd.to_datetime('2014-10-01 00:00:00')
+    # put into datetime
+    date_lst = [pd.to_datetime(dt) for dt in date_lst]
     tzinfo = pytz.timezone('UTC')
-    # date to use for finding wy
     tmp_date = date_lst[0]
     tmp_date = tmp_date.replace(tzinfo=tzinfo)
     # find start of water year
     tmpwy = utils.water_day(tmp_date)[1]
+    wy = tmpwy
     start_date = pd.to_datetime('{:d}-10-01'.format(tmpwy-1))
+
+    # get the paths
+    fp_lst = ['wy{}/{}{}_SUPERsnow_depth.asc'.format(wy, basin, dt.strftime(fmt_file))
+              for dt in date_lst]
+    fp_lst = [os.path.join(fpdir,fpu) for fpu in fp_lst]
+
+    # dem_fp = '/data/blizzard/tuolumne/common_data/topo/tuolx_dem_50m.ipw'
+    # gisPath = '/home/micahsandusky/Code/awsfTesting/initUpdate/'
+    # maskPath = os.path.join(gisPath, 'tuolx_mask_50m.ipw')
+    dem_fp = '/data/blizzard/sanjoaquin/common_data/topo/SJ_dem_50m.ipw'
+    gisPath = '/data/blizzard/sanjoaquin/common_data/topo/'
+    maskPath = os.path.join(gisPath, 'SJ_Millerton_mask_50m.ipw')
+    mask = ipw.IPW(maskPath).bands[0].data[:]
+    #date_lst = ['2015-06-08']
+
+    output_path = os.path.join(fpdir, 'wy{}'.format(wy))
+    fname = 'flight_depths_{}'.format(basin)
+    nanval = -9999.0
+    nanup = 1000.0
+
+
+    # #### Now actually do the stuff ####
+    # date to use for finding wy
     fname = fname+'_{}'.format(tmpwy)
 
     # get topo stats from dem
@@ -191,7 +209,7 @@ def run():
 
     # write to file
     for idt, dt in enumerate(date_lst):
-        data = depth_arr[idt,:]
+        data = depth_arr[idt,:]*mask
         output_timestep(ds, data, dt, idt, start_date)
 
     # close file

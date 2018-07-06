@@ -43,7 +43,10 @@ def run():
 
             if a.do_isnobal:
                 # run iSnobal
-                a.run_isnobal()
+                if a.update_depth:
+                    a.run_isnobal_update()
+                else:
+                    a.run_isnobal()
 
             elif a.do_ipysnobal:
                 # run iPySnobal
@@ -56,7 +59,10 @@ def run():
         else:
             if a.do_isnobal:
                 # restart iSnobal from crash
-                a.restart_crash_image()
+                if a.update_depth:
+                    a.run_isnobal_update()
+                else:
+                    a.run_isnobal()
                 # convert ipw back to netcdf for processing
             elif a.do_ipysnobal:
                 # run iPySnobal

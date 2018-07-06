@@ -99,31 +99,7 @@ def smrfMEAS(myawsm):
 
             s._logger.info(datetime.now() - start)
 
-
-def run_isnobal(myawsm):
-    '''
-    Run iSnobal from command line. Checks necessary directories, creates
-    initialization image and calls iSnobal.
-
-    Args:
-        myawsm: AWSM instance
-    '''
-
-    myawsm._logger.info('Setting up to run iSnobal')
-    # find water year for calculating offset
-    tt = myawsm.start_date - myawsm.wy_start
-
-    offset = tt.days*24 + tt.seconds//3600  # start index for the input file
-    nbits = myawsm.nbits
-
-    # create the run directory
-    # if not os.path.exists(myawsm.pathro):
-    #     os.makedirs(myawsm.pathro)
-    # if not os.path.exists(myawsm.pathinit):
-    #     os.makedirs(myawsm.pathinit)
-
-    # making initial conditions file
-    myawsm._logger.debug("making initial conds img for iSnobal")
+def make_init_file(myawsm, offset):
     i_out = ipw.IPW()
 
     # making dem band
@@ -178,7 +154,7 @@ def run_isnobal(myawsm):
         i_out.add_geo_hdr([myawsm.u, myawsm.v], [myawsm.du, myawsm.dv],
                           myawsm.units, myawsm.csys)
         i_out.write(os.path.join(myawsm.pathinit,
-                                 'init%04d.ipw' % (offset)), nbits)
+                                 'init%04d.ipw' % (offset)), myawsm.nbits)
 
     else:
         zs0 = np.zeros((myawsm.ny, myawsm.nx))
@@ -196,87 +172,16 @@ def run_isnobal(myawsm):
         i_out.new_band(zs0)  # 0liquid
         i_out.add_geo_hdr([myawsm.u, myawsm.v], [myawsm.du, myawsm.dv],
                           myawsm.units, myawsm.csys)
-        i_out.write(os.path.join(myawsm.pathinit,
-                                 'init%04d.ipw' % (offset)), nbits)
 
-    # develop the command to run the model
-    myawsm._logger.debug("Developing command and running iSnobal")
-    nthreads = int(myawsm.ithreads)
+    init_file = os.path.join(myawsm.pathinit,
+                             'init%04d.ipw' % (offset))
+    i_out.write(init_file, myawsm.nbits)
 
-    tt = myawsm.end_date-myawsm.start_date
-    tmstps = tt.days*24 + tt.seconds//3600  # start index for the input file
-    # if we have input for timesteps, use it
-    if myawsm.run_for_nsteps is not None:
-        tmstps = myawsm.run_for_nsteps
+    myawsm._logger.debug('Wrote init file {}'.format(init_file))
 
-    # make paths absolute if they are not
-    cwd = os.getcwd()
+    return init_file
 
-    fp_ppt_desc = myawsm.ppt_desc
-
-    # check length of ppt_desc file to see if there has been precip
-    is_ppt = os.stat(fp_ppt_desc).st_size
-    if is_ppt == 0:
-        myawsm._logger.warning('Running iSnobal with no precip')
-
-    # thresholds for iSnobal
-    mass_thresh = '{},{},{}'.format(myawsm.mass_thresh[0],
-                                    myawsm.mass_thresh[1],
-                                    myawsm.mass_thresh[2])
-
-    # check length of time steps (bug in the way iSnobal reads in input files)
-    if (offset + tmstps) < 1000:
-        tmstps = 1001
-
-    run_cmd = 'isnobal -v -P %d -b %d -t 60 -T %s -n %d \
-    -I %s/init%04d.ipw -d %f -i %s/in' % (nthreads, myawsm.nbits,
-                                          mass_thresh, tmstps,
-                                          myawsm.pathinit, offset,
-                                          myawsm.active_layer,
-                                          myawsm.pathi)
-    if offset > 0:
-        run_cmd += ' -r %s' % (offset)
-    if is_ppt > 0:
-        run_cmd += ' -p %s' % (fp_ppt_desc)
-    else:
-        myawsm._logger.warning('Time frame has no precip!')
-
-    if myawsm.mask_isnobal:
-        run_cmd += ' -m %s' % (myawsm.fp_mask)
-
-    # add output frequency in hours
-    run_cmd += ' -O {}'.format(int(myawsm.output_freq))
-
-    # add end to string
-    run_cmd += ' -e em -s snow  2>&1'
-
-    # change directories, run, and move back
-    myawsm._logger.debug("Running {}".format(run_cmd))
-    os.chdir(myawsm.pathro)
-    # call iSnobal
-    p = subprocess.Popen(run_cmd, shell=True, stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE)
-
-    while True:
-        line = p.stdout.readline()
-        myawsm._logger.info(line)
-        if not line:
-            break
-
-    os.chdir(cwd)
-
-
-def restart_crash_image(myawsm):
-    '''
-    Restart iSnobal from crash. Read in last output, zero depths smaller than
-    a threshold, write new initialization image, and call iSnobal.
-
-    Args:
-        myawsm: AWSM instance
-    '''
-    nbits = myawsm.nbits
-    nthreads = myawsm.ithreads
-
+def make_init_restart(myawsm):
     # find water year hour and file paths
     name_crash = 'snow.%04d' % myawsm.restart_hr
     fp_crash = os.path.join(myawsm.pathro, name_crash)
@@ -348,7 +253,125 @@ def restart_crash_image(myawsm):
                       myawsm.units, myawsm.csys)
 
     myawsm._logger.info('Writing to {}'.format(fp_new_init))
-    i_out.write(fp_new_init, nbits)
+    i_out.write(fp_new_init, myawsm.nbits)
+
+    return fp_new_init
+
+def run_isnobal(myawsm, offset=None):
+    '''
+    Run iSnobal from command line. Checks necessary directories, creates
+    initialization image and calls iSnobal.
+
+    Args:
+        myawsm: AWSM instance
+    '''
+
+    myawsm._logger.info('Setting up to run iSnobal')
+    # find water year for calculating offset
+    tt = myawsm.start_date - myawsm.wy_start
+
+    # allow offset to be passed in for depth updating procedure
+    if offset is None:
+        offset = tt.days*24 + tt.seconds//3600  # start index for the input file
+
+    # set number of bits
+    nbits = myawsm.nbits
+
+    # making initial conditions file
+    myawsm._logger.debug("Making initial conds img for iSnobal")
+    # if we were not given an init file, make one
+    if myawsm.init_file is None:
+        if myawsm.restart_crash:
+            init_file = make_init_restart(myawsm)
+            offset = myawsm.restart_hr+1
+        else:
+            init_file = make_init_file(myawsm, offset)
+            print('init', init_file)
+    else:
+        myawsm._logger.info('Initializing iSnobal with given init file')
+        init_file = myawsm.init_file
+
+    # develop the command to run the model
+    myawsm._logger.debug("Developing command and running iSnobal")
+    nthreads = int(myawsm.ithreads)
+
+    tt = myawsm.end_date-myawsm.start_date
+
+    # if we have input for timesteps, use it
+    if myawsm.run_for_nsteps is not None:
+        tmstps = myawsm.run_for_nsteps
+    else:
+        tmstps = tt.days*24 + tt.seconds//3600  # start index for the input file
+
+    # make paths absolute if they are not
+    cwd = os.getcwd()
+
+    fp_ppt_desc = myawsm.ppt_desc
+
+    # check length of ppt_desc file to see if there has been precip
+    is_ppt = os.stat(fp_ppt_desc).st_size
+    if is_ppt == 0:
+        myawsm._logger.warning('Running iSnobal with no precip')
+
+    # thresholds for iSnobal
+    mass_thresh = '{},{},{}'.format(myawsm.mass_thresh[0],
+                                    myawsm.mass_thresh[1],
+                                    myawsm.mass_thresh[2])
+
+    # check length of time steps (bug in the way iSnobal reads in input files)
+    if (offset + tmstps) < 1000:
+        tmstps = 1001
+
+    run_cmd = 'isnobal -v -P %d -b %d -t 60 -T %s -n %d \
+    -I %s -d %f -i %s/in' % (nthreads, myawsm.nbits,
+                                          mass_thresh, tmstps,
+                                          init_file,
+                                          myawsm.active_layer,
+                                          myawsm.pathi)
+    if offset > 0:
+        run_cmd += ' -r %s' % (offset)
+    if is_ppt > 0:
+        run_cmd += ' -p %s' % (fp_ppt_desc)
+    else:
+        myawsm._logger.warning('Time frame has no precip!')
+
+    if myawsm.mask_isnobal:
+        run_cmd += ' -m %s' % (myawsm.fp_mask)
+
+    # add output frequency in hours
+    run_cmd += ' -O {}'.format(int(myawsm.output_freq))
+
+    # add end to string
+    run_cmd += ' -e em -s snow  2>&1'
+
+    # change directories, run, and move back
+    myawsm._logger.debug("Running {}".format(run_cmd))
+    os.chdir(myawsm.pathro)
+    # call iSnobal
+    p = subprocess.Popen(run_cmd, shell=True, stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE)
+
+    while True:
+        line = p.stdout.readline()
+        myawsm._logger.info(line)
+        if not line:
+            break
+
+    os.chdir(cwd)
+
+
+def restart_crash_image(myawsm):
+    '''
+    Restart iSnobal from crash. Read in last output, zero depths smaller than
+    a threshold, write new initialization image, and call iSnobal.
+
+    Args:
+        myawsm: AWSM instance
+    '''
+    nbits = myawsm.nbits
+    nthreads = myawsm.ithreads
+
+
 
     myawsm._logger.info('Running isnobal from restart')
     offset = myawsm.restart_hr+1

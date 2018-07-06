@@ -30,6 +30,7 @@ from smrf.utils import utils, io
 from awsm.convertFiles import convertFiles as cvf
 from awsm.interface import interface as smin
 from awsm.interface import smrf_ipysnobal as smrf_ipy
+from awsm.interface import ingest_data
 from awsm.utils import utilities as awsm_utils
 import awsm.reporting.reportingtools as retools
 
@@ -228,6 +229,13 @@ class AWSM():
         else:
             self.prev_mod_file = None
 
+        if self.config['files']['init_file'] is not None:
+            self.init_file = os.path.abspath(self.config['files']['init_file'])
+            if self.prev_mod_file is not None:
+                raise IOError('Cannot have init file and prev mod file, pick one please.')
+        else:
+            self.init_file = None
+
         # threads for running iSnobal
         self.ithreads = self.config['awsm system']['ithreads']
         # how often to output form iSnobal
@@ -241,7 +249,9 @@ class AWSM():
         self.em_name = self.config['awsm system']['em_name']
 
         # options for restarting iSnobal
+        self.restart_crash = False
         if self.config['isnobal restart']['restart_crash']:
+            self.restart_crash = True
             # self.new_init = self.config['isnobal restart']['new_init']
             self.depth_thresh = self.config['isnobal restart']['depth_thresh']
             self.restart_hr = \
@@ -267,6 +277,19 @@ class AWSM():
             # set a new start date for this run
             self.restart_date = self.start_date + reset_offset
             self.tmp_log.append('Restart date is {}'.format(self.start_date))
+
+        # read in update depth parameters
+        self.update_depth = False
+        if 'update_depth' in self.config:
+            self.update_depth = self.config['update depth']['update']
+        if self.update_depth:
+            self.update_file = self.config['update depth']['update_file']
+            self.update_buffer = self.config['update depth']['buffer']
+            self.flight_numbers = self.config['update depth']['flight_numbers']
+            # if flights to use is not list, make it a list
+            if self.flight_numbers is not None:
+                if not isinstance(self.flight_numbers, list):
+                    self.flight_numbers = [self.flight_numbers]
 
         # list of sections releated to AWSM
         # These will be removed for smrf config
@@ -426,12 +449,18 @@ class AWSM():
         """
         cvf.ipw2nc_mea(self, runtype)
 
-    def run_isnobal(self):
+    def run_isnobal(self, offset=None):
         """
         Run isnobal. Calls :mod: `awsm.interface.interface.run_isnobal`
         """
 
-        smin.run_isnobal(self)
+        smin.run_isnobal(self, offset=offset)
+
+    def run_isnobal_update(self):
+        """
+        Run iSnobal with update procedure
+        """
+        ingest_data.run_update_procedure(self)
 
     def run_smrf_ipysnobal(self):
         """

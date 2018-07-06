@@ -230,17 +230,7 @@ T_s_0_buf = np.concatenate( (tmp1,np.concatenate( (tmp2,T_s_0,tmp2) ,axis=0),tmp
 T_s_l_buf = np.concatenate( (tmp1,np.concatenate( (tmp2,T_s_l,tmp2) ,axis=0),tmp1 ),axis=1)
 T_s_buf = np.concatenate( (tmp1,np.concatenate( (tmp2,T_s,tmp2) ,axis=0),tmp1 ),axis=1)
 h2o_buf = np.concatenate( (tmp1,np.concatenate( (tmp2,h2o_sat,tmp2) ,axis=0),tmp1 ),axis=1)
-plt.imshow(h2o_buf)
-plt.colorbar()
-plt.show()
-plt.imshow(h2o_sat)
-plt.colorbar()
-plt.show()
-plt.imshow(T_s_buf)
-plt.colorbar()
-plt.show()
 
-print(h2o_buf.shape)
 ###################### hopefully fixed for loop logic below
 
 for idx, (ix, iy) in enumerate(zip(I[0], I[1])): # Loop through cells with D > 0 and no iSnobal density,
@@ -350,68 +340,68 @@ h2o_sat[rho == 0] = 0
 
 ##
 # Test for missing sim cells where snow was measured by lidar:
-snow_mask = D.copy()
-snow_mask[D > 0] = 1
-plt.figure(1)
-plt.imshow(snow_mask)
-plt.title('ASO snow mask')
-plt.colorbar()
-plt.show()
-
-rho_mask = rho.copy()
-rho_mask[rho>0] = 1
-plt.figure(2)
-plt.imshow(snow_mask - rho_mask)
-plt.title('ASO_snowmask - density mask')
-plt.colorbar()
-plt.show()
-
-T_s_0_mask = T_s_0.copy()
-T_s_0_mask[T_s_0 > -75] = 1
-T_s_0_mask[T_s_0 == -75] = 0
-plt.figure(3)
-plt.imshow(snow_mask - T_s_0_mask)
-plt.title('snow_mask - T_s_0 mask')
-plt.colorbar()
-plt.show()
-
-# seems like a lot
-T_s_l_mask = T_s_l.copy()
-T_s_l_mask[T_s_l > -75] = 1
-T_s_l_mask[T_s_l == -75] = 0
-plt.figure(4)
-plt.imshow(snow_mask - T_s_l_mask)
-plt.title('snow_mask - T_s_l mask')
-plt.colorbar()
-plt.show()
-
-T_s_mask = T_s.copy()
-T_s_mask[T_s_l <= -75] = 0
-T_s_mask[T_s > -75] = 1;
-plt.figure(5)
-plt.imshow(snow_mask - T_s_mask)
-plt.title('snow_mask - T_s mask')
-plt.colorbar()
-plt.show()
-
-h2o_mask = h2o_sat.copy()
-h2o_mask[rho == 0] = 0
-h2o_mask[h2o_sat > 0] = 1
-plt.imshow(h2o_sat)
-plt.colorbar()
-plt.show()
-plt.figure(6)
-plt.imshow(snow_mask - h2o_mask)
-plt.title('snow_mask - h2o mask')
-plt.colorbar()
-plt.show()
-
-# Test - Look for locations where lidar depths are much different from model.
-Diff = D - z_s
-Diff[mask == 0] = np.nan
-
-#chdir(initDir)
-
+# snow_mask = D.copy()
+# snow_mask[D > 0] = 1
+# plt.figure(1)
+# plt.imshow(snow_mask)
+# plt.title('ASO snow mask')
+# plt.colorbar()
+# plt.show()
+#
+# rho_mask = rho.copy()
+# rho_mask[rho>0] = 1
+# plt.figure(2)
+# plt.imshow(snow_mask - rho_mask)
+# plt.title('ASO_snowmask - density mask')
+# plt.colorbar()
+# plt.show()
+#
+# T_s_0_mask = T_s_0.copy()
+# T_s_0_mask[T_s_0 > -75] = 1
+# T_s_0_mask[T_s_0 == -75] = 0
+# plt.figure(3)
+# plt.imshow(snow_mask - T_s_0_mask)
+# plt.title('snow_mask - T_s_0 mask')
+# plt.colorbar()
+# plt.show()
+#
+# # seems like a lot
+# T_s_l_mask = T_s_l.copy()
+# T_s_l_mask[T_s_l > -75] = 1
+# T_s_l_mask[T_s_l == -75] = 0
+# plt.figure(4)
+# plt.imshow(snow_mask - T_s_l_mask)
+# plt.title('snow_mask - T_s_l mask')
+# plt.colorbar()
+# plt.show()
+#
+# T_s_mask = T_s.copy()
+# T_s_mask[T_s_l <= -75] = 0
+# T_s_mask[T_s > -75] = 1;
+# plt.figure(5)
+# plt.imshow(snow_mask - T_s_mask)
+# plt.title('snow_mask - T_s mask')
+# plt.colorbar()
+# plt.show()
+#
+# h2o_mask = h2o_sat.copy()
+# h2o_mask[rho == 0] = 0
+# h2o_mask[h2o_sat > 0] = 1
+# plt.imshow(h2o_sat)
+# plt.colorbar()
+# plt.show()
+# plt.figure(6)
+# plt.imshow(snow_mask - h2o_mask)
+# plt.title('snow_mask - h2o mask')
+# plt.colorbar()
+# plt.show()
+#
+# # Test - Look for locations where lidar depths are much different from model.
+# Diff = D - z_s
+# Diff[mask == 0] = np.nan
+#
+# #chdir(initDir)
+#
 i_out = ipw.IPW()
 i_out.new_band(dem)
 i_out.new_band(z0)
@@ -426,62 +416,62 @@ i_out.write(os.path.join(pathinit,out_file+'.ipw'), nbits)
 
 ##  Import newly-created init file and look at images to make sure they line up:
 
-d=ipw.IPW(os.path.join(pathinit,out_file+'.ipw'))
 print('wrote ipw image')
+# d=ipw.IPW(os.path.join(pathinit,out_file+'.ipw'))
 
-z = d.bands[0].data
-z_0 = d.bands[1].data
-z_s = d.bands[2].data
-rho = d.bands[3].data
-T_s_0 = d.bands[4].data
-T_s_l = d.bands[5].data
-T_s = d.bands[6].data
-h2o_sat = d.bands[7].data
-
-##
-snow_mask = z_s
-snow_mask[z_s == 0] = 0
-snow_mask[z_s > 0] = 1
-
-rho_mask = rho
-rho_mask[rho > 0] = 1
-
-T_s_0_mask = T_s_0
-T_s_0_mask[T_s_0 > -75] = 1
-T_s_0_mask[T_s_0 == -75] = 0
-
-T_s_l_mask = T_s_l
-T_s_l_mask[T_s_l > -75] = 1
-T_s_l_mask[T_s_l == -75] = 0
-
-T_s_mask = T_s
-T_s_mask[T_s == -75] = 0
-T_s_mask[T_s > -75] = 1
-
-h2o_mask = h2o_sat
-h2o_mask[h2o_sat>0]=1
-
-plt.figure(7)
-plt.imshow(snow_mask)
-plt.colorbar()
-plt.show()
-plt.figure(8)
-plt.imshow(snow_mask - rho_mask)
-plt.colorbar()
-plt.show()
-plt.figure(9)
-plt.imshow(snow_mask - T_s_0_mask)
-plt.colorbar()
-plt.show()
-plt.figure(10)
-plt.imshow(snow_mask - T_s_l_mask)
-plt.colorbar()
-plt.show()
-plt.figure(11)
-plt.imshow(snow_mask - T_s_mask)
-plt.colorbar()
-plt.show()
-plt.figure(12)
-plt.imshow(snow_mask - h2o_mask)
-plt.colorbar()
-plt.show()
+# z = d.bands[0].data
+# z_0 = d.bands[1].data
+# z_s = d.bands[2].data
+# rho = d.bands[3].data
+# T_s_0 = d.bands[4].data
+# T_s_l = d.bands[5].data
+# T_s = d.bands[6].data
+# h2o_sat = d.bands[7].data
+#
+# ##
+# snow_mask = z_s
+# snow_mask[z_s == 0] = 0
+# snow_mask[z_s > 0] = 1
+#
+# rho_mask = rho
+# rho_mask[rho > 0] = 1
+#
+# T_s_0_mask = T_s_0
+# T_s_0_mask[T_s_0 > -75] = 1
+# T_s_0_mask[T_s_0 == -75] = 0
+#
+# T_s_l_mask = T_s_l
+# T_s_l_mask[T_s_l > -75] = 1
+# T_s_l_mask[T_s_l == -75] = 0
+#
+# T_s_mask = T_s
+# T_s_mask[T_s == -75] = 0
+# T_s_mask[T_s > -75] = 1
+#
+# h2o_mask = h2o_sat
+# h2o_mask[h2o_sat>0]=1
+#
+# plt.figure(7)
+# plt.imshow(snow_mask)
+# plt.colorbar()
+# plt.show()
+# plt.figure(8)
+# plt.imshow(snow_mask - rho_mask)
+# plt.colorbar()
+# plt.show()
+# plt.figure(9)
+# plt.imshow(snow_mask - T_s_0_mask)
+# plt.colorbar()
+# plt.show()
+# plt.figure(10)
+# plt.imshow(snow_mask - T_s_l_mask)
+# plt.colorbar()
+# plt.show()
+# plt.figure(11)
+# plt.imshow(snow_mask - T_s_mask)
+# plt.colorbar()
+# plt.show()
+# plt.figure(12)
+# plt.imshow(snow_mask - h2o_mask)
+# plt.colorbar()
+# plt.show()

@@ -129,7 +129,7 @@ class QueueIsnobal(threading.Thread):
         """
         force_variables = ['thermal', 'air_temp', 'vapor_pressure', 'wind_speed',
                            'net_solar', 'soil_temp', 'precip', 'percent_snow',
-                           'snow_density', 'dew_point']
+                           'snow_density', 'precip_temp']
 
         # loop through the input
         # do_data_tstep needs two input records so only go
@@ -152,7 +152,7 @@ class QueueIsnobal(threading.Thread):
                    'vapor_pressure': 'e_a', 'wind_speed': 'u',
                    'soil_temp': 'T_g', 'precip': 'm_pp',
                    'percent_snow': 'percent_snow', 'snow_density': 'rho_snow',
-                   'dew_point': 'T_pp'}
+                   'precip_temp': 'T_pp'}
 
         # get first timestep
         input1 = {}
@@ -285,7 +285,7 @@ class PySnobal():
                         'soil_temp': 'T_g', 'precip': 'm_pp',
                         'percent_snow': 'percent_snow',
                         'snow_density': 'rho_snow',
-                        'dew_point': 'T_pp'}
+                        'precip_temp': 'T_pp'}
 
         # get AWSM logger
         self._logger = logger

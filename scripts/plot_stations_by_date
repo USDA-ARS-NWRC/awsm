@@ -18,28 +18,33 @@ def run():
                         help='start date of filter')
     parser.add_argument('--end_date', metavar='-ED', type=str, default=None,
                         help='end date of filter')
+    parser.add_argument('--columns', metavar='-cls', type=str, nargs='+',
+                        help='list of column names', default=None)
+# Use like:
     args = parser.parse_args()
 
     fp = args.fp
     start_date = args.start_date
     end_date = args.end_date
+    columns = args.columns
 
     print('Plotting [{}] between dates {} and {}'.format(fp,start_date, end_date))
 
     if os.path.isfile(args.fp):
-        plot_csv(fp, start_date, end_date)
+        plot_csv(fp, start_date, end_date, columns)
 
     else:
         raise IOError('File does not exist.')
 
 
-def plot_csv(fp, sd, ed):
+def plot_csv(fp, sd, ed, columns):
     """
     Plot station data, filtering by dates if necessary
     Args:
         fp - file pointer
         sd - datetime of start date
         ed - datetime of end date
+        columns - columns for filtering
     """
     if (sd is None and ed is not None) or (sd is not None and ed is None):
         raise IOError('Either provide two filter dates or none')
@@ -47,6 +52,13 @@ def plot_csv(fp, sd, ed):
     # read in data
     df = pd.read_csv(fp, 'r', delimiter=',', parse_dates=['date_time'])
     df.set_index('date_time', inplace=True)
+
+    # check if we want to filter, filter accordingly
+    if columns is None:
+        columns = df.columns
+    df = df.filter(items=columns)
+
+    print('Plotting columns {}'.format(columns))
 
     # some formatting
     sns.set_context("notebook")

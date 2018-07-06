@@ -1,0 +1,95 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import pandas as pd
+import numpy as np
+import os
+import matplotlib.pyplot as plt
+import argparse
+import seaborn as sns
+
+
+def run():
+
+    parser = argparse.ArgumentParser(description='CSV plotting stuff.')
+    parser.add_argument('fps', metavar='F', type=str, nargs="+",
+                        help='Path to csv file')
+    parser.add_argument('--start_date', metavar='-SD', type=str, default=None,
+                        help='start date of filter')
+    parser.add_argument('--end_date', metavar='-ED', type=str, default=None,
+                        help='end date of filter')
+    parser.add_argument('--columns', metavar='-cls', type=str, nargs='+',
+                        help='list of column names', default=None)
+# Use like:
+    args = parser.parse_args()
+
+    fps = args.fps
+    start_date = args.start_date
+    end_date = args.end_date
+    columns = args.columns
+
+    print('Plotting [{}] between dates {} and {}'.format(fps,start_date, end_date))
+
+    ispath = [os.path.isfile(fp) for fp in fps]
+
+    if np.all(ispath):
+        plot_csv(fps, start_date, end_date, columns)
+
+    else:
+        raise IOError('File does not exist.')
+
+
+def plot_csv(fps, sd, ed, columns):
+    """
+    Plot station data, filtering by dates if necessary
+    Args:
+        fps - list of file pointers
+        sd - datetime of start date
+        ed - datetime of end date
+        columns - columns for filtering
+    """
+    if (sd is None and ed is not None) or (sd is not None and ed is None):
+        raise IOError('Either provide two filter dates or none')
+
+    # loop through file pointers
+    for fp in fps:
+        # read in data
+        df = pd.read_csv(fp, 'r', delimiter=',', parse_dates=['date_time'])
+        df.set_index('date_time', inplace=True)
+
+        # check if we want to filter, filter accordingly
+        if columns is None:
+            columns = df.columns
+        df = df.filter(items=columns)
+
+        print('Plotting columns {}'.format(columns))
+
+        # some formatting
+        sns.set_context("notebook")
+        sns.set_style("dark")
+
+        # if no dates, plot whole thing
+        if sd is None and ed is None:
+            ax = df.plot()
+
+        # filter by dates
+        else:
+            sd = pd.to_datetime(sd)
+            ed = pd.to_datetime(ed)
+            if sd >= ed:
+                raise IOError('Start date larger than end date')
+            # filter
+            dfnew = df.ix[sd:ed]
+            ax = dfnew.plot()
+
+        # show what file is being plotted
+        title = os.path.basename(fp)
+        title = 'Plotting file: ' + title
+        plt.title(title)
+        ax.grid(b=True, which='major')
+        # plot
+        plt.show()
+
+
+if __name__ == '__main__':
+    run()

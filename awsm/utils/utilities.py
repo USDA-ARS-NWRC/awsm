@@ -47,6 +47,8 @@ def get_topo_stats(fp, filetype='netcdf'):
         ts['dv'] = x[1] - x[0]
         ts['v'] = x[0]
         ts['u'] = y[0]
+        ts['x'] = x
+        ts['y'] = y
         ds.close()
 
     if filetype == 'ipw':
@@ -59,6 +61,8 @@ def get_topo_stats(fp, filetype='netcdf'):
         ts['v'] = float(i.bands[0].bsamp)
         ts['u'] = float(i.bands[0].bline)
         ts['csys'] = i.bands[0].coord_sys_ID
+        ts['x'] = ts['v'] + ts['dv']*np.arange(ts['nx'])
+        ts['y'] = ts['u'] + ts['du']*np.arange(ts['ny'])
 
     return ts
 

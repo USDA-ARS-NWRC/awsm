@@ -209,6 +209,9 @@ class AWSM():
         self.nbits = int(self.config['grid']['nbits'])
         self.soil_temp = self.config['soil_temp']['temp']
 
+        self.x = ts['x']
+        self.y = ts['y']
+
         # Time step mass thresholds for iSnobal
         self.mass_thresh = []
         self.mass_thresh.append(self.config['grid']['thresh_normal'])

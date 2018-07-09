@@ -86,6 +86,39 @@ def open_init_files(myawsm, options, dem):
     # -------------------------------------------------------------------------
     # read the required variables in
     init = {}
+
+    # first check to see if we have an init file at all
+    if myawsm.init_file is not None or myawsm.prev_mod_file is not None:
+        raise IOError('When trying to run iPysnobal, use [ipysnobal initial conditions]'
+                      '[init_file] not [files][init_file] or [prev_mod_file]')
+    if options['initial_conditions']['file'] is None:
+        os.path.info('No init file given, using ')
+        init['x'] = myawsm.x
+        init['y'] = myawsm.y
+        if myawsm.roughness_init is not None:
+            init['z_0'] = ipw.IPW(myawsm.roughness_init).bands[1].data[:]
+        else:
+            myawsm._logger.warning('No roughness given from old init,'
+                                   ' using value of 0.005 m')
+            init['z_0'] = 0.005*np.ones((myawsm.ny, myawsm.nx))
+        if myawsm.topotype == 'ipw':
+            i_dem = ipw.IPW(myawsm.fp_dem)
+            init['elevation'] = i_dem.bands[0].data[:]
+        elif myawsm.topotype == 'netcdf':
+            dem_file = nc.Dataset(myawsm.fp_dem, 'r')
+            init['elevation'] = dem_file['dem'][:]
+            dem_file.close()
+
+        init['z_s'] = np.zeros_like(init['elevation'])
+        init['rho'] = np.zeros_like(init['elevation'])
+        init['T_s_0'] = np.zeros_like(init['elevation'])
+        init['T_s'] = np.zeros_like(init['elevation'])
+        init['h2o_sat'] = np.zeros_like(init['elevation'])
+        init['mask'] = np.ones_like(init['elevation'])
+        
+        return init
+
+
     # get the initial conditions
     # if init file is a netcdf init
     if options['initial_conditions']['input_type'] == 'netcdf':

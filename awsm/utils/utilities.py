@@ -1,5 +1,6 @@
 from .gitinfo import __gitVersion__, __gitPath__
 import os
+import numpy as np
 from smrf import ipw
 import awsm
 from awsm import __version__

@@ -84,7 +84,7 @@ setup(
     package_data={'awsm':['./framework/CoreConfig.ini',
 				  './framework/recipes.ini']},
     scripts=['./scripts/awsm','./scripts/wyhr',
-			 './scripts/plot_stations_by_date', './scripts/plot_ipw'],
+			 './scripts/plot_csv', './scripts/plot_ipw'],
     install_requires=requirements,
     license="CC0 1.0",
     zip_safe=False,

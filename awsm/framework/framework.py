@@ -283,7 +283,7 @@ class AWSM():
 
         # read in update depth parameters
         self.update_depth = False
-        if 'update_depth' in self.config:
+        if 'update depth' in self.config:
             self.update_depth = self.config['update depth']['update']
         if self.update_depth:
             self.update_file = self.config['update depth']['update_file']

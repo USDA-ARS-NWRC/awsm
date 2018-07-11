@@ -1,6 +1,7 @@
 from smrf import ipw
 import numpy as np
 import os
+import copy
 import pandas as pd
 from matplotlib import pyplot as plt
 from netCDF4 import Dataset
@@ -163,7 +164,8 @@ def calc_offsets_nsteps(myawsm, update_info):
         test_start_wyhr = myawsm.start_wyhr
 
     # filter so we are in the dates
-    for un in update_info.keys():
+    update_info_copy = copy.deepcopy(update_info)
+    for un in update_info_copy.keys():
         tw = update_info[un]['wyhr']
         # get rid of updates more than a day before start date
         if tw < test_start_wyhr - 24:
@@ -532,8 +534,7 @@ def hedrick_updating_procedure(m_s, T_s_0, T_s_l, T_s, h2o_sat, density, z_s,
     D[iq2] = 0
     rho[iq2] = np.nan
 
-
-    I_lidar = np.where( (D == 0) | (np.isnan(D) ) ) # Snow-free pixels from lidar.
+    I_lidar = np.where( (D == 0.0) | (np.isnan(D) ) ) # Snow-free pixels from lidar.
     lidarDepth = tot_pix - len(I_lidar[0]) # # of pixels with snow (lidar).
     I_rho = np.where( np.isnan(rho) ) # Snow-free pixels upon importing.
     modelDensity = tot_pix - len(I_rho[0]) # # of pixels with density (model).

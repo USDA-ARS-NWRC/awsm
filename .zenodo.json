@@ -1,0 +1,50 @@
+{
+
+    "license": "other-open",
+    "title": "AWSM",
+    "version": "v0.5.0",
+    "upload_type": "software",
+    "keywords": [
+        "snow modeling",
+        "water resources",
+		    "energy balance",
+        "water supply forecasting"
+    ],
+    "creators": [
+        {
+            "affiliation": "USDA Agricultural Research Service",
+            "name": "Scott Havens",
+			"orcid": "0000-0002-6933-4485"
+        },
+        {
+            "affiliation": "USDA Agricultural Research Service",
+            "name": "Danny Marks",
+			"orcid": "0000-0003-3105-8427"
+        },
+
+        {
+            "affiliation": "USDA Agricultural Research Service",
+            "name": "Micah Sandusky",
+			"orcid": "0000-0002-4235-5876"
+        },
+        {
+            "affiliation": "USDA Agricultural Research Service",
+            "name": "Micah Johnson",
+			"orcid": "0000-0003-4029-8545"
+        },
+        {
+            "affiliation": "USDA Agricultural Research Service",
+            "name": "Mark Robertson",
+			"orcid": "0000-0003-4621-0161"
+        },
+        {
+            "affiliation": "USDA Agricultural Research Service",
+            "name": "Andrew Hedrick",
+			"orcid": "0000-0001-9511-1341"
+        }
+
+    ],
+
+    "access_right": "open"
+
+}

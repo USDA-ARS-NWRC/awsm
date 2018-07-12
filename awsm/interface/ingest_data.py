@@ -370,30 +370,31 @@ def hedrick_updating_procedure(m_s, T_s_0, T_s_l, T_s, h2o_sat, density, z_s,
     tempASO[np.isnan(D)] = 0.0
     tempiSnobal = z_s.copy()
     tuolx_mask = mask
-    tempASO[tuolx_mask == 1] = 0.0
+    tempASO[tuolx_mask == 1.0] = 0.0
     #tempiSnobal[tuolx_mask == 1] = 0.0
     I_ASO = (tempASO == 0.0)
     tempASO[I_ASO] = tempiSnobal[I_ASO]
-    tempASO[tuolx_mask == 1] = D[tuolx_mask == 1]
+    tempASO[tuolx_mask == 1.0] = D[tuolx_mask == 1.0]
     D = tempASO.copy()
 
     # Address problem of bit resolution where cells have mass and density,
     # but no depth is reported (less than minimum depth above zero).
     u_depth = np.unique(z_s)
 
-    z_s[m_s == 0] = 0.0
-    density[m_s == 0] = 0.0
-    T_s[m_s == 0] = -75.0
-    T_s_l[m_s == 0] = -75.0
-    T_s_0[m_s == 0] = -75.0
-    h2o_sat[m_s == 0] = 0.0
+    id_m_s = m_s == 0.0
+    z_s[id_m_s] = 0.0
+    density[id_m_s] = 0.0
+    T_s[id_m_s] = -75.0
+    T_s_l[id_m_s] = -75.0
+    T_s_0[id_m_s] = -75.0
+    h2o_sat[id_m_s] = 0.0
 
-    z_s[ (density > 0) & (z_s == 0) ] = u_depth[1]
+    z_s[ (density > 0.0) & (z_s == 0.0) ] = u_depth[1]
 
     rho = density.copy()
     D[D < 0.05] = 0.0 # Set shallow snow (less than 5cm) to 0.
-    D[mask == 0] = np.nan # Set out of watershed cells to NaN
-    rho[mask == 0] = np.nan # Set out of watershed cells to NaN
+    D[mask == 0.0] = np.nan # Set out of watershed cells to NaN
+    rho[mask == 0.0] = np.nan # Set out of watershed cells to NaN
     tot_pix = ncols * nrows # Get number of pixels in domain.
 
     I_model = np.where(z_s == 0) # Snow-free pixels in the model.
@@ -408,21 +409,22 @@ def hedrick_updating_procedure(m_s, T_s_0, T_s_l, T_s, h2o_sat, density, z_s,
                           Number of modeled cells with snow depth: {}\n \
                           Number of modeled cells with density: {}\n \
                           Number of lidar cells measuring snow: {}'.format(modelDepth, modelDensity, lidarDepth ) )
+    id0 = D == 0.0
 
-    rho[D == 0.0] = 0.0 # Find cells without lidar snow and set the modeled density to zero.
+    rho[id0] = 0.0 # Find cells without lidar snow and set the modeled density to zero.
     rho[rho == 0.0] = np.nan # Set all cells with no density to NaN.
 
-    T_s_0[D == 0.0] = np.nan # Find cells without lidar snow and set the active layer temp to NaN.
+    T_s_0[id0] = np.nan # Find cells without lidar snow and set the active layer temp to NaN.
     T_s_0[T_s_0 <= -75.0] = np.nan # Change isnobal no-values to NaN.
 
-    T_s_l[D == 0.0] = np.nan # Find cells without lidar snow and set the lower layer temp to NaN.
+    T_s_l[id0] = np.nan # Find cells without lidar snow and set the lower layer temp to NaN.
     T_s_l[T_s_l <= -75.0] = np.nan # Change isnobal no-values to NaN.
 
-    T_s[D == 0.0] = np.nan # Find cells without lidar snow and set the snow temp to np.nan.
+    T_s[id0] = np.nan # Find cells without lidar snow and set the snow temp to np.nan.
     T_s[T_s <= -75.0] = np.nan # Change isnobal no-values to NaN.
 
-    h2o_sat[D == 0.0] = np.nan # Find cells without lidar snow and set the h2o saturation to NaN.
-    h2o_sat[mask == 0] = np.nan
+    h2o_sat[id0] = np.nan # Find cells without lidar snow and set the h2o saturation to NaN.
+    h2o_sat[mask == 0.0] = np.nan
     # h2o_sat[h2o_sat == -75.0] = np.nan # Change isnobal no-values to NaN.
 
     I_rho = np.where( np.isnan(rho) ) # Snow-free pixels before interpolation
@@ -475,8 +477,8 @@ def hedrick_updating_procedure(m_s, T_s_0, T_s_l, T_s, h2o_sat, density, z_s,
             yl = yt - int((n1 - 1) / 2)
             yh = yt + int((n1 - 1) / 2)
             window = rho_buf[yl:yh,xl:xh]
-            qq = np.where(np.isnan(window)) # find number of pixels with a value.
-            if len(qq[0]) > 10:
+            qq = np.where(np.isfinite(window)) # find number of pixels with a value.
+            if (len(qq[0]) > 10):
                 val = np.nanmean(window[:])
                 rho[ix,iy] = val  # Interpolate for density (just a windowed mean)
                 window = T_s_0_buf[yl:yh,xl:xh]
@@ -489,14 +491,12 @@ def hedrick_updating_procedure(m_s, T_s_0, T_s_l, T_s, h2o_sat, density, z_s,
                 window = h2o_buf[yl:yh,xl:xh]
                 val = np.nanmean(window[:])
                 h2o_sat[ix,iy] = val # Interpolate for liquid water saturation
-            # what is this doing?
-            elif (np.sum(qq[0])*ncols + np.sum( qq[1])*nrows ) <= 10:
-            #else:
-                break
 
-            # if np.isnan( rho[ix,iy] ) == 0:
-            #     break
-            if not np.isnan( rho[ix,iy] ):
+            # check to see if you found a value
+            if n1 == n[-1] and np.isnan(rho[ix,iy]):
+                myawsm._logger.error('Failed to find desnity wihtin buffer')
+            # if we found a value, move on
+            if np.isfinite( rho[ix,iy] ):
                 break
 
     # ##################### hopefully fixed for loop logic below
@@ -531,7 +531,7 @@ def hedrick_updating_procedure(m_s, T_s_0, T_s_l, T_s, h2o_sat, density, z_s,
     # Find occurance where cell has depth and density but no temperature.
     # Delete snowpack from this cell.
     iq2 = (np.isnan(T_s)) & (np.isfinite(rho))
-    D[iq2] = 0
+    D[iq2] = 0.0
     rho[iq2] = np.nan
 
     I_lidar = np.where( (D == 0.0) | (np.isnan(D) ) ) # Snow-free pixels from lidar.
@@ -539,7 +539,7 @@ def hedrick_updating_procedure(m_s, T_s_0, T_s_l, T_s, h2o_sat, density, z_s,
     I_rho = np.where( np.isnan(rho) ) # Snow-free pixels upon importing.
     modelDensity = tot_pix - len(I_rho[0]) # # of pixels with density (model).
 
-    I_lidaridx = (D == 0) | (np.isnan(D) )  # Snow-free pixels from lidar.
+    I_lidaridx = (D == 0.0) | (np.isnan(D) )  # Snow-free pixels from lidar.
     I_rhoidx = np.isnan(rho)  # Snow-free pixels upon importing.
 
     myawsm._logger.debug('\nAfter Interpolation.\n \
@@ -552,18 +552,18 @@ def hedrick_updating_procedure(m_s, T_s_0, T_s_l, T_s, h2o_sat, density, z_s,
     if len(I_lidar[0]) != len(I_rho[0]):
         raise ValueError('Lidar depths do not match interpolated model densities.  Try changing buffer parameters.')
 
-    rho[I_rhoidx] = 0 # rho is the updated density map.
-    D[rho == 0] = 0 # D is lidar snow depths, I_rho is where no snow exists.
+    rho[I_rhoidx] = 0.0 # rho is the updated density map.
+    D[rho == 0.0] = 0.0 # D is lidar snow depths, I_rho is where no snow exists.
     I_25_new = D <= activeLayer # find cells with lidar depth less than 25 cm
         # These cells will have the corresponding lower layer temp changed to
         # -75 (no value) and the upper layer temp will be set to equal the
         # average snowpack temp in that cell.
-    T_s[rho == 0] = -75 # T_s is the average snow temperature in a cell. Is NaN (-75) for all rho = 0.
-    T_s_0[rho == 0] = -75 # T_s_0 is the updated active (upper) layer.  Is >0 for everywhere rho is >0.
+    T_s[rho == 0.0] = -75.0 # T_s is the average snow temperature in a cell. Is NaN (-75) for all rho = 0.
+    T_s_0[rho == 0.0] = -75.0 # T_s_0 is the updated active (upper) layer.  Is >0 for everywhere rho is >0.
     T_s_0[I_25_new] = T_s[I_25_new] # If lidar depth <= 25cm, set active layer temp to average temp of cell
-    T_s_l[I_25_new] = -75
-    T_s_l[np.isnan(T_s_l)] = -75
-    h2o_sat[rho == 0] = 0
+    T_s_l[I_25_new] = -75.0
+    T_s_l[np.isnan(T_s_l)] = -75.0
+    h2o_sat[rho == 0.0] = 0.0
 
     # grab unmasked cells again
     nmask = mask == 0

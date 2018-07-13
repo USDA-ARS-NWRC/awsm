@@ -489,14 +489,6 @@ class AWSM():
         """
         smrf_ipy.run_ipysnobal(self)
 
-    def restart_crash_image(self):
-        """
-        Restart isnobal. Calls
-        :mod: `awsm.interface.interface.restart_crash_image`
-        """
-        # modify config and run smrf
-        smin.restart_crash_image(self)
-
     def mk_directories(self):
         """
         Create all needed directories starting from the working drive

@@ -49,10 +49,9 @@ def create_smrf_config(myawsm):
     else:
         fp_smrfini = myawsm.smrfini
 
-    myawsm._logger.info('Writing the config file for SMRF')
-    generate_config(smrf_cfg, fp_smrfini)
+    myawsm._logger.info('Making SMRF config!')
 
-    return fp_smrfini
+    return smrf_cfg
 
 
 def smrfMEAS(myawsm):
@@ -71,13 +70,12 @@ def smrfMEAS(myawsm):
     # #####################################################################
     if myawsm.end_date > myawsm.start_date:
         myawsm._logger.info('Running SMRF')
-        # first create config file to run smrf
-        fp_smrfini = create_smrf_config(myawsm)
+        # first create config to run smrf
+        smrf_cfg = create_smrf_config(myawsm)
 
         start = datetime.now()
 
-        # with smrf.framework.SMRF(meas_ini_file) as s:
-        with smrf.framework.SMRF(fp_smrfini, myawsm._logger) as s:
+        with smrf.framework.SMRF(smrf_cfg, myawsm._logger) as s:
             # 2. load topo data
             s.loadTopo()
 

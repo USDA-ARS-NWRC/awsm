@@ -118,13 +118,13 @@ def run_smrf_ipysnobal(myawsm):
     Args:
         myawsm: AWSM instance
     """
-    # first create config file to run smrf
-    fp_smrfini = interface.create_smrf_config(myawsm)
+    # first create config to run smrf
+    smrf_cfg = interface.create_smrf_config(myawsm)
 
     # start = datetime.now()
 
     # initialize
-    with smrf.framework.SMRF(fp_smrfini, myawsm._logger) as s:
+    with smrf.framework.SMRF(smrf_cfg, myawsm._logger) as s:
         # if input has run_for_nsteps, make sure not to go past it
         if myawsm.run_for_nsteps is not None:
             change_in_hours = int(myawsm.run_for_nsteps *

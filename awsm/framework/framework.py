@@ -7,6 +7,7 @@ import pandas as pd
 import pytz
 import copy
 from inicheck.config import MasterConfig
+from inicheck.config import UserConfig
 from inicheck.tools import get_user_config, check_config
 from inicheck.output import print_config_report, generate_config
 
@@ -45,31 +46,44 @@ class AWSM():
     Attributes:
     """
 
-    def __init__(self, configFile):
+    def __init__(self, config):
         """
         Initialize the model, read config file, start and end date, and logging
+        Args:
+            config: string path to the config file or inicheck UserConfig instance
         """
         # read the config file and store
-        if not os.path.isfile(configFile):
-            raise Exception('Configuration file does not exist --> {}'
-                            .format(configFile))
-        try:
+        awsm_mcfg = MasterConfig(modules = 'awsm')
+        smrf_mcfg = MasterConfig(modules = 'smrf')
+
+        if isinstance(config, str):
+            if not os.path.isfile(config):
+                raise Exception('Configuration file does not exist --> {}'
+                                .format(config))
+            configFile = config
+
             try:
-                snowav_mcfg = MasterConfig(modules = 'snowav')
-                combined_mcfg = MasterConfig(modules = ['smrf','awsm','snowav'])
-            except:
-                combined_mcfg = MasterConfig(modules = ['smrf','awsm'])
+                try:
+                    snowav_mcfg = MasterConfig(modules = 'snowav')
+                    combined_mcfg = MasterConfig(modules = ['smrf','awsm','snowav'])
+                except:
+                    combined_mcfg = MasterConfig(modules = ['smrf','awsm'])
 
-            awsm_mcfg = MasterConfig(modules = 'awsm')
-            smrf_mcfg = MasterConfig(modules = 'smrf')
+                # Read in the original users config
+                self.ucfg = get_user_config(configFile, mcfg=combined_mcfg)
+                self.configFile = configFile
 
-            # Read in the original users config
-            self.ucfg = get_user_config(configFile, mcfg=combined_mcfg)
-            self.configFile = configFile
+            except UnicodeDecodeError as e:
+                print(e)
+                raise Exception(('The configuration file is not encoded in '
+                                 'UTF-8, please change and retry'))
 
-        except UnicodeDecodeError:
-            raise Exception(('The configuration file is not encoded in '
-                             'UTF-8, please change and retry'))
+        elif isinstance(config, UserConfig):
+            self.ucfg = config
+            configFile = ''
+
+        else:
+            raise Exception('Config passed to AWSM is neither file name nor UserConfig instance')
 
         # get the git version
         self.gitVersion = awsm_utils.getgitinfo()

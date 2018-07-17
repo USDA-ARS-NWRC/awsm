@@ -55,7 +55,7 @@ class StateUpdater():
         # 4. return the output_rec structure to pysnobal, either directly or by pointer
         #    because it's not super small
         # 5. Test this and test the iSnobal updating procedure
-        self.update_dates = [self.update_info[k]['date'] for k in self.update_info.keys()]
+        self.update_dates = [self.update_info[k]['date_time'] for k in self.update_info.keys()]
 
         # get necessary variables from awsm class
         self.active_layer = myawsm.active_layer
@@ -80,7 +80,13 @@ class StateUpdater():
             dt:             iPySnobal datetime of timestep
         """
 
+        # find the correct update number
+        ks = self.update_info.keys()
+        update_num = [k for k in ks if self.update_info[k]['date_time'] == dt]
+        if len(update_num) > 1:
+            raise ValueError('Something wrong in pysnobal updating date compare')
 
+        un = update_num[0]
 
         # get parameters from PySnobal
         m_s = output_rec['m_s']
@@ -93,8 +99,9 @@ class StateUpdater():
 
         # do the updating
         updated_fields = self.hedrick_updating_procedure(m_s, T_s_0, T_s_l, T_s,
-                                                    h2o_sat, density, z_s,
-                                                    x, y, update_info[])
+                                                         h2o_sat, density, z_s,
+                                                         self.x, self.y,
+                                                         update_info[un])
 
         # save the fields
         output_rec['m_s'] = updated_fields['D'] * updated_fields['rho']

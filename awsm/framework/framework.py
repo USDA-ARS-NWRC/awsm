@@ -463,7 +463,10 @@ class AWSM():
         """
         Run iSnobal with update procedure
         """
-        ingest_data.run_update_procedure(self)
+        # initialize updater
+        updater = ingest_data.StateUpdater(self)
+        # run iSnobal with updates
+        updater.run_update_procedure_isnobal(self)
 
     def run_smrf_ipysnobal(self):
         """

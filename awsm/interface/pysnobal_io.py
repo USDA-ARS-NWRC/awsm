@@ -46,7 +46,7 @@ def open_files_nc(myawsm):
     force['precip_mass'] = nc.Dataset(os.path.join(myawsm.paths, 'precip.nc'), 'r')
     force['percent_snow'] = nc.Dataset(os.path.join(myawsm.paths, 'percent_snow.nc'), 'r')
     force['snow_density'] = nc.Dataset(os.path.join(myawsm.paths, 'snow_density.nc'), 'r')
-    force['precip_temp'] = nc.Dataset(os.path.join(myawsm.paths, 'dew_point.nc'), 'r')
+    force['precip_temp'] = nc.Dataset(os.path.join(myawsm.paths, 'precip_temp.nc'), 'r')
 
     return force
 

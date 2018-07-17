@@ -17,6 +17,7 @@ from awsm.interface import ipysnobal
 from awsm.interface import interface
 from awsm.interface import initialize_model as initmodel
 from awsm.interface import pysnobal_io as io_mod
+from awsm.interface.ingest_data import StateUpdater
 import pytz
 import netCDF4 as nc
 try:
@@ -199,6 +200,11 @@ def run_smrf_ipysnobal_single(myawsm, s):
                                  'variables to run PySnobal!')
 
     # -------------------------------------
+    # initialize updater if required
+    if myawsm.update_depth:
+        updater = StateUpdater(myawsm)
+    else:
+        updater = None
     # initialize pysnobal run class
     my_pysnobal = ipysnobal.PySnobal(s.date_time,
                                      variable_list,
@@ -289,7 +295,7 @@ def run_smrf_ipysnobal_single(myawsm, s):
         if output_count == 0:
             my_pysnobal.run_single_fist_step(s)
         elif output_count > 0:
-            my_pysnobal.run_single(t, s)
+            my_pysnobal.run_single(t, s, updater)
         else:
             raise ValueError('Problem with times in run ipysnobal single')
 
@@ -324,6 +330,12 @@ def run_smrf_ipysnobal_threaded(myawsm, s):
     # -------------------------------------
     t, q = s.create_distributed_threads()
 
+    # initialize updater if required
+    if myawsm.update_depth:
+        updater = StateUpdater(myawsm)
+    else:
+        updater = None
+
     # isnobal thread
     t.append(ipysnobal.QueueIsnobal(q, s.date_time,
                                     s.thread_variables,
@@ -337,7 +349,8 @@ def run_smrf_ipysnobal_threaded(myawsm, s):
                                     s.topo.ny,
                                     myawsm.soil_temp,
                                     myawsm._logger,
-                                    myawsm.tzinfo))
+                                    myawsm.tzinfo,
+                                    updater))
 
     # the cleaner
     t.append(queue.QueueCleaner(s.date_time, q))

@@ -24,7 +24,14 @@ Make function to write the update to init file.
 Make outer function to loop through each function, output and reassign init file, kick off isnobal runs, call
 updates, and so on
 """
-
+# what we need to do here is
+# X 1. Initialize updater in pysnobal function (smrf_pysnobal, pysnobal, whatever)
+#   if and only if we want to do the dang updates
+# X 2. figure out how to compare current timestep to the update timesteps
+# X 3. call the do_update_pysnobal if we are on that time_step
+# X 4. return the output_rec structure to pysnobal, either directly or by pointer
+#    because it's not super small
+# 5. Test this and test the iSnobal updating procedure
 
 class StateUpdater():
     """
@@ -47,14 +54,7 @@ class StateUpdater():
         self.offsets = offsets
         self.firststeps = firststeps
 
-        # what we need to do here is
-        # 1. Initialize updater in pysnobal function (smrf_pysnobal, pysnobal, whatever)
-        #   if and only if we want to do the dang updates
-        # 2. figure out how to compare current timestep to the update timesteps
-        # 3. call the do_update_pysnobal if we are on that time_step
-        # 4. return the output_rec structure to pysnobal, either directly or by pointer
-        #    because it's not super small
-        # 5. Test this and test the iSnobal updating procedure
+        # compare
         self.update_dates = [self.update_info[k]['date_time'] for k in self.update_info.keys()]
 
         # get necessary variables from awsm class

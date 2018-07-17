@@ -82,7 +82,8 @@ class QueueIsnobal(threading.Thread):
 
     def __init__(self, queue, date_time, thread_variables, awsm_output_vars,
                  options, params, tstep_info, init,
-                 output_rec, nx, ny, soil_temp, logger, tzi):
+                 output_rec, nx, ny, soil_temp, logger, tzi,
+                 updater=None):
         """
         Args:
             queue:      dictionary of the queue
@@ -99,6 +100,7 @@ class QueueIsnobal(threading.Thread):
             soil_temp:  uniform soil temperature (float)
             logger:     initialized AWSM logger
             tzi:        time zone information
+            updater:    depth updater
         """
 
         threading.Thread.__init__(self, name='isnobal')
@@ -116,6 +118,7 @@ class QueueIsnobal(threading.Thread):
         self.soil_temp = soil_temp
         self.nthreads = self.options['output']['nthreads']
         self.tzinfo = tzi
+        self.updater = updater
 
         # get AWSM logger
         self._logger = logger
@@ -205,6 +208,11 @@ class QueueIsnobal(threading.Thread):
             input2['T_a'] += FREEZE
             input2['T_pp'] += FREEZE
             input2['T_g'] += FREEZE
+
+            if self.updater is not None:
+                if tstep in self.updater.update_dates:
+                    self.output_rec = \
+                        self.updater.do_update_pysnobal(self.output_rec, tstep)
 
             self._logger.info('running PySnobal for timestep: {}'.format(tstep))
             rt = snobal.do_tstep_grid(input1, input2,
@@ -342,7 +350,7 @@ class PySnobal():
 
         self._logger.info('Finished initializing first timestep for iPySnobal')
 
-    def run_single(self, tstep, s):
+    def run_single(self, tstep, s, updater=None):
         """
         Runs each timestep of Pysnobal when running with SMRF in non-threaded
         application.
@@ -350,6 +358,7 @@ class PySnobal():
         Args:
             tstep: datetime timestep
             s:     smrf class instance
+            updater: depth updater class
 
         """
         # pbar = progressbar.ProgressBar(max_value=len(options['time']['date_time']))
@@ -372,6 +381,12 @@ class PySnobal():
         self.input2['T_a'] += FREEZE
         self.input2['T_pp'] += FREEZE
         self.input2['T_g'] += FREEZE
+
+        # update depth if necessary
+        if updater is not None:
+            if tstep in updater.update_dates:
+                self.output_rec = \
+                    updater.do_update_pysnobal(self.output_rec, tstep)
 
         first_step = self.j
 

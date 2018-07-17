@@ -11,4 +11,4 @@ mysql-connector-python-rf==2.2.2
 mock
 matplotlib
 seaborn
-inicheck==0.2.10
+inicheck>=0.2.12

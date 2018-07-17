@@ -239,48 +239,53 @@ def run_smrf_ipysnobal_single(myawsm, s):
                                         cosz)
 
         # 1. Air temperature
-        s.distribute['air_temp'].distribute(s.data.air_temp.ix[t])
+        s.distribute['air_temp'].distribute(s.data.air_temp.loc[t])
 
         # 2. Vapor pressure
-        s.distribute['vapor_pressure'].distribute(s.data.vapor_pressure.ix[t],
-                                                  s.distribute['air_temp'].air_temp)
+        s.distribute['vapor_pressure'].distribute(s.data.vapor_pressure.loc[t],
+                                                    s.distribute['air_temp'].air_temp)
 
         # 3. Wind_speed and wind_direction
-        s.distribute['wind'].distribute(s.data.wind_speed.ix[t],
-                                        s.data.wind_direction.ix[t])
-        # self, data, dpt, time, wind, temp, mask=None
+        s.distribute['wind'].distribute(s.data.wind_speed.loc[t],
+                                           s.data.wind_direction.loc[t])
+
         # 4. Precipitation
-        s.distribute['precip'].distribute(s.data.precip.ix[t],
-                                          s.distribute['vapor_pressure'].precip_temp,
-                                          t,
-                                          s.data.wind_speed.ix[t],
-                                          s.data.air_temp.ix[t],
-                                          s.topo.mask)
+        s.distribute['precip'].distribute(s.data.precip.loc[t],
+                                            s.distribute['vapor_pressure'].dew_point,
+                                            s.distribute['vapor_pressure'].precip_temp,
+                                            s.distribute['air_temp'].air_temp,
+                                            t,
+                                            s.data.wind_speed.loc[t],
+                                            s.data.air_temp.loc[t],
+                                            s.distribute['wind'].wind_direction,
+                                            s.distribute['wind'].dir_round_cell,
+                                            s.distribute['wind'].wind_speed,
+                                            s.distribute['wind'].cellmaxus)
 
         # 5. Albedo
         s.distribute['albedo'].distribute(t,
-                                          illum_ang,
-                                          s.distribute['precip'].storm_days)
+                                             illum_ang,
+                                             s.distribute['precip'].storm_days)
 
         # 6. Solar
-        s.distribute['solar'].distribute(s.data.cloud_factor.ix[t],
-                                         illum_ang,
-                                         cosz,
-                                         azimuth,
-                                         s.distribute['precip'].last_storm_day_basin,
-                                         s.distribute['albedo'].albedo_vis,
-                                         s.distribute['albedo'].albedo_ir)
+        s.distribute['solar'].distribute(s.data.cloud_factor.loc[t],
+                                            illum_ang,
+                                            cosz,
+                                            azimuth,
+                                            s.distribute['precip'].last_storm_day_basin,
+                                            s.distribute['albedo'].albedo_vis,
+                                            s.distribute['albedo'].albedo_ir)
 
         # 7. thermal radiation
         if s.distribute['thermal'].gridded:
-            s.distribute['thermal'].distribute_thermal(s.data.thermal.ix[t],
-                                                       s.distribute['air_temp'].air_temp)
+            s.distribute['thermal'].distribute_thermal(s.data.thermal.loc[t],
+                                                          s.distribute['air_temp'].air_temp)
         else:
             s.distribute['thermal'].distribute(t,
-                                               s.distribute['air_temp'].air_temp,
-                                               s.distribute['vapor_pressure'].vapor_pressure,
-                                               s.distribute['vapor_pressure'].dew_point,
-                                               s.distribute['solar'].cloud_factor)
+                                                  s.distribute['air_temp'].air_temp,
+                                                  s.distribute['vapor_pressure'].vapor_pressure,
+                                                  s.distribute['vapor_pressure'].dew_point,
+                                                  s.distribute['solar'].cloud_factor)
 
         # 8. Soil temperature
         s.distribute['soil_temp'].distribute()

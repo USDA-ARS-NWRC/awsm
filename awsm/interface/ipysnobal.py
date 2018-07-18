@@ -15,6 +15,7 @@ except Exception as e:
     print(e)
     print('pysnobal not installed, ignoring')
 
+import pandas as pd
 import sys
 import numpy as np
 from smrf.utils import utils
@@ -209,10 +210,13 @@ class QueueIsnobal(threading.Thread):
             input2['T_pp'] += FREEZE
             input2['T_g'] += FREEZE
 
+            first_step = j
             if self.updater is not None:
-                if tstep in self.updater.update_dates:
+                if tstep.tz_localize(None) in self.updater.update_dates:
                     self.output_rec = \
-                        self.updater.do_update_pysnobal(self.output_rec, tstep)
+                        self.updater.do_update_pysnobal(self.output_rec,
+                                                        tstep.tz_localize(None))
+                    first_step = 1
 
             self._logger.info('running PySnobal for timestep: {}'.format(tstep))
             rt = snobal.do_tstep_grid(input1, input2,
@@ -220,7 +224,7 @@ class QueueIsnobal(threading.Thread):
                                       self.tstep_info,
                                       self.options['constants'],
                                       self.params,
-                                      first_step=j,
+                                      first_step=first_step,
                                       nthreads=self.nthreads)
 
             if rt != -1:
@@ -382,13 +386,16 @@ class PySnobal():
         self.input2['T_pp'] += FREEZE
         self.input2['T_g'] += FREEZE
 
+        first_step = self.j
+
         # update depth if necessary
         if updater is not None:
-            if tstep in updater.update_dates:
+            if tstep.tz_localize(None) in updater.update_dates:
+                print('doing that update thing')
                 self.output_rec = \
-                    updater.do_update_pysnobal(self.output_rec, tstep)
+                    updater.do_update_pysnobal(self.output_rec, tstep.tz_localize(None))
+                first_step = 1
 
-        first_step = self.j
 
         self._logger.info('running PySnobal for timestep: {}'.format(tstep))
         rt = snobal.do_tstep_grid(self.input1, self.input2, self.output_rec,

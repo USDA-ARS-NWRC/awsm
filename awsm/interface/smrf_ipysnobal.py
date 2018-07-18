@@ -84,14 +84,17 @@ def run_ipysnobal(myawsm):
         else:
             input2 = initmodel.get_timestep_ipw(tstep, input_list, ppt_list, myawsm)
 
+        first_step = j
         # update depth if necessary
         if updater is not None:
             if tstep in updater.update_dates:
+                start_z = output_rec['z_s'].copy()
                 output_rec = \
                     updater.do_update_pysnobal(output_rec, tstep)
+                first_step = 1
 
         rt = snobal.do_tstep_grid(input1, input2, output_rec, tstep_info,
-                                  options['constants'], params, first_step=j,
+                                  options['constants'], params, first_step=first_step,
                                   nthreads=myawsm.ipy_threads)
 
         if rt != -1:

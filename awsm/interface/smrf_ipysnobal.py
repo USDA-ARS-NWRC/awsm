@@ -67,6 +67,12 @@ def run_ipysnobal(myawsm):
         input1 = initmodel.get_timestep_ipw(options['time']['date_time'][0],
                                             input_list, ppt_list, myawsm)
 
+    # initialize updater if required
+    if myawsm.update_depth:
+        updater = StateUpdater(myawsm)
+    else:
+        updater = None
+
     myawsm._logger.info('starting PySnobal time series loop')
     j = 1
     # run PySnobal
@@ -77,7 +83,12 @@ def run_ipysnobal(myawsm):
             input2 = initmodel.get_timestep_netcdf(force, tstep)
         else:
             input2 = initmodel.get_timestep_ipw(tstep, input_list, ppt_list, myawsm)
-        # print output_rec
+
+        # update depth if necessary
+        if updater is not None:
+            if tstep in updater.update_dates:
+                output_rec = \
+                    updater.do_update_pysnobal(output_rec, tstep)
 
         rt = snobal.do_tstep_grid(input1, input2, output_rec, tstep_info,
                                   options['constants'], params, first_step=j,

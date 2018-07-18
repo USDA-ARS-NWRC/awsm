@@ -79,7 +79,7 @@ class StateUpdater():
             output_rec:     iPySnobal state variables
             dt:             iPySnobal datetime of timestep
         """
-
+        self._logger.debug('Preparing to update pysnobal')
         # find the correct update number
         ks = self.update_info.keys()
         update_num = [k for k in ks if self.update_info[k]['date_time'] == dt]
@@ -95,13 +95,13 @@ class StateUpdater():
         T_s = output_rec['T_s']
         h2o_sat = output_rec['h2o_sat']
         z_s = output_rec['z_s']
-        density = output_rec['density']
+        density = output_rec['rho']
 
         # do the updating
         updated_fields = self.hedrick_updating_procedure(m_s, T_s_0, T_s_l, T_s,
                                                          h2o_sat, density, z_s,
                                                          self.x, self.y,
-                                                         update_info[un])
+                                                         self.update_info[un])
 
         # save the fields
         output_rec['m_s'] = updated_fields['D'] * updated_fields['rho']
@@ -110,7 +110,7 @@ class StateUpdater():
         output_rec['T_s'] = updated_fields['T_s']
         output_rec['h2o_sat'] = updated_fields['h2o_sat']
         output_rec['z_s'] = updated_fields['D']
-        output_rec['density'] = updated_fields['rho']
+        output_rec['rho'] = updated_fields['rho']
 
         return output_rec
 
@@ -145,7 +145,7 @@ class StateUpdater():
 
             # perform the update and set the init file for iSnobal
             myawsm.init_file = self.do_update_isnobal(myawsm, self.update_info[k],
-                                         update_snow, x, y)
+                                         update_snow, self.x, self.y)
 
             # set nsteps
             myawsm.run_for_nsteps = self.runsteps[idu]
@@ -400,7 +400,7 @@ class StateUpdater():
             update_info: necessary update info
         Returns:
             updated_fields:  dictionary of updated fields including dem, z0, D,
-                             rho, T_s_0, T_s_l, T_s, h2o_sta, dnsity, z_s
+                             rho, T_s_0, T_s_l, T_s, h2o_sat
         """
 
         # keep a copy of the original inputs
@@ -518,7 +518,7 @@ class StateUpdater():
                               Number of lidar cells measuring snow: {2}'.format(modelDepth, modelDensity, lidarDepth ) )
 
         ##  Now find cells where lidar measured snow, but Isnobal simulated no snow:
-        I = np.where( (np.isnan(rho)) & (D > 0) )
+        I = np.where( (np.isnan(rho)) & (D > 0.0) )
         I_25 = np.where( (z_s <= (activeLayer * 1.20)) & (D >= activeLayer) ) # find cells with lidar
             # depth greater than, and iSnobal depths less than, the active layer
             # depth. Lower layer temperatures of these cells will need to be
@@ -667,6 +667,5 @@ class StateUpdater():
         updated_fields['T_s_l'] = T_s_l
         updated_fields['T_s'] = T_s
         updated_fields['h2o_sat'] = h2o_sat
-        updated_fields['z_s'] = z_s
 
         return updated_fields

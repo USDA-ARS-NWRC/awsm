@@ -6,11 +6,10 @@ from datetime import datetime
 import pandas as pd
 import pytz
 import copy
-from inicheck.config import MasterConfig
-from inicheck.config import UserConfig
+from inicheck.config import MasterConfig, UserConfig
 from inicheck.tools import get_user_config, check_config
 from inicheck.output import print_config_report, generate_config
-
+import smrf
 # make input the same as raw input if python 2
 try:
     input = raw_input
@@ -759,3 +758,75 @@ class AWSM():
         """
 
         self._logger.info('AWSM closed --> %s' % datetime.now())
+
+
+def run_awsm(config):
+    """
+    Function that runs awsm how it should be operate for full runs.
+
+    Args:
+        config: string path to the config file or inicheck UserConfig instance
+    """
+    start = datetime.now()
+
+    # 1. initialize
+    # try:
+    with AWSM(config) as a:
+
+        if a.do_forecast:
+            runtype = 'forecast'
+        else:
+            runtype = 'smrf'
+
+        if not a.config['isnobal restart']['restart_crash']:
+            # distribute data by running smrf
+            if a.do_smrf:
+                a.runSmrf()
+
+            # convert smrf output to ipw for iSnobal
+            if a.do_make_in:
+                a.nc2ipw(runtype)
+
+            if a.do_isnobal:
+                # run iSnobal
+                if a.update_depth:
+                    a.run_isnobal_update()
+                else:
+                    a.run_isnobal()
+
+            elif a.do_ipysnobal:
+                # run iPySnobal
+                a.run_ipysnobal()
+
+                # convert ipw back to netcdf for processing
+            if a.do_make_nc:
+                a.ipw2nc(runtype)
+        # if restart
+        else:
+            if a.do_isnobal:
+                # restart iSnobal from crash
+                if a.update_depth:
+                    a.run_isnobal_update()
+                else:
+                    a.run_isnobal()
+                # convert ipw back to netcdf for processing
+            elif a.do_ipysnobal:
+                # run iPySnobal
+                a.run_ipysnobal()
+
+            if a.do_make_nc:
+                a.ipw2nc(runtype)
+
+        # Run iPySnobal from SMRF in memory
+        if a.do_smrf_ipysnobal:
+            if a.daily_folders:
+                a.run_awsm_daily()
+            else:
+                a.run_smrf_ipysnobal()
+
+        # create report
+        if a.do_report:
+            a._logger.info('AWSM finished run, starting report')
+            a.do_reporting()
+
+        a._logger.info('AWSM finished in: {}'.format(datetime.now() - start))

@@ -12,7 +12,7 @@ import unittest
 import shutil
 import os
 import awsm
-from awsm.framework.framework import AWSM
+from awsm.framework.framework import run_awsm
 import numpy as np
 from netCDF4 import Dataset
 
@@ -72,11 +72,7 @@ class TestStandardRME(unittest.TestCase):
         config = os.path.join(run_dir, 'config.ini')
 
         # Run simulation
-        with AWSM(config) as a:
-            a.runSmrf()
-            a.nc2ipw('smrf')
-            a.run_isnobal()
-            a.ipw2nc('smrf')
+        run_awsm(config)
 
     def test_thickness(self):
     	"""

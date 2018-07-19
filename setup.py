@@ -102,5 +102,5 @@ setup(
     ],
     test_suite='tests',
     # tests_require=test_requirements,
-    setup_requires=setup_requirements,
+    # setup_requires=setup_requirements,
 )

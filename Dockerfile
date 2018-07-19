@@ -1,5 +1,5 @@
 # AWSM is built on SMRF
-FROM usdaarsnwrc/smrf:latest
+FROM usdaarsnwrc/smrf:develop
 
 MAINTAINER Scott Havens <scott.havens@ars.usda.gov>
 
@@ -34,7 +34,9 @@ RUN cd /code/pysnobal-master \
 
 WORKDIR /data
 
-#COPY ./docker-entrypoint.sh /
-#ENTRYPOINT ["/docker-entrypoint.sh"]
+COPY ./docker-entrypoint.sh /
+RUN chmod +x /docker-entrypoint.sh
+ENTRYPOINT ["/docker-entrypoint.sh"]
+#CMD ["python3", "/code/awsm/scripts/awsm"]
 
-ENTRYPOINT ["python3", "/code/awsm/scripts/awsm"]
+#ENTRYPOINT ["python3", "/code/awsm/scripts/awsm"]

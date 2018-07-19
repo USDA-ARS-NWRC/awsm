@@ -29,7 +29,8 @@ class AWSMTestCase(unittest.TestCase):
         self.config_file = config_file
 
         # read in the base configuration
-        self.base_config = get_user_config(config_file, modules = 'smrf')
+        self.base_config = get_user_config(config_file,
+                                           modules = ['smrf','awsm'])
 
     def tearDown(self):
         """
@@ -37,18 +38,19 @@ class AWSMTestCase(unittest.TestCase):
         """
 
         folder = os.path.join(self.test_dir, 'RME', 'output')
+        nodelete = os.path.join(folder, '.keep')
         for the_file in os.listdir(folder):
             file_path = os.path.join(folder, the_file)
-            try:
-                if os.path.isfile(file_path):
-                    os.unlink(file_path)
-                elif os.path.isdir(file_path): shutil.rmtree(file_path)
-            except Exception as e:
-                print(e)
+            if file_path != nodelete:
+                try:
+                    if os.path.isfile(file_path):
+                        os.unlink(file_path)
+                    elif os.path.isdir(file_path): shutil.rmtree(file_path)
+                except Exception as e:
+                    print(e)
 
 
-
-class TestConfigurations(SMRFTestCase):
+class TestConfigurations(AWSMTestCase):
 
     def test_base_run(self):
         """
@@ -58,8 +60,8 @@ class TestConfigurations(SMRFTestCase):
         # test the base run with the config file
         #result = run_smrf(self.config_file)
         #self.assertTrue(result)
-        self.assertTrue(False)
+        #self.assertTrue(False)
 
         # test the base run with the config file
-        result = run_smrf(self.base_config)
+        result = run_awsm(self.base_config)
         self.assertTrue(result)

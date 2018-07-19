@@ -772,61 +772,68 @@ def run_awsm(config):
     # 1. initialize
     # try:
     with AWSM(config) as a:
-
-        if a.do_forecast:
-            runtype = 'forecast'
-        else:
-            runtype = 'smrf'
-
-        if not a.config['isnobal restart']['restart_crash']:
-            # distribute data by running smrf
-            if a.do_smrf:
-                a.runSmrf()
-
-            # convert smrf output to ipw for iSnobal
-            if a.do_make_in:
-                a.nc2ipw(runtype)
-
-            if a.do_isnobal:
-                # run iSnobal
-                if a.update_depth:
-                    a.run_isnobal_update()
-                else:
-                    a.run_isnobal()
-
-            elif a.do_ipysnobal:
-                # run iPySnobal
-                a.run_ipysnobal()
-
-                # convert ipw back to netcdf for processing
-            if a.do_make_nc:
-                a.ipw2nc(runtype)
-        # if restart
-        else:
-            if a.do_isnobal:
-                # restart iSnobal from crash
-                if a.update_depth:
-                    a.run_isnobal_update()
-                else:
-                    a.run_isnobal()
-                # convert ipw back to netcdf for processing
-            elif a.do_ipysnobal:
-                # run iPySnobal
-                a.run_ipysnobal()
-
-            if a.do_make_nc:
-                a.ipw2nc(runtype)
-
-        # Run iPySnobal from SMRF in memory
-        if a.do_smrf_ipysnobal:
-            if a.daily_folders:
-                a.run_awsm_daily()
+        try:
+            if a.do_forecast:
+                runtype = 'forecast'
             else:
-                a.run_smrf_ipysnobal()
+                runtype = 'smrf'
 
-        # create report
-        if a.do_report:
-            a._logger.info('AWSM finished run, starting report')
-            a.do_reporting()
+            if not a.config['isnobal restart']['restart_crash']:
+                # distribute data by running smrf
+                if a.do_smrf:
+                    a.runSmrf()
 
-        a._logger.info('AWSM finished in: {}'.format(datetime.now() - start))
+                # convert smrf output to ipw for iSnobal
+                if a.do_make_in:
+                    a.nc2ipw(runtype)
+
+                if a.do_isnobal:
+                    # run iSnobal
+                    if a.update_depth:
+                        a.run_isnobal_update()
+                    else:
+                        a.run_isnobal()
+
+                elif a.do_ipysnobal:
+                    # run iPySnobal
+                    a.run_ipysnobal()
+
+                    # convert ipw back to netcdf for processing
+                if a.do_make_nc:
+                    a.ipw2nc(runtype)
+            # if restart
+            else:
+                if a.do_isnobal:
+                    # restart iSnobal from crash
+                    if a.update_depth:
+                        a.run_isnobal_update()
+                    else:
+                        a.run_isnobal()
+                    # convert ipw back to netcdf for processing
+                elif a.do_ipysnobal:
+                    # run iPySnobal
+                    a.run_ipysnobal()
+
+                if a.do_make_nc:
+                    a.ipw2nc(runtype)
+
+            # Run iPySnobal from SMRF in memory
+            if a.do_smrf_ipysnobal:
+                if a.daily_folders:
+                    a.run_awsm_daily()
+                else:
+                    a.run_smrf_ipysnobal()
+
+            # create report
+            if a.do_report:
+                a._logger.info('AWSM finished run, starting report')
+                a.do_reporting()
+
+                a._logger.info('AWSM finished in: {}'.format(datetime.now() - start))
+
+            success = True
+            return success
+
+        except Exception as e:
+            a._logger.error(e)
+            return False

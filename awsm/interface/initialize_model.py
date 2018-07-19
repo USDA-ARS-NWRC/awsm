@@ -92,7 +92,7 @@ def open_init_files(myawsm, options, dem):
         raise IOError('When trying to run iPysnobal, use [ipysnobal initial conditions]'
                       '[init_file] not [files][init_file] or [prev_mod_file]')
     if options['initial_conditions']['file'] is None:
-        os.path.info('No init file given, using ')
+        myawsm._logger.info('No init file given, using zero fields')
         init['x'] = myawsm.x
         init['y'] = myawsm.y
         if myawsm.roughness_init is not None:
@@ -115,7 +115,7 @@ def open_init_files(myawsm, options, dem):
         init['T_s'] = np.zeros_like(init['elevation'])
         init['h2o_sat'] = np.zeros_like(init['elevation'])
         init['mask'] = np.ones_like(init['elevation'])
-        
+
         return init
 
 
@@ -695,7 +695,11 @@ def get_args(myawsm):
     config['inputs']['soil_temp'] = myawsm.soil_temp
 
     config['initial_conditions'] = {}
-    config['initial_conditions']['file'] = os.path.abspath(myawsm.config['ipysnobal initial conditions']['init_file'])
+    if myawsm.config['ipysnobal initial conditions']['init_file'] is not None:
+        config['initial_conditions']['file'] = os.path.abspath(myawsm.config['ipysnobal initial conditions']['init_file'])
+    else:
+        config['initial_conditions']['file'] = None
+
     config['initial_conditions']['input_type'] = myawsm.ipy_init_type.lower()
     if 'restart' in myawsm.config['ipysnobal initial conditions']:
         config['initial_conditions']['restart'] = myawsm.config['ipysnobal initial conditions']['restart']

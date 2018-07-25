@@ -10,28 +10,9 @@ from collections import OrderedDict
 import glob
 
 from smrf.utils import utils
-# ###outline
-"""
-Initialize the updates, stick them in a dictionary or list with the key as the
-update date. Only keep ones that are in the daterange.
-In this step, make a list of nsteps to run isnobal (between each update and at the end)
 
-Make function to take in last update depths and all necessary bands and do the update
-and return necessary bands
-
-Make function to write the update to init file.
-
-Make outer function to loop through each function, output and reassign init file, kick off isnobal runs, call
-updates, and so on
-"""
-# what we need to do here is
-# X 1. Initialize updater in pysnobal function (smrf_pysnobal, pysnobal, whatever)
-#   if and only if we want to do the dang updates
-# X 2. figure out how to compare current timestep to the update timesteps
-# X 3. call the do_update_pysnobal if we are on that time_step
-# X 4. return the output_rec structure to pysnobal, either directly or by pointer
-#    because it's not super small
-# 5. Test this and test the iSnobal updating procedure
+C_TO_K = 273.16
+FREEZE = C_TO_K
 
 class StateUpdater():
     """
@@ -90,9 +71,9 @@ class StateUpdater():
 
         # get parameters from PySnobal
         m_s = output_rec['m_s']
-        T_s_0 = output_rec['T_s_0']
-        T_s_l = output_rec['T_s_l']
-        T_s = output_rec['T_s']
+        T_s_0 = output_rec['T_s_0'] - FREEZE
+        T_s_l = output_rec['T_s_l'] - FREEZE
+        T_s = output_rec['T_s'] - FREEZE
         h2o_sat = output_rec['h2o_sat']
         z_s = output_rec['z_s']
         density = output_rec['rho']
@@ -105,9 +86,9 @@ class StateUpdater():
 
         # save the fields
         output_rec['m_s'] = updated_fields['D'] * updated_fields['rho']
-        output_rec['T_s_0'] = updated_fields['T_s_0']
-        output_rec['T_s_l'] = updated_fields['T_s_l']
-        output_rec['T_s'] = updated_fields['T_s']
+        output_rec['T_s_0'] = updated_fields['T_s_0'] + FREEZE
+        output_rec['T_s_l'] = updated_fields['T_s_l'] + FREEZE
+        output_rec['T_s'] = updated_fields['T_s'] + FREEZE
         output_rec['h2o_sat'] = updated_fields['h2o_sat']
         output_rec['z_s'] = updated_fields['D']
         output_rec['rho'] = updated_fields['rho']

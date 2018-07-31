@@ -58,9 +58,9 @@ class TestConfigurations(AWSMTestCase):
         """
 
         # test the base run with the config file
-        #result = run_smrf(self.config_file)
-        #self.assertTrue(result)
-        #self.assertTrue(False)
+        result = run_awsm(self.config_file)
+        self.assertTrue(result)
+        # self.assertTrue(False)
 
         # test the base run with the config file
         result = run_awsm(self.base_config)

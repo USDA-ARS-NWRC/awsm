@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 
 """
-test_full_smrf
+test_awsm
 ----------------------------------
 
-Tests for an entire smrf run. The SMRF integration run!
+Tests for an entire awsm run. The AWSM integration run!
 """
 
 import unittest
@@ -15,7 +15,7 @@ import awsm
 from awsm.framework.framework import run_awsm
 import numpy as np
 from netCDF4 import Dataset
-
+import matplotlib.pyplot as plt
 
 def compare_image(v_name,gold_image,test_image):
     """
@@ -29,12 +29,16 @@ def compare_image(v_name,gold_image,test_image):
         Boolean: Whether the two images were the same
     """
 
-    d1 = Dataset(gold_image)
+    d1 = Dataset(gold_image, 'r')
     gold = d1.variables[v_name][:]
+    d1.close()
 
-    d2 = Dataset(test_image)
+    d2 = Dataset(test_image, 'r')
     rough = d2.variables[v_name][:]
+    d2.close()
+
     result = np.abs(gold-rough)
+
     return  not np.any(result>0.0)
 
 
@@ -65,9 +69,10 @@ class TestStandardRME(unittest.TestCase):
 
         # Remove any potential files to ensure fresh run
         if os.path.isdir(self.output):
-            for f in [self.output_snow,self.output_em]:
-                if os.path.isfile(f):
-                    os.remove(f)
+            shutil.rmtree(self.output)
+            # for f in [self.output_snow,self.output_em]:
+            #     if os.path.isfile(f):
+            #         os.remove(f)
 
         config = os.path.join(run_dir, 'config.ini')
 

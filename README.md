@@ -5,6 +5,9 @@
 [![DOI](https://readthedocs.org/projects/awsm/badge/)](https://awsm.readthedocs.io)
 [![Docker Build Status](https://img.shields.io/docker/build/usdaarsnwrc/awsm.svg)](https://hub.docker.com/r/usdaarsnwrc/awsm/)
 [![Docker Automated build](https://img.shields.io/docker/automated/usdaarsnwrc/awsm.svg)](https://hub.docker.com/r/usdaarsnwrc/awsm/)
+[![Coverage Status](https://coveralls.io/repos/github/USDA-ARS-NWRC/awsm/badge.svg?branch=HEAD)](https://coveralls.io/github/USDA-ARS-NWRC/awsm?branch=HEAD)
+[![Build Status](https://travis-ci.org/USDA-ARS-NWRC/awsm.svg?branch=devel)](https://travis-ci.org/USDA-ARS-NWRC/awsm)
+
 
 Automated Water Supply Model (AWSM) was developed at the USDA Agricultural
 Research Service (ARS) in Boise, ID. AWSM was designed to streamline the work

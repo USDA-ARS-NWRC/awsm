@@ -12,7 +12,9 @@ elif [ "$1" = "test" ]; then
     cd /code/awsm
     coverage run --source awsm setup.py test
 
-    coverage report --fail-under=70
+    coverage report --fail-under=40
+    coveralls
+    exit 0
 
 elif [ ! -x "$1" ]; then
     echo "Run AWSM with config file"

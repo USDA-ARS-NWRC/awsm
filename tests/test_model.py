@@ -61,34 +61,37 @@ class TestModel(AWSMTestCase):
         result = run_awsm(config)
         self.assertTrue(result)
 
-    # def test_smrf_pysnobal_single(self):
-    #     """ Test smrf passing variables to PySnobal """
-    #
-    #     config = deepcopy(self.base_config)
-    #     config.raw_cfg['awsm master']['run_smrf'] = False
-    #     config.raw_cfg['awsm master']['make_in'] = False
-    #     config.raw_cfg['awsm master']['run_smrf_ipysnobal'] = True
-    #     config.raw_cfg['system']['threading'] = False
-    #
-    #     config.apply_recipes()
-    #     config = cast_all_variables(config, config.mcfg)
-    #
-    #     self.assertTrue(config.raw_cfg['awsm master']['run_smrf_ipysnobal'])
-    #
-    #     result = run_awsm(config)
-    #     self.assertTrue(result)
-    #
-    # def test_smrf_pysnobal_thread(self):
-    #     """  Test smrf passing variables to PySnobal threaded """
-    #
-    #     config = deepcopy(self.base_config)
-    #     config.raw_cfg['awsm master']['run_smrf'] = False
-    #     config.raw_cfg['awsm master']['make_in'] = False
-    #     config.raw_cfg['awsm master']['run_smrf_ipysnobal'] = True
-    #     config.raw_cfg['system']['threading'] = True
-    #
-    #     config.apply_recipes()
-    #     config = cast_all_variables(config, config.mcfg)
-    #
-    #     result = run_awsm(config)
-    #     self.assertTrue(result)
+    def test_smrf_pysnobal_single(self):
+        """ Test smrf passing variables to PySnobal """
+
+        config = deepcopy(self.base_config)
+        config.raw_cfg['awsm master']['run_smrf'] = False
+        config.raw_cfg['awsm master']['make_in'] = False
+        config.raw_cfg['awsm master']['run_smrf_ipysnobal'] = True
+        config.raw_cfg['awsm master']['run_ipysnobal'] = False
+        config.raw_cfg['system']['threading'] = False
+
+        config.apply_recipes()
+        config = cast_all_variables(config, config.mcfg)
+
+        self.assertTrue(config.raw_cfg['awsm master']['run_smrf_ipysnobal'])
+        self.assertTrue(config.raw_cfg['awsm master']['run_ipysnobal'] == False)
+
+        result = run_awsm(config)
+        self.assertTrue(result)
+
+    def test_smrf_pysnobal_thread(self):
+        """  Test smrf passing variables to PySnobal threaded """
+
+        config = deepcopy(self.base_config)
+        config.raw_cfg['awsm master']['run_smrf'] = False
+        config.raw_cfg['awsm master']['make_in'] = False
+        config.raw_cfg['awsm master']['run_smrf_ipysnobal'] = True
+        config.raw_cfg['awsm master']['run_ipysnobal'] = False
+        config.raw_cfg['system']['threading'] = True
+
+        config.apply_recipes()
+        config = cast_all_variables(config, config.mcfg)
+
+        result = run_awsm(config)
+        self.assertTrue(result)

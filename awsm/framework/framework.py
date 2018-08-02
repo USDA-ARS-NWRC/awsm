@@ -205,21 +205,10 @@ class AWSM():
 
         # ################ Topo data for iSnobal ##################
         # get topo stats
-        self.topo = mytopo(self.config['topo'], self._logger)
-        # assign topo stats
-        # self.u = int(ts['u'])
-        # self.v = int(ts['v'])
-        # self.du = int(ts['du'])
-        # self.dv = int(ts['dv'])
-        # self.nx = int(ts['nx'])
-        # self.ny = int(ts['ny'])
-        # self.units = ts['units']
+        self.topo = mytopo(self.config['topo'])
         self.csys = self.config['grid']['csys']
         self.nbits = int(self.config['grid']['nbits'])
         self.soil_temp = self.config['soil_temp']['temp']
-
-        self.x = ts['x']
-        self.y = ts['y']
 
         # Time step mass thresholds for iSnobal
         self.mass_thresh = []

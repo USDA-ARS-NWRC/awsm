@@ -2,6 +2,7 @@ from smrf import ipw
 import numpy as np
 import os
 import logging
+from netCDF4 import Dataset
 
 
 class topo():
@@ -29,10 +30,10 @@ class topo():
 
     images = ['dem', 'mask']
 
-    def __init__(self, topoConfig, logger):
+    def __init__(self, topoConfig):
         self.topoConfig = topoConfig
 
-        logger.debug('Reading in topo info for AWSM')
+        #logger.debug('Reading in topo info for AWSM')
         # read images
         img_type = self.topoConfig['type']
         if img_type == 'ipw':
@@ -40,7 +41,7 @@ class topo():
         elif img_type == 'netcdf':
             self.readNetCDF()
 
-        logger.debug('Done reading in topo info for AWSM')
+        #logger.debug('Done reading in topo info for AWSM')
 
     def readImages(self):
         """

@@ -32,6 +32,7 @@ from awsm.interface import interface as smin
 from awsm.interface import smrf_ipysnobal as smrf_ipy
 from awsm.interface import ingest_data
 from awsm.utils import utilities as awsm_utils
+from awsm.data.topo import topo as mytopo
 import awsm.reporting.reportingtools as retools
 
 class AWSM():
@@ -201,23 +202,18 @@ class AWSM():
 
         # ################ Topo information ##################
         self.topotype = self.config['topo']['type']
-        # pull in location of the dem
-        if self.topotype == 'ipw':
-            self.fp_dem = os.path.abspath(self.config['topo']['dem'])
-        elif self.topotype == 'netcdf':
-            self.fp_dem = os.path.abspath(self.config['topo']['filename'])
 
-        # ################ Grid data for iSnobal ##################
+        # ################ Topo data for iSnobal ##################
         # get topo stats
-        ts = awsm_utils.get_topo_stats(self.fp_dem, filetype=self.topotype)
+        self.topo = mytopo(self.config['topo'], self._logger)
         # assign topo stats
-        self.u = int(ts['u'])
-        self.v = int(ts['v'])
-        self.du = int(ts['du'])
-        self.dv = int(ts['dv'])
-        self.nx = int(ts['nx'])
-        self.ny = int(ts['ny'])
-        self.units = ts['units']
+        # self.u = int(ts['u'])
+        # self.v = int(ts['v'])
+        # self.du = int(ts['du'])
+        # self.dv = int(ts['dv'])
+        # self.nx = int(ts['nx'])
+        # self.ny = int(ts['ny'])
+        # self.units = ts['units']
         self.csys = self.config['grid']['csys']
         self.nbits = int(self.config['grid']['nbits'])
         self.soil_temp = self.config['soil_temp']['temp']

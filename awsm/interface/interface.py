@@ -101,20 +101,13 @@ def make_init_file(myawsm, offset):
     i_out = ipw.IPW()
 
     # making dem band
-    if myawsm.topotype == 'ipw':
-        i_dem = ipw.IPW(myawsm.fp_dem)
-        i_out.new_band(i_dem.bands[0].data)
-    elif myawsm.topotype == 'netcdf':
-        dem_file = nc.Dataset(myawsm.fp_dem, 'r')
-        i_dem = dem_file['dem'][:]
-        i_out.new_band(i_dem)
-        dem_file.close()
+    i_out.new_band(myawsm.topo.dem)
 
     if myawsm.mask_isnobal:
         i_mask = ipw.IPW(myawsm.fp_mask).bands[0].data
         myawsm._logger.info('Masking init file')
     else:
-        i_mask = np.ones((myawsm.ny, myawsm.nx))
+        i_mask = np.ones((myawsm.topo.ny, myawsm.topo.nx))
 
     if offset > 0:
         # use given rougness from old init file if given
@@ -123,7 +116,7 @@ def make_init_file(myawsm, offset):
         else:
             myawsm._logger.warning('No roughness given from old init,'
                                    ' using value of 0.005 m')
-            i_out.new_band(0.005*np.ones((myawsm.ny, myawsm.nx)))
+            i_out.new_band(0.005*np.ones((myawsm.topo.ny, myawsm.topo.nx)))
 
         # if we have a previous mod file
         if myawsm.prev_mod_file is not None:
@@ -149,27 +142,29 @@ def make_init_file(myawsm, offset):
 
             i_out.new_band(0.0*i_mask)  # percent saturation
 
-        i_out.add_geo_hdr([myawsm.u, myawsm.v], [myawsm.du, myawsm.dv],
-                          myawsm.units, myawsm.csys)
+        i_out.add_geo_hdr([myawsm.topo.u, myawsm.topo.v],
+                          [myawsm.topo.du, myawsm.topo.dv],
+                          myawsm.topo.units, myawsm.csys)
         i_out.write(os.path.join(myawsm.pathinit,
                                  'init%04d.ipw' % (offset)), myawsm.nbits)
 
     else:
-        zs0 = np.zeros((myawsm.ny, myawsm.nx))
+        zs0 = np.zeros((myawsm.topo.ny, myawsm.topo.nx))
         if myawsm.roughness_init is not None:
             i_out.new_band(ipw.IPW(myawsm.roughness_init).bands[1].data)
         else:
             myawsm._logger.warning('No roughness given from old init,'
                                    ' using value of 0.005 m')
-            i_out.new_band(0.005*np.ones((myawsm.ny, myawsm.nx)))
+            i_out.new_band(0.005*np.ones((myawsm.topo.ny, myawsm.topo.nx)))
         #             i_out.new_band(i_rl0.bands[0].data)
         i_out.new_band(zs0)  # zeros snow cover depth
         i_out.new_band(zs0)  # 0density
         i_out.new_band(zs0)  # 0ts active
         i_out.new_band(zs0)  # 0ts avg
         i_out.new_band(zs0)  # 0liquid
-        i_out.add_geo_hdr([myawsm.u, myawsm.v], [myawsm.du, myawsm.dv],
-                          myawsm.units, myawsm.csys)
+        i_out.add_geo_hdr([myawsm.topo.u, myawsm.topo.v],
+                          [myawsm.topo.du, myawsm.topo.dv],
+                          myawsm.topo.units, myawsm.csys)
 
     init_file = os.path.join(myawsm.pathinit,
                              'init%04d.ipw' % (offset))
@@ -195,21 +190,14 @@ def make_init_restart(myawsm):
     # ########################################################
 
     # making dem band
-    if myawsm.topotype == 'ipw':
-        i_dem = ipw.IPW(myawsm.fp_dem)
-        i_out.new_band(i_dem.bands[0].data)
-    elif myawsm.topotype == 'netcdf':
-        dem_file = nc.Dataset(myawsm.fp_dem, 'r')
-        i_dem = dem_file['dem'][:]
-        i_out.new_band(i_dem)
-        dem_file.close()
+    i_out.new_band(myawsm.topo.dem)
 
     if myawsm.roughness_init is not None:
         i_out.new_band(ipw.IPW(myawsm.roughness_init).bands[1].data)
     else:
         myawsm._logger.warning('No roughness given from old init, '
                                'using value of 0.005 m')
-        i_out.new_band(0.005*np.ones((myawsm.ny, myawsm.nx)))
+        i_out.new_band(0.005*np.ones((myawsm.topo.ny, myawsm.topo.nx)))
 
     # pull apart crash image and zero out values at index with depths < thresh
     z_s = i_crash.bands[0].data  # snow depth
@@ -247,8 +235,9 @@ def make_init_restart(myawsm):
     i_out.new_band(T_s_l)
     i_out.new_band(T_s)
     i_out.new_band(h20_sat)
-    i_out.add_geo_hdr([myawsm.u, myawsm.v], [myawsm.du, myawsm.dv],
-                      myawsm.units, myawsm.csys)
+    i_out.add_geo_hdr([myawsm.topo.u, myawsm.topo.v],
+                      [myawsm.topo.du, myawsm.topo.dv],
+                      myawsm.topo.units, myawsm.csys)
 
     myawsm._logger.info('Writing to {}'.format(fp_new_init))
     i_out.write(fp_new_init, myawsm.nbits)

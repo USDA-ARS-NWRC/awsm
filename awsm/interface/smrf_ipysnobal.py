@@ -36,14 +36,8 @@ def run_ipysnobal(myawsm):
 
     """
     # initialize ipysnobal state
-    # read dem if ipw file
-    if myawsm.config['topo']['type'] == 'ipw':
-        dem = ipw.IPW(myawsm.config['topo']['dem']).bands[0].data
-    # read dem if netcdf file
-    if myawsm.config['topo']['type'] == 'netcdf':
-        demf = nc.Dataset(myawsm.config['topo']['filename'], 'r')
-        dem = demf.variables['dem'][:]
-        demf.close()
+    # get dem
+    dem = myawsm.topo.dem
 
     myawsm._logger.info('Initializing from files')
     options, params, tstep_info, init, output_rec = \

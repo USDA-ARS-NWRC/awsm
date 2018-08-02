@@ -288,8 +288,9 @@ def do_update_isnobal(myawsm, update_info, update_snow, x, y):
     i_out.new_band(updated_fields['T_s'])
     i_out.new_band(updated_fields['h2o_sat'])
     #i_out.add_geo_hdr([u, v], [du, dv], units, csys)
-    i_out.add_geo_hdr([myawsm.u, myawsm.v], [myawsm.du, myawsm.dv],
-                      myawsm.units, myawsm.csys)
+    i_out.add_geo_hdr([myawsm.topo.u, myawsm.topo.v],
+                      [myawsm.topo.du, myawsm.topo.dv],
+                      myawsm.topo.units, myawsm.csys)
     i_out.write(init_file, myawsm.nbits)
 
     ##  Import newly-created init file and look at images to make sure they line up:
@@ -334,12 +335,7 @@ def hedrick_updating_procedure(m_s, T_s_0, T_s_l, T_s, h2o_sat, density, z_s,
     activeLayer = myawsm.active_layer
     Buf = myawsm.update_buffer  # Buffer size (in cells) for the interpolation to search over.
     # get dem and roughness
-    if myawsm.topotype == 'ipw':
-        i_dem = ipw.IPW(myawsm.fp_dem)
-        dem = i_dem.bands[0].data
-    elif myawsm.topotype == 'netcdf':
-        dem_file = nc.Dataset(myawsm.fp_dem, 'r')
-        dem = dem_file['dem'][:]
+    dem = myawsm.topo.dem
 
     if myawsm.roughness_init is not None:
         z0 = ipw.IPW(myawsm.roughness_init).bands[1].data
@@ -348,7 +344,7 @@ def hedrick_updating_procedure(m_s, T_s_0, T_s_l, T_s, h2o_sat, density, z_s,
     else:
         myawsm._logger.warning('No roughness given from old init,'
                                ' using value of 0.005 m')
-        z0 = 0.005*np.ones((myawsm.ny, myawsm.nx))
+        z0 = 0.005*np.ones((myawsm.topo.ny, myawsm.topo.nx))
 
     # New depth field
     D = update_info['depth']

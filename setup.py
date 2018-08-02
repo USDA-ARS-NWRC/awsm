@@ -78,7 +78,8 @@ setup(
 			  'awsm.framework',
               'awsm.knn',
 			  'awsm.utils',
-			  'awsm.reporting'
+			  'awsm.reporting',
+			  'awsm.data'
 			  ],
     include_package_data=True,
     package_data={'awsm':['./framework/CoreConfig.ini',

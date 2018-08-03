@@ -18,8 +18,10 @@ class TestModel(AWSMTestCase):
         config.raw_cfg['awsm master']['run_isnobal'] = True
         config.raw_cfg['awsm master']['make_nc'] = True
         config.raw_cfg['awsm master']['mask_isnobal'] = True
+        config.raw_cfg['awsm master']['run_ipysnobal'] = False
 
         config.apply_recipes()
+
         config = cast_all_variables(config, config.mcfg)
 
 
@@ -27,6 +29,36 @@ class TestModel(AWSMTestCase):
         self.assertTrue(config.raw_cfg['awsm master']['run_isnobal'] == True)
 
         result = can_i_run_awsm(config)
+        self.assertTrue(result)
+
+    def test_isnobal_restart(self):
+        """ Test standard iSnobal with crash restart """
+
+        config = deepcopy(self.base_config)
+
+        config.raw_cfg['awsm master']['run_isnobal'] = True
+        config.raw_cfg['awsm master']['make_nc'] = False
+        config.raw_cfg['awsm master']['run_ipysnobal'] = False
+
+        config.apply_recipes()
+
+        config = cast_all_variables(config, config.mcfg)
+
+        result = run_awsm(config)
+
+        # run again with restart
+        config = deepcopy(self.base_config)
+
+        config.raw_cfg['awsm master']['run_isnobal'] = True
+        config.raw_cfg['awsm master']['make_nc'] = False
+        config.raw_cfg['awsm master']['run_ipysnobal'] = False
+        config.raw_cfg['isnobal restart']['restart_crash'] = True
+        config.raw_cfg['isnobal restart']['wyh_restart_output'] = 1464
+
+        config.apply_recipes()
+
+        config = cast_all_variables(config, config.mcfg)
+
         self.assertTrue(result)
 
     def test_pysnobal(self):

@@ -142,12 +142,6 @@ def make_init_file(myawsm, offset):
 
             i_out.new_band(0.0*i_mask)  # percent saturation
 
-        i_out.add_geo_hdr([myawsm.topo.u, myawsm.topo.v],
-                          [myawsm.topo.du, myawsm.topo.dv],
-                          myawsm.topo.units, myawsm.csys)
-        i_out.write(os.path.join(myawsm.pathinit,
-                                 'init%04d.ipw' % (offset)), myawsm.nbits)
-
     else:
         zs0 = np.zeros((myawsm.topo.ny, myawsm.topo.nx))
         if myawsm.roughness_init is not None:
@@ -162,9 +156,10 @@ def make_init_file(myawsm, offset):
         i_out.new_band(zs0)  # 0ts active
         i_out.new_band(zs0)  # 0ts avg
         i_out.new_band(zs0)  # 0liquid
-        i_out.add_geo_hdr([myawsm.topo.u, myawsm.topo.v],
-                          [myawsm.topo.du, myawsm.topo.dv],
-                          myawsm.topo.units, myawsm.csys)
+
+    i_out.add_geo_hdr([myawsm.topo.u, myawsm.topo.v],
+                      [myawsm.topo.du, myawsm.topo.dv],
+                      myawsm.topo.units, myawsm.csys)
 
     init_file = os.path.join(myawsm.pathinit,
                              'init%04d.ipw' % (offset))

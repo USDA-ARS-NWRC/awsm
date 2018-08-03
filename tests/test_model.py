@@ -44,7 +44,7 @@ class TestModel(AWSMTestCase):
 
         config = cast_all_variables(config, config.mcfg)
 
-        result = run_awsm(config)
+        result = can_i_run_awsm(config)
 
         # run again with restart
         config = deepcopy(self.base_config)

@@ -30,17 +30,43 @@ class topo():
 
     images = ['dem', 'mask']
 
-    def __init__(self, topoConfig):
+    def __init__(self, topoConfig, mask_isnobal, do_isnobal, csys, dir_m):
+        """
+        Args:
+            topoConfig:   config section for topo from smrf config
+            mask_isnobal: Boolean for masking iSnobal
+            do_isnboal:   Boolean for running iSnobal
+            csys:         Coordinate system id
+            dir_m:        Directory in which to write mask if needed
+
+        """
         self.topoConfig = topoConfig
 
         #logger.debug('Reading in topo info for AWSM')
         # read images
-        img_type = self.topoConfig['type']
-        if img_type == 'ipw':
+        self.img_type = self.topoConfig['type']
+        if self.img_type == 'ipw':
             self.readImages()
-        elif img_type == 'netcdf':
+        elif self.img_type == 'netcdf':
             self.readNetCDF()
 
+        # assign path to mask, write mask if needed
+        # only needed if running iSnobal from ipw, not PySnobal
+        if mask_isnobal and do_isnobal:
+            if self.img_type == 'netcdf':
+                # assign path
+                self.fp_mask = os.path.join(dir_m, 'run_mask.ipw')
+                # write mask ipw file
+                i_out = ipw.IPW()
+                i_out.new_band(self.mask)
+                i_out.add_geo_hdr([self.u, self.v], [self.du, self.dv],
+                                  self.units, csys)
+                i_out.write(self.fp_mask, 16)
+
+            elif self.img_type == 'ipw':
+                self.fp_mask = self.topoConfig['mask']
+        else:
+            self.fp_mask = None
         #logger.debug('Done reading in topo info for AWSM')
 
     def readImages(self):

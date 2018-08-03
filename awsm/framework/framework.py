@@ -127,9 +127,7 @@ class AWSM():
 
         # options for masking isnobal
         self.mask_isnobal = self.config['awsm master']['mask_isnobal']
-        if self.mask_isnobal:
-            # mask file
-            self.fp_mask = os.path.abspath(self.config['topo']['mask'])
+
         # prompt for making directories
         self.prompt_dirs = self.config['awsm master']['prompt_dirs']
 
@@ -199,16 +197,6 @@ class AWSM():
                                     ' gridded input data')
                 print(self.tmp_err)
                 sys.exit()
-
-        # ################ Topo information ##################
-        self.topotype = self.config['topo']['type']
-
-        # ################ Topo data for iSnobal ##################
-        # get topo stats
-        self.topo = mytopo(self.config['topo'])
-        self.csys = self.config['grid']['csys']
-        self.nbits = int(self.config['grid']['nbits'])
-        self.soil_temp = self.config['soil_temp']['temp']
 
         # Time step mass thresholds for iSnobal
         self.mass_thresh = []
@@ -299,6 +287,18 @@ class AWSM():
 
         # Make rigid directory structure
         self.mk_directories()
+
+        # ################ Topo information ##################
+        self.topotype = self.config['topo']['type']
+
+        # ################ Topo data for iSnobal ##################
+        # get topo stats
+        self.csys = self.config['grid']['csys']
+        self.nbits = int(self.config['grid']['nbits'])
+        self.soil_temp = self.config['soil_temp']['temp']
+        # get topo class
+        self.topo = mytopo(self.config['topo'], self.mask_isnobal,
+                           self.do_isnobal, self.csys, self.pathdd)
 
         # parse reporting section and make reporting folder
         if self.do_report:
@@ -754,71 +754,80 @@ def run_awsm(config):
     """
     start = datetime.now()
 
-    # 1. initialize
-    # try:
     with AWSM(config) as a:
-        try:
-            if a.do_forecast:
-                runtype = 'forecast'
-            else:
-                runtype = 'smrf'
+        if a.do_forecast:
+            runtype = 'forecast'
+        else:
+            runtype = 'smrf'
 
-            if not a.config['isnobal restart']['restart_crash']:
-                # distribute data by running smrf
-                if a.do_smrf:
-                    a.runSmrf()
+        if not a.config['isnobal restart']['restart_crash']:
+            # distribute data by running smrf
+            if a.do_smrf:
+                a.runSmrf()
 
-                # convert smrf output to ipw for iSnobal
-                if a.do_make_in:
-                    a.nc2ipw(runtype)
+            # convert smrf output to ipw for iSnobal
+            if a.do_make_in:
+                a.nc2ipw(runtype)
 
-                if a.do_isnobal:
-                    # run iSnobal
-                    if a.update_depth:
-                        a.run_isnobal_update()
-                    else:
-                        a.run_isnobal()
-
-                elif a.do_ipysnobal:
-                    # run iPySnobal
-                    a.run_ipysnobal()
-
-                    # convert ipw back to netcdf for processing
-                if a.do_make_nc:
-                    a.ipw2nc(runtype)
-            # if restart
-            else:
-                if a.do_isnobal:
-                    # restart iSnobal from crash
-                    if a.update_depth:
-                        a.run_isnobal_update()
-                    else:
-                        a.run_isnobal()
-                    # convert ipw back to netcdf for processing
-                elif a.do_ipysnobal:
-                    # run iPySnobal
-                    a.run_ipysnobal()
-
-                if a.do_make_nc:
-                    a.ipw2nc(runtype)
-
-            # Run iPySnobal from SMRF in memory
-            if a.do_smrf_ipysnobal:
-                if a.daily_folders:
-                    a.run_awsm_daily()
+            if a.do_isnobal:
+                # run iSnobal
+                if a.update_depth:
+                    a.run_isnobal_update()
                 else:
-                    a.run_smrf_ipysnobal()
+                    a.run_isnobal()
 
-            # create report
-            if a.do_report:
-                a._logger.info('AWSM finished run, starting report')
-                a.do_reporting()
+            elif a.do_ipysnobal:
+                # run iPySnobal
+                a.run_ipysnobal()
 
-                a._logger.info('AWSM finished in: {}'.format(datetime.now() - start))
+                # convert ipw back to netcdf for processing
+            if a.do_make_nc:
+                a.ipw2nc(runtype)
+        # if restart
+        else:
+            if a.do_isnobal:
+                # restart iSnobal from crash
+                if a.update_depth:
+                    a.run_isnobal_update()
+                else:
+                    a.run_isnobal()
+                # convert ipw back to netcdf for processing
+            elif a.do_ipysnobal:
+                # run iPySnobal
+                a.run_ipysnobal()
 
-            success = True
-            return success
+            if a.do_make_nc:
+                a.ipw2nc(runtype)
 
-        except Exception as e:
-            a._logger.error(e)
-            return False
+        # Run iPySnobal from SMRF in memory
+        if a.do_smrf_ipysnobal:
+            if a.daily_folders:
+                a.run_awsm_daily()
+            else:
+                a.run_smrf_ipysnobal()
+
+        # create report
+        if a.do_report:
+            a._logger.info('AWSM finished run, starting report')
+            a.do_reporting()
+
+            a._logger.info('AWSM finished in: {}'.format(datetime.now() - start))
+
+
+
+
+def can_i_run_awsm(config):
+    """
+    Function that wraps run_awsm in try, except.
+
+    Args:
+        config: string path to the config file or inicheck UserConfig instance
+    """
+    try:
+        run_awsm(config)
+        success = True
+        return success
+
+    except Exception as e:
+        a._logger.error(e)
+        return False

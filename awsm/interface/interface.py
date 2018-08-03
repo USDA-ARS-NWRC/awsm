@@ -104,7 +104,7 @@ def make_init_file(myawsm, offset):
     i_out.new_band(myawsm.topo.dem)
 
     if myawsm.mask_isnobal:
-        i_mask = ipw.IPW(myawsm.fp_mask).bands[0].data
+        i_mask = myawsm.topo.mask
         myawsm._logger.info('Masking init file')
     else:
         i_mask = np.ones((myawsm.topo.ny, myawsm.topo.nx))
@@ -329,7 +329,7 @@ def run_isnobal(myawsm, offset=None):
         myawsm._logger.warning('Time frame has no precip!')
 
     if myawsm.mask_isnobal:
-        run_cmd += ' -m %s' % (myawsm.fp_mask)
+        run_cmd += ' -m %s' % (myawsm.topo.fp_mask)
 
     # add output frequency in hours
     run_cmd += ' -O {}'.format(int(myawsm.output_freq))

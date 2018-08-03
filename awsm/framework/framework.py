@@ -33,6 +33,7 @@ from awsm.interface import smrf_ipysnobal as smrf_ipy
 from awsm.interface import ingest_data
 from awsm.utils import utilities as awsm_utils
 from awsm.data.topo import topo as mytopo
+from awsm.data.init_model import modelInit
 import awsm.reporting.reportingtools as retools
 
 class AWSM():
@@ -108,10 +109,11 @@ class AWSM():
 
         # ################## Decide which modules to run #####################
         self.do_smrf = self.config['awsm master']['run_smrf']
-        self.do_isnobal = self.config['awsm master']['run_isnobal']
-        self.do_smrf_ipysnobal = \
-            self.config['awsm master']['run_smrf_ipysnobal']
-        self.do_ipysnobal = self.config['awsm master']['run_ipysnobal']
+        #self.do_isnobal = self.config['awsm master']['run_isnobal']
+        self.model_type = self.config['awsm master']['model_type']
+        # self.do_smrf_ipysnobal = \
+        #     self.config['awsm master']['run_smrf_ipysnobal']
+        # self.do_ipysnobal = self.config['awsm master']['run_ipysnobal']
 
         if 'gridded' in self.config:
             self.do_forecast = self.config['gridded']['forecast_flag']
@@ -204,26 +206,9 @@ class AWSM():
         self.mass_thresh.append(self.config['grid']['thresh_medium'])
         self.mass_thresh.append(self.config['grid']['thresh_small'])
 
-        # init file just for surface roughness
-        if self.config['files']['roughness_init'] is not None:
-            self.roughness_init = \
-                os.path.abspath(self.config['files']['roughness_init'])
-        else:
-            self.roughness_init = self.config['files']['roughness_init']
-
-        # point to snow ipw image for restart of run
-        if self.config['files']['prev_mod_file'] is not None:
-            self.prev_mod_file = \
-                os.path.abspath(self.config['files']['prev_mod_file'])
-        else:
-            self.prev_mod_file = None
-
-        if self.config['files']['init_file'] is not None:
-            self.init_file = os.path.abspath(self.config['files']['init_file'])
-            if self.prev_mod_file is not None:
-                raise IOError('Cannot have init file and prev mod file, pick one please.')
-        else:
-            self.init_file = None
+        # if we have a model, initialize it
+        if self.model_type is not None:
+            self.myinit = modelInit(self)
 
         # threads for running iSnobal
         self.ithreads = self.config['awsm system']['ithreads']

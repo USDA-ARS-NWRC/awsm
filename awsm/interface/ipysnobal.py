@@ -58,14 +58,10 @@ def init_from_smrf(myawsm, mysmrf=None, dem=None):
                                                   myawsm.mass_thresh)
 
     if dem is None:
-        dem = mysmrf.topo.dem
+        dem = myawsm.topo.dem
 
-    # open the files and read in data
-    if not myawsm.restart_run:
-        init = initmodel.open_init_files(myawsm, options, dem)
-    # open restart files and zero small depths
-    else:
-        init = initmodel.open_restart_files(myawsm, options, dem)
+    # get init params
+    init = myawsm.myinit.init
 
     output_rec = initmodel.initialize(params, tstep_info, init)
 

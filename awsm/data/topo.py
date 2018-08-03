@@ -29,12 +29,12 @@ class topo():
 
     images = ['dem', 'mask', 'roughness']
 
-    def __init__(self, topoConfig, mask_isnobal, do_isnobal, csys, dir_m):
+    def __init__(self, topoConfig, mask_isnobal, model_type, csys, dir_m):
         """
         Args:
             topoConfig:   config section for topo from smrf config
             mask_isnobal: Boolean for masking iSnobal
-            do_isnboal:   Boolean for running iSnobal
+            model_type:   Type of snow model
             csys:         Coordinate system id
             dir_m:        Directory in which to write mask if needed
 
@@ -51,7 +51,7 @@ class topo():
 
         # assign path to mask, write mask if needed
         # only needed if running iSnobal from ipw, not PySnobal
-        if mask_isnobal and do_isnobal:
+        if mask_isnobal and model_type == 'isnobal':
             if self.img_type == 'netcdf':
                 # assign path
                 self.fp_mask = os.path.join(dir_m, 'run_mask.ipw')

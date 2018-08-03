@@ -3,7 +3,10 @@ import numpy as np
 import os
 import logging
 from netCDF4 import Dataset
+from datetime import timedelta
 
+C_TO_K = 273.16
+FREEZE = C_TO_K
 
 """
 Outline
@@ -14,7 +17,7 @@ Outline
     --if running isnobal and init file is ipw then just passes fp to init
     --if no file then make the necessary 0 start file
 
--make_init:
+-write_init:
     --make the needed file or datatype to init the runs
     --if isnobal then write the file or just pass the fp if input was pw init
     --make init dictionary to pass to any pysnobal
@@ -22,12 +25,6 @@ Outline
 -make_backup:
     -- backup init state in netcdf file
 
-changes to the code:
--create init class
--get rid of roughness init
--consolidate init file options
--consolidate model type options
--add roughness as a topo input (needs added to smrf config and added into recipes)
 """
 
 class modelInit():
@@ -66,13 +63,10 @@ class modelInit():
         self.pathro = pathro
         # restart paramters
         self.restart_crash = cfg['isnobal restart']['restart_crash']
-        self.restart_hr = cfg['isnobal restart']['wyh wyh_restart_output']
+        self.restart_hr = cfg['isnobal restart']['wyh_restart_output']
         self.depth_thresh = cfg['isnobal restart']['depth_thresh']
         # water year hours
         self.start_wyhr = start_wyhr
-
-        # do we need to write an init file for isnobal?
-        self.write_init = False
 
         # dictionary to store init data
         self.init = {}
@@ -87,7 +81,7 @@ class modelInit():
         for key in self.init.keys():
             self.init[key] = self.init[key].astype(np.float64)
 
-        if self.model_type is in ['ipysnobal', 'smrf_ipysnobal']:
+        if self.model_type in ['ipysnobal', 'smrf_ipysnobal']:
             # convert temperatures to K
             self.init['T_s'] += FREEZE
             self.init['T_s_0'] += FREEZE
@@ -134,7 +128,7 @@ class modelInit():
         # make ipw init file
         i_out = ipw.IPW()
         i_out.new_band(self.init['elevation'])
-        i_out.new_band(self.init['z0'])
+        i_out.new_band(self.init['z_0'])
         i_out.new_band(self.init['z_s']*mask)  # snow depth
         i_out.new_band(self.init['rho']*mask)  # snow density
 
@@ -194,11 +188,11 @@ class modelInit():
 
         init['h2o_sat'] = 0.0*self.topo.mask  # percent saturatio
 
-    def get_ipw_out():
+    def get_ipw_out(self):
         """
         Set init fields for iSnobal out as init file
         """
-        i_in = ipw.IPW(self.init_file)
+        i_in = ipw.IPW(self.fp_init)
         self.init['z_s'] = i_in.bands[0].data*self.topo.mask  # snow depth
         self.init['rho'] = i_in.bands[1].data*self.topo.mask  # snow density
 
@@ -208,7 +202,7 @@ class modelInit():
 
         self.init['h2o_sat'] = i_in.bands[8].data*self.topo.mask  # percent saturatio
 
-    def get_netcdf():
+    def get_netcdf(self):
         """
         Get init fields from netcdf init file
         """
@@ -227,11 +221,11 @@ class modelInit():
 
         i.close()
 
-    def get_netcdf_out():
+    def get_netcdf_out(self):
         """
         Get init fields from output netcdf at correct time index
         """
-        i = nc.Dataset(self.init_file)
+        i = nc.Dataset(self.fp_init)
 
         # find timestep indices to grab
         time = i.variables['time'][:]

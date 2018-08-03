@@ -16,10 +16,12 @@ elif [ "$1" = "test" ]; then
     coveralls
     exit 0
 
-elif [ ! -x "$1" ]; then
+elif [[ "$1" == *.ini ]]; then
     echo "Run AWSM with config file"
+    echo "$1"
     exec $awsm "$1"
 
 else
-    exec "$1"
+    echo "$@"
+    exec "$@"
 fi

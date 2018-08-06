@@ -100,11 +100,11 @@ class modelInit():
 
         # write input file if running iSnobal and
         # not passed an iSnobal init file
-        if (self.model_type == 'isnobal') and \
-           (self.init_type != 'ipw' or self.restart_crash):
-            self.fp_init = os.path.join(pathinit,
-                                        'init%04d.ipw' % (self.start_wyhr))
-            self.write_init()
+        if (self.model_type == 'isnobal'):
+            if self.init_type != 'ipw' or self.restart_crash is True:
+                self.fp_init = os.path.join(pathinit,
+                                            'init%04d.ipw' % (self.start_wyhr))
+                self.write_init()
 
     def get_init_file(self):
         """

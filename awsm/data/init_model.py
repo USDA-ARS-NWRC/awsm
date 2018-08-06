@@ -60,6 +60,9 @@ class modelInit():
         # get parameters from awsm
         self.init_file = cfg['files']['init_file']
         self.init_type = cfg['files']['init_type']
+
+        if self.init_file is not None:
+            self.logger.info('Using {} to build model init state.'.format(self.init_file))
         # iSnobal init directory
         self.pathinit = pathinit
         # type of model run
@@ -98,7 +101,7 @@ class modelInit():
         # write input file if running iSnobal and
         # not passed an iSnobal init file
         if (self.model_type == 'isnobal') and \
-           (self.init_type is not 'ipw' or self.restart_crash):
+           (self.init_type != 'ipw' or self.restart_crash):
             self.fp_init = os.path.join(pathinit,
                                         'init%04d.ipw' % (self.start_wyhr))
             self.write_init()
@@ -209,7 +212,32 @@ class modelInit():
         self.init['T_s_l'] = i_in.bands[5].data*self.topo.mask  # lower layer temp
         self.init['T_s'] = i_in.bands[6].data*self.topo.mask  # avgerage snow temp
 
-        self.init['h2o_sat'] = i_in.bands[8].data*self.topo.mask  # percent saturatio
+        self.init['h2o_sat'] = i_in.bands[8].data*self.topo.mask  # percent saturation
+
+    def get_ipw(self):
+        """
+        Set init fields for iSnobal out as init file
+        """
+        i_in = ipw.IPW(self.init_file)
+        self.init['z_0'] = i_in.bands[1].data*self.topo.mask  # snow depth
+
+        self.logger.warning('Using roughness from iSnobal ipw init file for initializing of model!')
+
+        self.init['z_s'] = i_in.bands[2].data*self.topo.mask  # snow depth
+        self.init['rho'] = i_in.bands[3].data*self.topo.mask  # snow density
+
+        self.init['T_s_0'] = i_in.bands[4].data*self.topo.mask  # active layer temp
+
+        # get bands depending on if there is a lower layer or not
+        if len(i_in.bands) == 7:
+            self.init['T_s_l'] = i_in.bands[5].data*self.topo.mask  # lower layer temp
+            self.init['T_s'] = i_in.bands[6].data*self.topo.mask  # avgerage snow temp
+            self.init['h2o_sat'] = i_in.bands[7].data*self.topo.mask  # percent saturation
+
+        elif len(i_in.bands) == 8:
+            self.init['T_s'] = i_in.bands[5].data*self.topo.mask  # avgerage snow temp
+            self.init['h2o_sat'] = i_in.bands[6].data*self.topo.mask  # percent saturation
+
 
     def get_netcdf(self):
         """

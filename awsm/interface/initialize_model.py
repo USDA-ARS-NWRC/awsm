@@ -86,6 +86,34 @@ def open_init_files(myawsm, options, dem):
     # -------------------------------------------------------------------------
     # read the required variables in
     init = {}
+
+    # first check to see if we have an init file at all
+    if myawsm.init_file is not None or myawsm.prev_mod_file is not None:
+        raise IOError('When trying to run iPysnobal, use [ipysnobal initial conditions]'
+                      '[init_file] not [files][init_file] or [prev_mod_file]')
+    if options['initial_conditions']['file'] is None:
+        myawsm._logger.info('No init file given, using zero fields')
+        init['x'] = myawsm.topo.x
+        init['y'] = myawsm.topo.y
+        if myawsm.roughness_init is not None:
+            init['z_0'] = ipw.IPW(myawsm.roughness_init).bands[1].data[:]
+        else:
+            myawsm._logger.warning('No roughness given from old init,'
+                                   ' using value of 0.005 m')
+            init['z_0'] = 0.005*np.ones((myawsm.topo.ny, myawsm.topo.nx))
+
+        init['elevation'] = myawsm.topo.dem
+
+        init['z_s'] = np.zeros_like(init['elevation'])
+        init['rho'] = np.zeros_like(init['elevation'])
+        init['T_s_0'] = np.zeros_like(init['elevation'])
+        init['T_s'] = np.zeros_like(init['elevation'])
+        init['h2o_sat'] = np.zeros_like(init['elevation'])
+        init['mask'] = np.ones_like(init['elevation'])
+
+        return init
+
+
     # get the initial conditions
     # if init file is a netcdf init
     if options['initial_conditions']['input_type'] == 'netcdf':
@@ -149,7 +177,7 @@ def open_init_files(myawsm, options, dem):
         if myawsm.roughness_init is not None:
             init['z_0'] = ipw.IPW(myawsm.roughness_init).bands[1].data[:]  # get the roughness length
         else:
-            init['z_0'] = 0.005*np.ones((myawsm.ny, myawsm.nx))
+            init['z_0'] = 0.005*np.ones((myawsm.topo.ny, myawsm.topo.nx))
             myawsm._logger.warning('No roughness given from old init, using value of 0.005 m')
 
         init['z_s'] = i.variables['thickness'][idt, :]
@@ -159,10 +187,8 @@ def open_init_files(myawsm, options, dem):
         init['T_s_l'] = i.variables['temp_lower'][idt, :]
         init['h2o_sat'] = i.variables['water_saturation'][idt, :]
 
-        if 'mask_file' in options['initial_conditions']:
-            imask = ipw.IPW(options['initial_conditions']['mask_file'])
-            msk = imask.bands[0].data
-            init['mask'] = msk
+        if 'mask' in options['initial_conditions']:
+            init['mask'] = myawsm.topo.mask
         else:
             init['mask'] = np.ones_like(init['elevation'])
 
@@ -176,12 +202,11 @@ def open_init_files(myawsm, options, dem):
     elif options['initial_conditions']['input_type'] == 'ipw':
 
         i = ipw.IPW(options['initial_conditions']['file'])
-        if 'mask_file' in options['initial_conditions']:
-            imask = ipw.IPW(options['initial_conditions']['mask_file'])
-            msk = imask.bands[0].data
+        if 'mask' in options['initial_conditions']:
+            msk = options['initial_conditions']['mask']
 
-        x = myawsm.v + myawsm.dv*np.arange(myawsm.nx)
-        y = myawsm.u + myawsm.du*np.arange(myawsm.ny)
+        x = myawsm.topo.x
+        y = myawsm.topo.y
 
         # read the required variables in
         init = {}
@@ -202,8 +227,8 @@ def open_init_files(myawsm, options, dem):
             init['T_s_l'] = i.bands[6].data[:]
 
         # Add mask if input
-        if 'mask_file' in options['initial_conditions']:
-            init['mask'] = msk
+        if 'mask' in options['initial_conditions']:
+            init['mask'] = options['initial_conditions']['mask']
         else:
             init['mask'] = np.ones_like(init['elevation'])
 
@@ -211,12 +236,11 @@ def open_init_files(myawsm, options, dem):
     elif options['initial_conditions']['input_type'] == 'ipw_out':
         # initialize from output file and roughness init
         i = ipw.IPW(options['initial_conditions']['file'])
-        if 'mask_file' in options['initial_conditions']:
-            imask = ipw.IPW(options['initial_conditions']['mask_file'])
-            msk = imask.bands[0].data
+        if 'mask' in options['initial_conditions']:
+            msk = options['initial_conditions']['mask']
 
-        x = myawsm.v + myawsm.dv*np.arange(myawsm.nx)
-        y = myawsm.u + myawsm.du*np.arange(myawsm.ny)
+        x = myawsm.topo.x
+        y = myawsm.topo.y
 
         # read the required variables in
         init = {}
@@ -226,7 +250,7 @@ def open_init_files(myawsm, options, dem):
         if myawsm.roughness_init is not None:
             init['z_0'] = ipw.IPW(myawsm.roughness_init).bands[1].data[:]  # get the roughness length
         else:
-            init['z_0'] = 0.005*np.ones((myawsm.ny, myawsm.nx))
+            init['z_0'] = 0.005*np.ones((myawsm.topo.ny, myawsm.topo.nx))
             myawsm._logger.warning('No roughness given from old init, using value of 0.005 m')
 
         # All other variables will be assumed zero if not present
@@ -240,8 +264,8 @@ def open_init_files(myawsm, options, dem):
         init['h2o_sat'] = i.bands[8].data[:]
 
         # Add mask if input
-        if 'mask_file' in options['initial_conditions']:
-            init['mask'] = msk
+        if 'mask' in options['initial_conditions']:
+            init['mask'] = options['initial_conditions']['mask']
         else:
             init['mask'] = np.ones_like(init['elevation'])
 
@@ -428,14 +452,14 @@ def get_timestep_ipw(tstep, input_list, ppt_list, myawsm):
     if np.any(input_list == wyhr):
         i_in = ipw.IPW(os.path.join(myawsm.pathi, 'in.%04i' % (wyhr)))
         # assign soil temp
-        inpt['T_g'] = myawsm.soil_temp*np.ones((myawsm.ny, myawsm.nx))
+        inpt['T_g'] = myawsm.soil_temp*np.ones((myawsm.topo.ny, myawsm.topo.nx))
         # myawsm._logger.info('T_g: {}'.format(myawsm.soil_temp))
-        # inpt['T_g'] = -2.5*np.ones((myawsm.ny, myawsm.nx))
+        # inpt['T_g'] = -2.5*np.ones((myawsm.topo.ny, myawsm.topo.nx))
         for f, v in map_val.items():
             # if no solar data, give it zero
             if f == 5 and len(i_in.bands) < 6:
                 # myawsm._logger.info('No solar data for {}'.format(tstep))
-                inpt[v] = np.zeros((myawsm.ny, myawsm.nx))
+                inpt[v] = np.zeros((myawsm.topo.ny, myawsm.topo.nx))
             else:
                 inpt[v] = i_in.bands[f].data
     # assign ppt data if there
@@ -448,7 +472,7 @@ def get_timestep_ipw(tstep, input_list, ppt_list, myawsm):
             inpt[v] = i_ppt.bands[f].data
     else:
         for f, v in map_val_prec.items():
-            inpt[v] = np.zeros((myawsm.ny, myawsm.nx))
+            inpt[v] = np.zeros((myawsm.topo.ny, myawsm.topo.nx))
 
     # convert from C to K
     inpt['T_a'] += FREEZE
@@ -662,23 +686,19 @@ def get_args(myawsm):
     config['inputs']['soil_temp'] = myawsm.soil_temp
 
     config['initial_conditions'] = {}
-    config['initial_conditions']['file'] = os.path.abspath(myawsm.config['ipysnobal initial conditions']['init_file'])
+    if myawsm.config['ipysnobal initial conditions']['init_file'] is not None:
+        config['initial_conditions']['file'] = os.path.abspath(myawsm.config['ipysnobal initial conditions']['init_file'])
+    else:
+        config['initial_conditions']['file'] = None
+
     config['initial_conditions']['input_type'] = myawsm.ipy_init_type.lower()
     if 'restart' in myawsm.config['ipysnobal initial conditions']:
         config['initial_conditions']['restart'] = myawsm.config['ipysnobal initial conditions']['restart']
     else:
         config['initial_conditions']['restart'] = False
 
-    # if 'mask_file' in myawsm.config['ipysnobal initial conditions']:
-    #     if config['initial_conditions']['input_type'] == 'ipw' or config['initial_conditions']['input_type'] == 'ipw_out':
-    #         config['initial_conditions']['mask_file'] = myawsm.config['ipysnobal initial conditions']['mask_file']
-    #     elif config['initial_conditions']['input_type'] == 'netcdf':
-    #         myawsm._logger.error('Mask should be in netcdf, not external file')
     if myawsm.mask_isnobal:
-        if myawsm.topotype == 'ipw':
-            config['initial_conditions']['mask_file'] = myawsm.fp_mask
-        else:
-            myawsm._logger.error('Mask should be ipw to run iPySnobal')
+        config['initial_conditions']['mask'] = myawsm.topo.mask
 
     return config, point_run
 

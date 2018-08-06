@@ -41,3 +41,10 @@ History
 * SNOWAV interface established
 * API Documentation 
 
+
+0.6.0 (2018-07-13)
+------------------
+
+* Added model state updating using lidar images
+* Added a feature to enable the use of wet bulb for precip temp (mirroring SMRF)
+* Automatically detecting domain parameters from topo file

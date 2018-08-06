@@ -53,18 +53,18 @@ def plot_waterbalance(myawsm):
     Function to plot the mass balance after an AWSM run has completed
     """
 
-    u = myawsm.u
-    v =  myawsm.v
-    du = myawsm.du
-    dv = myawsm.dv
-    nx = myawsm.nx
-    ny = myawsm.ny
+    u = myawsm.topo.u
+    v =  myawsm.topo.v
+    du = myawsm.topo.du
+    dv = myawsm.topo.dv
+    nx = myawsm.topo.nx
+    ny = myawsm.topo.ny
     pixel = np.abs(du)
 
     run_dir = myawsm.pathro
     path_ppt = myawsm.ppt_desc
 
-    mask = ipw.IPW(myawsm.fp_mask).bands[0].data
+    mask = myawsm.topo.mask
     numpix = np.sum(mask)
 
     # get precip from ipw

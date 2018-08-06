@@ -6,10 +6,10 @@ from datetime import datetime
 import pandas as pd
 import pytz
 import copy
-from inicheck.config import MasterConfig
+from inicheck.config import MasterConfig, UserConfig
 from inicheck.tools import get_user_config, check_config
 from inicheck.output import print_config_report, generate_config
-
+import smrf
 # make input the same as raw input if python 2
 try:
     input = raw_input
@@ -30,7 +30,9 @@ from smrf.utils import utils, io
 from awsm.convertFiles import convertFiles as cvf
 from awsm.interface import interface as smin
 from awsm.interface import smrf_ipysnobal as smrf_ipy
+from awsm.interface import ingest_data
 from awsm.utils import utilities as awsm_utils
+from awsm.data.topo import topo as mytopo
 import awsm.reporting.reportingtools as retools
 
 class AWSM():
@@ -44,31 +46,44 @@ class AWSM():
     Attributes:
     """
 
-    def __init__(self, configFile):
+    def __init__(self, config):
         """
         Initialize the model, read config file, start and end date, and logging
+        Args:
+            config: string path to the config file or inicheck UserConfig instance
         """
         # read the config file and store
-        if not os.path.isfile(configFile):
-            raise Exception('Configuration file does not exist --> {}'
-                            .format(configFile))
-        try:
+        awsm_mcfg = MasterConfig(modules = 'awsm')
+        smrf_mcfg = MasterConfig(modules = 'smrf')
+
+        if isinstance(config, str):
+            if not os.path.isfile(config):
+                raise Exception('Configuration file does not exist --> {}'
+                                .format(config))
+            configFile = config
+
             try:
-                snowav_mcfg = MasterConfig(modules = 'snowav')
-                combined_mcfg = MasterConfig(modules = ['smrf','awsm','snowav'])
-            except:
-                combined_mcfg = MasterConfig(modules = ['smrf','awsm'])
+                try:
+                    snowav_mcfg = MasterConfig(modules = 'snowav')
+                    combined_mcfg = MasterConfig(modules = ['smrf','awsm','snowav'])
+                except:
+                    combined_mcfg = MasterConfig(modules = ['smrf','awsm'])
 
-            awsm_mcfg = MasterConfig(modules = 'awsm')
-            smrf_mcfg = MasterConfig(modules = 'smrf')
+                # Read in the original users config
+                self.ucfg = get_user_config(configFile, mcfg=combined_mcfg)
+                self.configFile = configFile
 
-            # Read in the original users config
-            self.ucfg = get_user_config(configFile, mcfg=combined_mcfg)
-            self.configFile = configFile
+            except UnicodeDecodeError as e:
+                print(e)
+                raise Exception(('The configuration file is not encoded in '
+                                 'UTF-8, please change and retry'))
 
-        except UnicodeDecodeError:
-            raise Exception(('The configuration file is not encoded in '
-                             'UTF-8, please change and retry'))
+        elif isinstance(config, UserConfig):
+            self.ucfg = config
+            configFile = ''
+
+        else:
+            raise Exception('Config passed to AWSM is neither file name nor UserConfig instance')
 
         # get the git version
         self.gitVersion = awsm_utils.getgitinfo()
@@ -112,9 +127,7 @@ class AWSM():
 
         # options for masking isnobal
         self.mask_isnobal = self.config['awsm master']['mask_isnobal']
-        if self.mask_isnobal:
-            # mask file
-            self.fp_mask = os.path.abspath(self.config['topo']['mask'])
+
         # prompt for making directories
         self.prompt_dirs = self.config['awsm master']['prompt_dirs']
 
@@ -185,29 +198,6 @@ class AWSM():
                 print(self.tmp_err)
                 sys.exit()
 
-        # ################ Topo information ##################
-        self.topotype = self.config['topo']['type']
-        # pull in location of the dem
-        if self.topotype == 'ipw':
-            self.fp_dem = os.path.abspath(self.config['topo']['dem'])
-        elif self.topotype == 'netcdf':
-            self.fp_dem = os.path.abspath(self.config['topo']['filename'])
-
-        # ################ Grid data for iSnobal ##################
-        # get topo stats
-        ts = awsm_utils.get_topo_stats(self.fp_dem, filetype=self.topotype)
-        # assign topo stats
-        self.u = int(ts['u'])
-        self.v = int(ts['v'])
-        self.du = int(ts['du'])
-        self.dv = int(ts['dv'])
-        self.nx = int(ts['nx'])
-        self.ny = int(ts['ny'])
-        self.units = ts['units']
-        self.csys = self.config['grid']['csys']
-        self.nbits = int(self.config['grid']['nbits'])
-        self.soil_temp = self.config['soil_temp']['temp']
-
         # Time step mass thresholds for iSnobal
         self.mass_thresh = []
         self.mass_thresh.append(self.config['grid']['thresh_normal'])
@@ -228,6 +218,13 @@ class AWSM():
         else:
             self.prev_mod_file = None
 
+        if self.config['files']['init_file'] is not None:
+            self.init_file = os.path.abspath(self.config['files']['init_file'])
+            if self.prev_mod_file is not None:
+                raise IOError('Cannot have init file and prev mod file, pick one please.')
+        else:
+            self.init_file = None
+
         # threads for running iSnobal
         self.ithreads = self.config['awsm system']['ithreads']
         # how often to output form iSnobal
@@ -241,7 +238,9 @@ class AWSM():
         self.em_name = self.config['awsm system']['em_name']
 
         # options for restarting iSnobal
+        self.restart_crash = False
         if self.config['isnobal restart']['restart_crash']:
+            self.restart_crash = True
             # self.new_init = self.config['isnobal restart']['new_init']
             self.depth_thresh = self.config['isnobal restart']['depth_thresh']
             self.restart_hr = \
@@ -268,6 +267,19 @@ class AWSM():
             self.restart_date = self.start_date + reset_offset
             self.tmp_log.append('Restart date is {}'.format(self.start_date))
 
+        # read in update depth parameters
+        self.update_depth = False
+        if 'update depth' in self.config:
+            self.update_depth = self.config['update depth']['update']
+        if self.update_depth:
+            self.update_file = self.config['update depth']['update_file']
+            self.update_buffer = self.config['update depth']['buffer']
+            self.flight_numbers = self.config['update depth']['flight_numbers']
+            # if flights to use is not list, make it a list
+            if self.flight_numbers is not None:
+                if not isinstance(self.flight_numbers, list):
+                    self.flight_numbers = [self.flight_numbers]
+
         # list of sections releated to AWSM
         # These will be removed for smrf config
         self.sec_awsm = awsm_mcfg.cfg.keys()
@@ -275,6 +287,18 @@ class AWSM():
 
         # Make rigid directory structure
         self.mk_directories()
+
+        # ################ Topo information ##################
+        self.topotype = self.config['topo']['type']
+
+        # ################ Topo data for iSnobal ##################
+        # get topo stats
+        self.csys = self.config['grid']['csys']
+        self.nbits = int(self.config['grid']['nbits'])
+        self.soil_temp = self.config['soil_temp']['temp']
+        # get topo class
+        self.topo = mytopo(self.config['topo'], self.mask_isnobal,
+                           self.do_isnobal, self.csys, self.pathdd)
 
         # parse reporting section and make reporting folder
         if self.do_report:
@@ -426,12 +450,18 @@ class AWSM():
         """
         cvf.ipw2nc_mea(self, runtype)
 
-    def run_isnobal(self):
+    def run_isnobal(self, offset=None):
         """
         Run isnobal. Calls :mod: `awsm.interface.interface.run_isnobal`
         """
 
-        smin.run_isnobal(self)
+        smin.run_isnobal(self, offset=offset)
+
+    def run_isnobal_update(self):
+        """
+        Run iSnobal with update procedure
+        """
+        ingest_data.run_update_procedure(self)
 
     def run_smrf_ipysnobal(self):
         """
@@ -456,14 +486,6 @@ class AWSM():
         Calls :mod: `awsm.interface.smrf_ipysnobal.run_ipysnobal`
         """
         smrf_ipy.run_ipysnobal(self)
-
-    def restart_crash_image(self):
-        """
-        Restart isnobal. Calls
-        :mod: `awsm.interface.interface.restart_crash_image`
-        """
-        # modify config and run smrf
-        smin.restart_crash_image(self)
 
     def mk_directories(self):
         """
@@ -721,3 +743,91 @@ class AWSM():
         """
 
         self._logger.info('AWSM closed --> %s' % datetime.now())
+
+
+def run_awsm(config):
+    """
+    Function that runs awsm how it should be operate for full runs.
+
+    Args:
+        config: string path to the config file or inicheck UserConfig instance
+    """
+    start = datetime.now()
+
+    with AWSM(config) as a:
+        if a.do_forecast:
+            runtype = 'forecast'
+        else:
+            runtype = 'smrf'
+
+        if not a.config['isnobal restart']['restart_crash']:
+            # distribute data by running smrf
+            if a.do_smrf:
+                a.runSmrf()
+
+            # convert smrf output to ipw for iSnobal
+            if a.do_make_in:
+                a.nc2ipw(runtype)
+
+            if a.do_isnobal:
+                # run iSnobal
+                if a.update_depth:
+                    a.run_isnobal_update()
+                else:
+                    a.run_isnobal()
+
+            elif a.do_ipysnobal:
+                # run iPySnobal
+                a.run_ipysnobal()
+
+                # convert ipw back to netcdf for processing
+            if a.do_make_nc:
+                a.ipw2nc(runtype)
+        # if restart
+        else:
+            if a.do_isnobal:
+                # restart iSnobal from crash
+                if a.update_depth:
+                    a.run_isnobal_update()
+                else:
+                    a.run_isnobal()
+                # convert ipw back to netcdf for processing
+            elif a.do_ipysnobal:
+                # run iPySnobal
+                a.run_ipysnobal()
+
+            if a.do_make_nc:
+                a.ipw2nc(runtype)
+
+        # Run iPySnobal from SMRF in memory
+        if a.do_smrf_ipysnobal:
+            if a.daily_folders:
+                a.run_awsm_daily()
+            else:
+                a.run_smrf_ipysnobal()
+
+        # create report
+        if a.do_report:
+            a._logger.info('AWSM finished run, starting report')
+            a.do_reporting()
+
+            a._logger.info('AWSM finished in: {}'.format(datetime.now() - start))
+
+
+
+
+def can_i_run_awsm(config):
+    """
+    Function that wraps run_awsm in try, except.
+
+    Args:
+        config: string path to the config file or inicheck UserConfig instance
+    """
+    try:
+        run_awsm(config)
+        success = True
+        return success
+
+    except Exception as e:
+        a._logger.error(e)
+        return False

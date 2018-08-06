@@ -81,7 +81,7 @@ target/
 *.swp
 
 test_data/AWSM_test_config_tuol.ini
-test_data/RME_run/output/rme
+test_data/RME_run/output/rme/*
 
 #Integration tests
 tests/RME/output/rme/*

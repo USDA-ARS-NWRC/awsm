@@ -56,8 +56,8 @@ def nc2ipw_mea(myawsm, runtype):
     ps_var = 'percent_snow'
     rho = os.path.join(smrfpath, 'snow_density.nc')
     rho_var = 'snow_density'
-    tp = os.path.join(smrfpath, 'dew_point.nc')
-    tp_var = 'dew_point'
+    tp = os.path.join(smrfpath, 'precip_temp.nc')
+    tp_var = 'precip_temp'
 
     in_pathp = os.path.join(datapath, 'ppt_4b')
 
@@ -110,8 +110,9 @@ def nc2ipw_mea(myawsm, runtype):
         if np.sum(sn_step) > 0:
             i.new_band(sn_step)
 
-        i.add_geo_hdr([myawsm.u, myawsm.v], [myawsm.du, myawsm.dv],
-                      myawsm.units, myawsm.csys)
+        i.add_geo_hdr([myawsm.topo.u, myawsm.topo.v],
+                      [myawsm.topo.du, myawsm.topo.dv],
+                      myawsm.topo.units, myawsm.csys)
         i.write(in_step, myawsm.nbits)
 
         # only output if precip
@@ -126,8 +127,9 @@ def nc2ipw_mea(myawsm, runtype):
             i.new_band(ps_step)
             i.new_band(rho_step)
             i.new_band(tp_step)
-            i.add_geo_hdr([myawsm.u, myawsm.v], [myawsm.du, myawsm.dv],
-                          myawsm.units, myawsm.csys)
+            i.add_geo_hdr([myawsm.topo.u, myawsm.topo.v],
+                          [myawsm.topo.du, myawsm.topo.dv],
+                          myawsm.topo.units, myawsm.csys)
             i.write(in_stepp, myawsm.nbits)
             f.write('%i %s\n' % (t, in_stepp))
 
@@ -173,8 +175,8 @@ def ipw2nc_mea(myawsm, runtype):
     #######################################################################
     time_zone = myawsm.tmz
     # create the x,y vectors
-    x = myawsm.v + myawsm.dv*np.arange(myawsm.nx)
-    y = myawsm.u + myawsm.du*np.arange(myawsm.ny)
+    x = myawsm.topo.x
+    y = myawsm.topo.y
 
     # ========================================================================
     # NetCDF EM image
@@ -206,8 +208,8 @@ def ipw2nc_mea(myawsm, runtype):
 
     # create the dimensions
     em.createDimension('time', None)
-    em.createDimension('y', myawsm.ny)
-    em.createDimension('x', myawsm.nx)
+    em.createDimension('y', myawsm.topo.ny)
+    em.createDimension('x', myawsm.topo.nx)
 
     # create some variables
     em.createVariable('time', 'f', dimensions[0])
@@ -259,8 +261,8 @@ def ipw2nc_mea(myawsm, runtype):
 
     # create the dimensions
     snow.createDimension('time', None)
-    snow.createDimension('y', myawsm.ny)
-    snow.createDimension('x', myawsm.nx)
+    snow.createDimension('y', myawsm.topo.ny)
+    snow.createDimension('x', myawsm.topo.nx)
 
     # create some variables
     snow.createVariable('time', 'f', dimensions[0])

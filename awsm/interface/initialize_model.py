@@ -389,20 +389,20 @@ def get_args(myawsm):
     config['inputs']['input_type'] = myawsm.ipy_init_type
     config['inputs']['soil_temp'] = myawsm.soil_temp
 
-    config['initial_conditions'] = {}
-    if myawsm.config['ipysnobal initial conditions']['init_file'] is not None:
-        config['initial_conditions']['file'] = os.path.abspath(myawsm.config['ipysnobal initial conditions']['init_file'])
-    else:
-        config['initial_conditions']['file'] = None
-
-    config['initial_conditions']['input_type'] = myawsm.ipy_init_type.lower()
-    if 'restart' in myawsm.config['ipysnobal initial conditions']:
-        config['initial_conditions']['restart'] = myawsm.config['ipysnobal initial conditions']['restart']
-    else:
-        config['initial_conditions']['restart'] = False
-
-    if myawsm.mask_isnobal:
-        config['initial_conditions']['mask'] = myawsm.topo.mask
+    # config['initial_conditions'] = {}
+    # if myawsm.config['ipysnobal initial conditions']['init_file'] is not None:
+    #     config['initial_conditions']['file'] = os.path.abspath(myawsm.config['ipysnobal initial conditions']['init_file'])
+    # else:
+    #     config['initial_conditions']['file'] = None
+    #
+    # config['initial_conditions']['input_type'] = myawsm.ipy_init_type.lower()
+    # if 'restart' in myawsm.config['ipysnobal initial conditions']:
+    #     config['initial_conditions']['restart'] = myawsm.config['ipysnobal initial conditions']['restart']
+    # else:
+    #     config['initial_conditions']['restart'] = False
+    #
+    # if myawsm.mask_isnobal:
+    #     config['initial_conditions']['mask'] = myawsm.topo.mask
 
     return config, point_run
 

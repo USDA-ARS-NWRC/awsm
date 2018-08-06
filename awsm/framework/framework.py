@@ -299,7 +299,8 @@ class AWSM():
         # if we have a model, initialize it
         if self.model_type is not None:
             self.myinit = modelInit(self._logger, self.config, self.topo,
-                                    self.start_wyhr, self.pathro)
+                                    self.start_wyhr, self.pathro,
+                                    self.pathinit, self.wy_start)
 
 
     def parseReport(self):
@@ -816,5 +817,5 @@ def can_i_run_awsm(config):
         return success
 
     except Exception as e:
-        a._logger.error(e)
+        print(e)
         return False

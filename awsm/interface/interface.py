@@ -118,6 +118,10 @@ def run_isnobal(myawsm, offset=None):
     # set number of bits
     nbits = myawsm.nbits
 
+    # set offset for restart
+    if myawsm.restart_crash:
+        offset = myawsm.restart_hr+1
+
     # init file
     init_file = myawsm.myinit.fp_init
 

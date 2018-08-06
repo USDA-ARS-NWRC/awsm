@@ -2,7 +2,7 @@ from smrf import ipw
 import numpy as np
 import os
 import logging
-from netCDF4 import Dataset
+import netCDF4 as nc
 from datetime import timedelta
 
 C_TO_K = 273.16
@@ -39,7 +39,8 @@ class modelInit():
 
     """
 
-    def __init__(self, logger, cfg, topo, start_wyhr, pathro):
+    def __init__(self, logger, cfg, topo, start_wyhr, pathro,
+                 pathinit, wy_start):
         """
         Args:
             logger:         AWSM logger
@@ -47,6 +48,8 @@ class modelInit():
             topo:           AWSM topo class
             start_wyhr:     WYHR of run start date
             pathro:         output directory
+            pathinit:       iSnobal init directory
+            wy_start:       datetime of water year start date
 
         """
         # get logger
@@ -55,8 +58,10 @@ class modelInit():
         self.topo = topo
         self.csys = cfg['grid']['csys']
         # get parameters from awsm
-        self.fp_init = cfg['files']['init_file']
+        self.init_file = cfg['files']['init_file']
         self.init_type = cfg['files']['init_type']
+        # iSnobal init directory
+        self.pathinit = pathinit
         # type of model run
         self.model_type = cfg['awsm master']['model_type']
         # paths
@@ -67,6 +72,8 @@ class modelInit():
         self.depth_thresh = cfg['isnobal restart']['depth_thresh']
         # water year hours
         self.start_wyhr = start_wyhr
+        # datetime of october 1 of the correct year
+        self.wy_start = wy_start
 
         # dictionary to store init data
         self.init = {}
@@ -85,13 +92,15 @@ class modelInit():
             # convert temperatures to K
             self.init['T_s'] += FREEZE
             self.init['T_s_0'] += FREEZE
-            if 'T_s_l' in init:
+            if 'T_s_l' in self.init:
                 self.init['T_s_l'] += FREEZE
 
         # write input file if running iSnobal and
         # not passed an iSnobal init file
         if (self.model_type == 'isnobal') and \
            (self.init_type is not 'ipw' or self.restart_crash):
+            self.fp_init = os.path.join(pathinit,
+                                        'init%04d.ipw' % (self.start_wyhr))
             self.write_init()
 
     def get_init_file(self):
@@ -103,7 +112,7 @@ class modelInit():
         if self.restart_crash:
             self.get_crash_init()
         # if we have no init info, make zero init
-        elif self.fp_init is None:
+        elif self.init_file is None:
             self.get_zero_init()
         # get init depending on filetype
         elif self.init_type == 'ipw_out':
@@ -179,20 +188,20 @@ class modelInit():
         Set init fields for zero init
         """
         self.logger.info('No init file given, using zero fields')
-        init['z_s'] = 0.0*self.topo.mask  # snow depth
-        init['rho'] = 0.0*self.topo.mask  # snow density
+        self.init['z_s'] = 0.0*self.topo.mask  # snow depth
+        self.init['rho'] = 0.0*self.topo.mask  # snow density
 
-        init['T_s_0'] = -75.0*self.topo.mask  # active layer temp
-        init['T_s_l'] = -75.0*self.topo.mask  # lower layer temp
-        init['T_s'] = -75.0*self.topo.mask  # avgerage snow temp
+        self.init['T_s_0'] = -75.0*self.topo.mask  # active layer temp
+        self.init['T_s_l'] = -75.0*self.topo.mask  # lower layer temp
+        self.init['T_s'] = -75.0*self.topo.mask  # avgerage snow temp
 
-        init['h2o_sat'] = 0.0*self.topo.mask  # percent saturatio
+        self.init['h2o_sat'] = 0.0*self.topo.mask  # percent saturatio
 
     def get_ipw_out(self):
         """
         Set init fields for iSnobal out as init file
         """
-        i_in = ipw.IPW(self.fp_init)
+        i_in = ipw.IPW(self.init_file)
         self.init['z_s'] = i_in.bands[0].data*self.topo.mask  # snow depth
         self.init['rho'] = i_in.bands[1].data*self.topo.mask  # snow density
 
@@ -225,7 +234,7 @@ class modelInit():
         """
         Get init fields from output netcdf at correct time index
         """
-        i = nc.Dataset(self.fp_init)
+        i = nc.Dataset(self.init_file)
 
         # find timestep indices to grab
         time = i.variables['time'][:]

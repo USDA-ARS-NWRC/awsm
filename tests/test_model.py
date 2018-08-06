@@ -15,10 +15,9 @@ class TestModel(AWSMTestCase):
 
         config = deepcopy(self.base_config)
 
-        config.raw_cfg['awsm master']['run_isnobal'] = True
         config.raw_cfg['awsm master']['make_nc'] = True
         config.raw_cfg['awsm master']['mask_isnobal'] = True
-        config.raw_cfg['awsm master']['run_ipysnobal'] = False
+        config.raw_cfg['awsm master']['model_type'] = 'isnobal'
 
         config.apply_recipes()
 
@@ -26,7 +25,7 @@ class TestModel(AWSMTestCase):
 
 
         # ensure that the recipes are used
-        self.assertTrue(config.raw_cfg['awsm master']['run_isnobal'] == True)
+        self.assertTrue(config.cfg['awsm master']['model_type'] == 'isnobal')
 
         result = can_i_run_awsm(config)
         self.assertTrue(result)
@@ -36,9 +35,8 @@ class TestModel(AWSMTestCase):
 
         config = deepcopy(self.base_config)
 
-        config.raw_cfg['awsm master']['run_isnobal'] = True
+        config.raw_cfg['awsm master']['model_type'] = 'isnobal'
         config.raw_cfg['awsm master']['make_nc'] = False
-        config.raw_cfg['awsm master']['run_ipysnobal'] = False
 
         config.apply_recipes()
 
@@ -49,9 +47,8 @@ class TestModel(AWSMTestCase):
         # run again with restart
         config = deepcopy(self.base_config)
 
-        config.raw_cfg['awsm master']['run_isnobal'] = True
+        config.raw_cfg['awsm master']['model_type'] = 'isnobal'
         config.raw_cfg['awsm master']['make_nc'] = False
-        config.raw_cfg['awsm master']['run_ipysnobal'] = False
         config.raw_cfg['isnobal restart']['restart_crash'] = True
         config.raw_cfg['isnobal restart']['wyh_restart_output'] = 1464
 
@@ -66,14 +63,13 @@ class TestModel(AWSMTestCase):
 
         config = deepcopy(self.base_config)
 
-        config.raw_cfg['awsm master']['run_ipysnobal'] = True
-
+        # config.raw_cfg['files']['init_type'] = 'ipw_out'
+        # config.raw_cfg['files']['init_file'] = './RME/snow.2538'
         config.apply_recipes()
         config = cast_all_variables(config, config.mcfg)
 
-
         # ensure that the recipes are used
-        self.assertTrue(config.raw_cfg['awsm master']['run_ipysnobal'] == True)
+        self.assertTrue(config.cfg['awsm master']['model_type'] == 'ipysnobal')
 
         result = can_i_run_awsm(config)
         self.assertTrue(result)
@@ -83,7 +79,6 @@ class TestModel(AWSMTestCase):
 
         config = deepcopy(self.base_config)
 
-        config.raw_cfg['awsm master']['run_ipysnobal'] = True
         config.raw_cfg['awsm master']['make_in'] = False
         config.raw_cfg['awsm master']['mask_isnobal'] = True
         config.raw_cfg['ipysnobal']['forcing_data_type'] = 'netcdf'
@@ -100,15 +95,13 @@ class TestModel(AWSMTestCase):
         config = deepcopy(self.base_config)
         config.raw_cfg['awsm master']['run_smrf'] = False
         config.raw_cfg['awsm master']['make_in'] = False
-        config.raw_cfg['awsm master']['run_smrf_ipysnobal'] = True
-        config.raw_cfg['awsm master']['run_ipysnobal'] = False
+        config.raw_cfg['awsm master']['model_type'] = 'smrf_ipysnobal'
         config.raw_cfg['system']['threading'] = False
 
         config.apply_recipes()
         config = cast_all_variables(config, config.mcfg)
 
-        self.assertTrue(config.raw_cfg['awsm master']['run_smrf_ipysnobal'])
-        self.assertTrue(config.raw_cfg['awsm master']['run_ipysnobal'] == False)
+        self.assertTrue(config.cfg['awsm master']['model_type'] == 'smrf_ipysnobal')
 
         result = can_i_run_awsm(config)
         self.assertTrue(result)
@@ -119,8 +112,7 @@ class TestModel(AWSMTestCase):
         config = deepcopy(self.base_config)
         config.raw_cfg['awsm master']['run_smrf'] = False
         config.raw_cfg['awsm master']['make_in'] = False
-        config.raw_cfg['awsm master']['run_smrf_ipysnobal'] = True
-        config.raw_cfg['awsm master']['run_ipysnobal'] = False
+        config.raw_cfg['awsm master']['model_type'] = 'smrf_ipysnobal'
         config.raw_cfg['system']['threading'] = True
 
         config.apply_recipes()

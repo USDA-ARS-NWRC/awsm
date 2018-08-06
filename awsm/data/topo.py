@@ -27,7 +27,7 @@ class topo():
 
     """
 
-    images = ['dem', 'mask', 'roughness']
+    images = ['dem', 'mask']
 
     def __init__(self, topoConfig, mask_isnobal, model_type, csys, dir_m):
         """
@@ -102,7 +102,9 @@ class topo():
                 setattr(self, v, None)
 
         # set roughness if not given
-        if self.roughness is None:
+        if 'roughness' in self.topoConfig:
+            self.roughness = ipw.IPW(self.topoConfig['roughness']).bands[0].data.astype(np.float64)
+        elif self.roughness is None:
             print('No surface roughness given in topo, setting to 5mm')
             self.roughness = 0.005*np.ones((self.ny, self.nx))
 
@@ -138,6 +140,8 @@ class topo():
         if 'roughness' not in f.variables.keys():
             print('No surface roughness given in topo, setting to 5mm')
             self.roughness = 0.005*np.ones((self.ny, self.nx))
+        else:
+            self.roughness = f.variables['roughness'][:].astype(np.float64)
 
         for v_smrf in self.images:
 

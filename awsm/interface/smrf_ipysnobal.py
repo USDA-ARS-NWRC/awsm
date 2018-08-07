@@ -37,14 +37,8 @@ def run_ipysnobal(myawsm):
 
     """
     # initialize ipysnobal state
-    # read dem if ipw file
-    if myawsm.config['topo']['type'] == 'ipw':
-        dem = ipw.IPW(myawsm.config['topo']['dem']).bands[0].data
-    # read dem if netcdf file
-    if myawsm.config['topo']['type'] == 'netcdf':
-        demf = nc.Dataset(myawsm.config['topo']['filename'], 'r')
-        dem = demf.variables['dem'][:]
-        demf.close()
+    # get dem
+    dem = myawsm.topo.dem
 
     myawsm._logger.info('Initializing from files')
     options, params, tstep_info, init, output_rec = \
@@ -133,13 +127,13 @@ def run_smrf_ipysnobal(myawsm):
     Args:
         myawsm: AWSM instance
     """
-    # first create config file to run smrf
-    fp_smrfini = interface.create_smrf_config(myawsm)
+    # first create config to run smrf
+    smrf_cfg = interface.create_smrf_config(myawsm)
 
     # start = datetime.now()
 
     # initialize
-    with smrf.framework.SMRF(fp_smrfini, myawsm._logger) as s:
+    with smrf.framework.SMRF(smrf_cfg, myawsm._logger) as s:
         # if input has run_for_nsteps, make sure not to go past it
         if myawsm.run_for_nsteps is not None:
             change_in_hours = int(myawsm.run_for_nsteps *

@@ -6,10 +6,10 @@ from datetime import datetime
 import pandas as pd
 import pytz
 import copy
-from inicheck.config import MasterConfig
+from inicheck.config import MasterConfig, UserConfig
 from inicheck.tools import get_user_config, check_config
 from inicheck.output import print_config_report, generate_config
-
+import smrf
 # make input the same as raw input if python 2
 try:
     input = raw_input
@@ -32,6 +32,7 @@ from awsm.interface import interface as smin
 from awsm.interface import smrf_ipysnobal as smrf_ipy
 from awsm.interface import ingest_data
 from awsm.utils import utilities as awsm_utils
+from awsm.data.topo import topo as mytopo
 import awsm.reporting.reportingtools as retools
 
 class AWSM():
@@ -45,31 +46,44 @@ class AWSM():
     Attributes:
     """
 
-    def __init__(self, configFile):
+    def __init__(self, config):
         """
         Initialize the model, read config file, start and end date, and logging
+        Args:
+            config: string path to the config file or inicheck UserConfig instance
         """
         # read the config file and store
-        if not os.path.isfile(configFile):
-            raise Exception('Configuration file does not exist --> {}'
-                            .format(configFile))
-        try:
+        awsm_mcfg = MasterConfig(modules = 'awsm')
+        smrf_mcfg = MasterConfig(modules = 'smrf')
+
+        if isinstance(config, str):
+            if not os.path.isfile(config):
+                raise Exception('Configuration file does not exist --> {}'
+                                .format(config))
+            configFile = config
+
             try:
-                snowav_mcfg = MasterConfig(modules = 'snowav')
-                combined_mcfg = MasterConfig(modules = ['smrf','awsm','snowav'])
-            except:
-                combined_mcfg = MasterConfig(modules = ['smrf','awsm'])
+                try:
+                    snowav_mcfg = MasterConfig(modules = 'snowav')
+                    combined_mcfg = MasterConfig(modules = ['smrf','awsm','snowav'])
+                except:
+                    combined_mcfg = MasterConfig(modules = ['smrf','awsm'])
 
-            awsm_mcfg = MasterConfig(modules = 'awsm')
-            smrf_mcfg = MasterConfig(modules = 'smrf')
+                # Read in the original users config
+                self.ucfg = get_user_config(configFile, mcfg=combined_mcfg)
+                self.configFile = configFile
 
-            # Read in the original users config
-            self.ucfg = get_user_config(configFile, mcfg=combined_mcfg)
-            self.configFile = configFile
+            except UnicodeDecodeError as e:
+                print(e)
+                raise Exception(('The configuration file is not encoded in '
+                                 'UTF-8, please change and retry'))
 
-        except UnicodeDecodeError:
-            raise Exception(('The configuration file is not encoded in '
-                             'UTF-8, please change and retry'))
+        elif isinstance(config, UserConfig):
+            self.ucfg = config
+            configFile = ''
+
+        else:
+            raise Exception('Config passed to AWSM is neither file name nor UserConfig instance')
 
         # get the git version
         self.gitVersion = awsm_utils.getgitinfo()
@@ -113,9 +127,7 @@ class AWSM():
 
         # options for masking isnobal
         self.mask_isnobal = self.config['awsm master']['mask_isnobal']
-        if self.mask_isnobal:
-            # mask file
-            self.fp_mask = os.path.abspath(self.config['topo']['mask'])
+
         # prompt for making directories
         self.prompt_dirs = self.config['awsm master']['prompt_dirs']
 
@@ -185,32 +197,6 @@ class AWSM():
                                     ' gridded input data')
                 print(self.tmp_err)
                 sys.exit()
-
-        # ################ Topo information ##################
-        self.topotype = self.config['topo']['type']
-        # pull in location of the dem
-        if self.topotype == 'ipw':
-            self.fp_dem = os.path.abspath(self.config['topo']['dem'])
-        elif self.topotype == 'netcdf':
-            self.fp_dem = os.path.abspath(self.config['topo']['filename'])
-
-        # ################ Grid data for iSnobal ##################
-        # get topo stats
-        ts = awsm_utils.get_topo_stats(self.fp_dem, filetype=self.topotype)
-        # assign topo stats
-        self.u = int(ts['u'])
-        self.v = int(ts['v'])
-        self.du = int(ts['du'])
-        self.dv = int(ts['dv'])
-        self.nx = int(ts['nx'])
-        self.ny = int(ts['ny'])
-        self.units = ts['units']
-        self.csys = self.config['grid']['csys']
-        self.nbits = int(self.config['grid']['nbits'])
-        self.soil_temp = self.config['soil_temp']['temp']
-
-        self.x = ts['x']
-        self.y = ts['y']
 
         # Time step mass thresholds for iSnobal
         self.mass_thresh = []
@@ -301,6 +287,18 @@ class AWSM():
 
         # Make rigid directory structure
         self.mk_directories()
+
+        # ################ Topo information ##################
+        self.topotype = self.config['topo']['type']
+
+        # ################ Topo data for iSnobal ##################
+        # get topo stats
+        self.csys = self.config['grid']['csys']
+        self.nbits = int(self.config['grid']['nbits'])
+        self.soil_temp = self.config['soil_temp']['temp']
+        # get topo class
+        self.topo = mytopo(self.config['topo'], self.mask_isnobal,
+                           self.do_isnobal, self.csys, self.pathdd)
 
         # parse reporting section and make reporting folder
         if self.do_report:
@@ -748,3 +746,91 @@ class AWSM():
         """
 
         self._logger.info('AWSM closed --> %s' % datetime.now())
+
+
+def run_awsm(config):
+    """
+    Function that runs awsm how it should be operate for full runs.
+
+    Args:
+        config: string path to the config file or inicheck UserConfig instance
+    """
+    start = datetime.now()
+
+    with AWSM(config) as a:
+        if a.do_forecast:
+            runtype = 'forecast'
+        else:
+            runtype = 'smrf'
+
+        if not a.config['isnobal restart']['restart_crash']:
+            # distribute data by running smrf
+            if a.do_smrf:
+                a.runSmrf()
+
+            # convert smrf output to ipw for iSnobal
+            if a.do_make_in:
+                a.nc2ipw(runtype)
+
+            if a.do_isnobal:
+                # run iSnobal
+                if a.update_depth:
+                    a.run_isnobal_update()
+                else:
+                    a.run_isnobal()
+
+            elif a.do_ipysnobal:
+                # run iPySnobal
+                a.run_ipysnobal()
+
+                # convert ipw back to netcdf for processing
+            if a.do_make_nc:
+                a.ipw2nc(runtype)
+        # if restart
+        else:
+            if a.do_isnobal:
+                # restart iSnobal from crash
+                if a.update_depth:
+                    a.run_isnobal_update()
+                else:
+                    a.run_isnobal()
+                # convert ipw back to netcdf for processing
+            elif a.do_ipysnobal:
+                # run iPySnobal
+                a.run_ipysnobal()
+
+            if a.do_make_nc:
+                a.ipw2nc(runtype)
+
+        # Run iPySnobal from SMRF in memory
+        if a.do_smrf_ipysnobal:
+            if a.daily_folders:
+                a.run_awsm_daily()
+            else:
+                a.run_smrf_ipysnobal()
+
+        # create report
+        if a.do_report:
+            a._logger.info('AWSM finished run, starting report')
+            a.do_reporting()
+
+            a._logger.info('AWSM finished in: {}'.format(datetime.now() - start))
+
+
+
+
+def can_i_run_awsm(config):
+    """
+    Function that wraps run_awsm in try, except.
+
+    Args:
+        config: string path to the config file or inicheck UserConfig instance
+    """
+    try:
+        run_awsm(config)
+        success = True
+        return success
+
+    except Exception as e:
+        a._logger.error(e)
+        return False

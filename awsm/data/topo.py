@@ -104,7 +104,7 @@ class topo():
         # set roughness if not given
         if 'roughness' in self.topoConfig:
             self.roughness = ipw.IPW(self.topoConfig['roughness']).bands[0].data.astype(np.float64)
-        elif self.roughness is None:
+        else:
             print('No surface roughness given in topo, setting to 5mm')
             self.roughness = 0.005*np.ones((self.ny, self.nx))
 

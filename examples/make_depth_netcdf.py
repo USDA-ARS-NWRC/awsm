@@ -193,7 +193,7 @@ def run():
     tuol_updates[2015] = ['2015-02-18', '2015-03-06', '2015-03-25', '2015-04-03',
                           '2015-04-09', '2015-04-15', '2015-04-27', '2015-05-01',
                           '2015-05-28', '2015-06-08']
-    tuol_updates[2016] = ['2016-03-26', '2016-04-01', '2016-04-07', '2016-04-16',
+    tuol_updates[2016] = ['2016-03-26', '2016-04-07', '2016-04-16',
                           '2016-04-26', '2016-05-09', '2016-05-27', '2016-06-07',
                           '2016-06-13', '2016-06-20', '2016-06-25', '2016-07-01',
                           '2016-07-08']
@@ -220,7 +220,7 @@ def run():
         dem_fp = '/data/blizzard/tuolumne/common_data/topo/tuolx_dem_50m.ipw'
         gisPath = '/home/micahsandusky/Code/awsfTesting/initUpdate/'
         maskPath = os.path.join(gisPath, 'tuolx_mask_50m.ipw')
-        if wy < 2016:
+        if wy < 2017:
             maskPath = os.path.join(gisPath, 'tuolx_hetchy_mask_50m.ipw')
     elif basin == 'SJ':
         dem_fp = '/data/blizzard/sanjoaquin/common_data/topo/SJ_dem_50m.ipw'

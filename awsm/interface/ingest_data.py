@@ -41,15 +41,13 @@ class StateUpdater():
         # get necessary variables from awsm class
         self.active_layer = myawsm.active_layer
         self.update_buffer = myawsm.update_buffer  # Buffer size (in cells) for the interpolation to search over.
-        # get dem and roughness
-        self.topotype = myawsm.topotype
-        self.fp_dem = myawsm.fp_dem
-        self.roughness_init = myawsm.roughness_init
-        self.init_file = myawsm.init_file
+
         self._logger = myawsm._logger
 
-        self.ny = myawsm.ny
-        self.nx = myawsm.nx
+        self.ny = myawsm.topo.ny
+        self.nx = myawsm.topo.nx
+        self.topo = myawsm.topo
+        self.pathinit = myawsm.pathinit
 
     def do_update_pysnobal(self, output_rec, dt):
         """
@@ -340,7 +338,7 @@ class StateUpdater():
 
         # write init file
         out_file = 'init_update_{}_wyhr{:04d}.ipw'.format(update_number, wyhr)
-        init_file = os.path.join(myawsm.pathinit,out_file)
+        init_file = os.path.join(self.pathinit,out_file)
         i_out = ipw.IPW()
         i_out.new_band(updated_fields['dem'])
         i_out.new_band(updated_fields['z0'])
@@ -351,13 +349,13 @@ class StateUpdater():
         i_out.new_band(updated_fields['T_s'])
         i_out.new_band(updated_fields['h2o_sat'])
         #i_out.add_geo_hdr([u, v], [du, dv], units, csys)
-        i_out.add_geo_hdr([myawsm.topo.u, myawsm.topo.v],
-                          [myawsm.topo.du, myawsm.topo.dv],
-                          myawsm.topo.units, myawsm.csys)
-        i_out.write(init_file, myawsm.nbits)
+        i_out.add_geo_hdr([self.topo.u, self.topo.v],
+                          [self.topo.du, self.topo.dv],
+                          self.topo.units, self.csys)
+        i_out.write(init_file, self.nbits)
 
         ##  Import newly-created init file and look at images to make sure they line up:
-        myawsm._logger.info('Wrote ipw image for update {}'.format(wyhr))
+        self._logger.info('Wrote ipw image for update {}'.format(wyhr))
 
         return init_file
 
@@ -398,13 +396,14 @@ class StateUpdater():
         activeLayer = self.active_layer
         Buf = self.update_buffer  # Buffer size (in cells) for the interpolation to search over.
         # get dem and roughness
-        dem = myawsm.topo.dem
-        z0 = myawsm.topo.roughness
+        dem = self.topo.dem
+        z0 = self.topo.roughness
 
         # New depth field
         D = update_info['depth']
 
         # make mask
+        D[self.topo.mask = 0.0] = np.nan
         mask = np.ones_like(D)
         mask[np.isnan(D)] = 0.0
 

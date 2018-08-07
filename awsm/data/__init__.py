@@ -4,3 +4,4 @@ __author__ = """Micah Sandusky"""
 __email__ = 'micah.sandusky@ars.usda.gov'
 
 from . import topo
+from . import init_model

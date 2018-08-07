@@ -33,6 +33,7 @@ from awsm.interface import smrf_ipysnobal as smrf_ipy
 from awsm.interface import ingest_data
 from awsm.utils import utilities as awsm_utils
 from awsm.data.topo import topo as mytopo
+from awsm.data.init_model import modelInit
 import awsm.reporting.reportingtools as retools
 
 class AWSM():
@@ -108,10 +109,11 @@ class AWSM():
 
         # ################## Decide which modules to run #####################
         self.do_smrf = self.config['awsm master']['run_smrf']
-        self.do_isnobal = self.config['awsm master']['run_isnobal']
-        self.do_smrf_ipysnobal = \
-            self.config['awsm master']['run_smrf_ipysnobal']
-        self.do_ipysnobal = self.config['awsm master']['run_ipysnobal']
+        #self.do_isnobal = self.config['awsm master']['run_isnobal']
+        self.model_type = self.config['awsm master']['model_type']
+        # self.do_smrf_ipysnobal = \
+        #     self.config['awsm master']['run_smrf_ipysnobal']
+        # self.do_ipysnobal = self.config['awsm master']['run_ipysnobal']
 
         if 'gridded' in self.config:
             self.do_forecast = self.config['gridded']['forecast_flag']
@@ -204,27 +206,6 @@ class AWSM():
         self.mass_thresh.append(self.config['grid']['thresh_medium'])
         self.mass_thresh.append(self.config['grid']['thresh_small'])
 
-        # init file just for surface roughness
-        if self.config['files']['roughness_init'] is not None:
-            self.roughness_init = \
-                os.path.abspath(self.config['files']['roughness_init'])
-        else:
-            self.roughness_init = self.config['files']['roughness_init']
-
-        # point to snow ipw image for restart of run
-        if self.config['files']['prev_mod_file'] is not None:
-            self.prev_mod_file = \
-                os.path.abspath(self.config['files']['prev_mod_file'])
-        else:
-            self.prev_mod_file = None
-
-        if self.config['files']['init_file'] is not None:
-            self.init_file = os.path.abspath(self.config['files']['init_file'])
-            if self.prev_mod_file is not None:
-                raise IOError('Cannot have init file and prev mod file, pick one please.')
-        else:
-            self.init_file = None
-
         # threads for running iSnobal
         self.ithreads = self.config['awsm system']['ithreads']
         # how often to output form iSnobal
@@ -250,10 +231,10 @@ class AWSM():
         self.active_layer = self.config['grid']['active_layer']
 
         # if we are going to run ipysnobal with smrf
-        if self.do_smrf_ipysnobal or self.do_ipysnobal:
+        if self.model_type in ['ipysnobal', 'smrf_ipysnobal']:
             self.ipy_threads = self.ithreads
             self.ipy_init_type = \
-                self.config['ipysnobal initial conditions']['input_type']
+                self.config['files']['init_type']
             self.forcing_data_type = \
                 self.config['ipysnobal']['forcing_data_type']
 
@@ -298,7 +279,7 @@ class AWSM():
         self.soil_temp = self.config['soil_temp']['temp']
         # get topo class
         self.topo = mytopo(self.config['topo'], self.mask_isnobal,
-                           self.do_isnobal, self.csys, self.pathdd)
+                           self.model_type, self.csys, self.pathdd)
 
         # parse reporting section and make reporting folder
         if self.do_report:
@@ -314,6 +295,13 @@ class AWSM():
 
         # create log now that directory structure is done
         self.createLog()
+
+        # if we have a model, initialize it
+        if self.model_type is not None:
+            self.myinit = modelInit(self._logger, self.config, self.topo,
+                                    self.start_wyhr, self.pathro,
+                                    self.pathinit, self.wy_start)
+
 
     def parseReport(self):
         """
@@ -772,14 +760,14 @@ def run_awsm(config):
             if a.do_make_in:
                 a.nc2ipw(runtype)
 
-            if a.do_isnobal:
+            if a.model_type == 'isnobal':
                 # run iSnobal
                 if a.update_depth:
                     a.run_isnobal_update()
                 else:
                     a.run_isnobal()
 
-            elif a.do_ipysnobal:
+            elif a.model_type == 'ipysnobal':
                 # run iPySnobal
                 a.run_ipysnobal()
 
@@ -788,14 +776,14 @@ def run_awsm(config):
                 a.ipw2nc(runtype)
         # if restart
         else:
-            if a.do_isnobal:
+            if a.model_type == 'isnobal':
                 # restart iSnobal from crash
                 if a.update_depth:
                     a.run_isnobal_update()
                 else:
                     a.run_isnobal()
                 # convert ipw back to netcdf for processing
-            elif a.do_ipysnobal:
+            elif a.model_type == 'ipysnobal':
                 # run iPySnobal
                 a.run_ipysnobal()
 
@@ -803,7 +791,7 @@ def run_awsm(config):
                 a.ipw2nc(runtype)
 
         # Run iPySnobal from SMRF in memory
-        if a.do_smrf_ipysnobal:
+        if a.model_type == 'smrf_ipysnobal':
             if a.daily_folders:
                 a.run_awsm_daily()
             else:
@@ -832,5 +820,5 @@ def can_i_run_awsm(config):
         return success
 
     except Exception as e:
-        a._logger.error(e)
+        print(e)
         return False

@@ -1,7 +1,6 @@
 from smrf import ipw
 import numpy as np
 import os
-import logging
 from netCDF4 import Dataset
 
 
@@ -30,12 +29,12 @@ class topo():
 
     images = ['dem', 'mask']
 
-    def __init__(self, topoConfig, mask_isnobal, do_isnobal, csys, dir_m):
+    def __init__(self, topoConfig, mask_isnobal, model_type, csys, dir_m):
         """
         Args:
             topoConfig:   config section for topo from smrf config
             mask_isnobal: Boolean for masking iSnobal
-            do_isnboal:   Boolean for running iSnobal
+            model_type:   Type of snow model
             csys:         Coordinate system id
             dir_m:        Directory in which to write mask if needed
 
@@ -52,7 +51,7 @@ class topo():
 
         # assign path to mask, write mask if needed
         # only needed if running iSnobal from ipw, not PySnobal
-        if mask_isnobal and do_isnobal:
+        if mask_isnobal and model_type == 'isnobal':
             if self.img_type == 'netcdf':
                 # assign path
                 self.fp_mask = os.path.join(dir_m, 'run_mask.ipw')
@@ -67,6 +66,10 @@ class topo():
                 self.fp_mask = self.topoConfig['mask']
         else:
             self.fp_mask = None
+
+        # make masks one if not masking model
+        if not mask_isnobal:
+            self.mask = np.ones_like(self.dem)
         #logger.debug('Done reading in topo info for AWSM')
 
     def readImages(self):
@@ -98,6 +101,13 @@ class topo():
             else:
                 setattr(self, v, None)
 
+        # set roughness if not given
+        if 'roughness' in self.topoConfig:
+            self.roughness = ipw.IPW(self.topoConfig['roughness']).bands[0].data.astype(np.float64)
+        else:
+            print('No surface roughness given in topo, setting to 5mm')
+            self.roughness = 0.005*np.ones((self.ny, self.nx))
+
         # create the x,y vectors
         self.x = self.v + self.dv*np.arange(self.nx)
         self.y = self.u + self.du*np.arange(self.ny)
@@ -116,9 +126,23 @@ class topo():
         # read in the images
         f = Dataset(self.topoConfig['filename'], 'r')
 
+        # get some general information about the model domain from the dem
+        self.nx = f.dimensions['x'].size
+        self.ny = f.dimensions['y'].size
+
+        # create the x,y vectors
+        self.x = f.variables['x'][:]
+        self.y = f.variables['y'][:]
+
         # read in the images
         # netCDF files are stored typically as 32-bit float, so convert
         # to double or int
+        if 'roughness' not in f.variables.keys():
+            print('No surface roughness given in topo, setting to 5mm')
+            self.roughness = 0.005*np.ones((self.ny, self.nx))
+        else:
+            self.roughness = f.variables['roughness'][:].astype(np.float64)
+
         for v_smrf in self.images:
 
             # check to see if the user defined any variables e.g. veg_height = veg_length
@@ -132,13 +156,7 @@ class topo():
 
             setattr(self, v_smrf, result)
 
-        # get some general information about the model domain from the dem
-        self.nx = f.dimensions['x'].size
-        self.ny = f.dimensions['y'].size
 
-        # create the x,y vectors
-        self.x = f.variables['x'][:]
-        self.y = f.variables['y'][:]
         [self.X, self.Y] = np.meshgrid(self.x, self.y)
 
         self.du = self.y[1] - self.y[0]

@@ -229,12 +229,12 @@ class modelInit():
         self.init['T_s_0'] = i_in.bands[4].data*self.topo.mask  # active layer temp
 
         # get bands depending on if there is a lower layer or not
-        if len(i_in.bands) == 7:
+        if len(i_in.bands) == 8:
             self.init['T_s_l'] = i_in.bands[5].data*self.topo.mask  # lower layer temp
             self.init['T_s'] = i_in.bands[6].data*self.topo.mask  # avgerage snow temp
             self.init['h2o_sat'] = i_in.bands[7].data*self.topo.mask  # percent saturation
 
-        elif len(i_in.bands) == 8:
+        elif len(i_in.bands) == 7:
             self.init['T_s'] = i_in.bands[5].data*self.topo.mask  # avgerage snow temp
             self.init['h2o_sat'] = i_in.bands[6].data*self.topo.mask  # percent saturation
 

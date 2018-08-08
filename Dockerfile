@@ -11,6 +11,7 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends curl \
     && cd /code \
     && curl -L https://github.com/USDA-ARS-NWRC/pysnobal/archive/master.tar.gz | tar xz \
+    && curl -L https://github.com/USDA-ARS-NWRC/snowav/archive/master.tar.gz | tar xz \
     && rm -rf /var/lib/apt/lists/* \
     && apt remove -y curl \
     && apt autoremove -y
@@ -29,6 +30,9 @@ RUN cd /code/pysnobal-master \
     && python3 setup.py install \
     && cd /code/awsm \
     && python3 -m pip install -r /code/awsm/requirements.txt \
+    && python3 setup.py install \
+    && cd /code/snowav \
+    && python3 -m pip install -r /code/snowav/requirements.txt \
     && python3 setup.py install \
     && rm -r /root/.cache/pip
 

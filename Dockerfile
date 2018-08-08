@@ -31,8 +31,8 @@ RUN cd /code/pysnobal-master \
     && cd /code/awsm \
     && python3 -m pip install -r /code/awsm/requirements.txt \
     && python3 setup.py install \
-    && cd /code/snowav \
-    && python3 -m pip install -r /code/snowav/requirements.txt \
+    && cd /code/snowav-master \
+    && python3 -m pip install -r /code/snowav-master/requirements.txt \
     && python3 setup.py install \
     && rm -r /root/.cache/pip
 

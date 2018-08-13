@@ -20,11 +20,7 @@ def create_smrf_config(myawsm):
     # ### read in base and write out the specific config file for smrf #######
     # ########################################################################
 
-    # append snowav keys if we're doing reporting
-    if myawsm.do_report:
-        delete_keys = myawsm.sec_awsm.append(myawsm.sec_snowav)
-    else:
-        delete_keys = myawsm.sec_awsm
+    delete_keys = myawsm.sec_awsm
 
     # Write out config file to run smrf
     # make copy and delete only awsm sections

@@ -145,7 +145,9 @@ class modelInit():
         i_out.new_band(self.init['rho']*mask)  # snow density
 
         i_out.new_band(self.init['T_s_0']*mask)  # active layer temp
-        i_out.new_band(self.init['T_s_l']*mask)  # lower layer temp
+        if self.start_wyhr > 0:
+            i_out.new_band(self.init['T_s_l']*mask)  # lower layer temp
+
         i_out.new_band(self.init['T_s']*mask)  # avgerage snow temp
 
         i_out.new_band(self.init['h2o_sat']*mask)  # percent saturatio

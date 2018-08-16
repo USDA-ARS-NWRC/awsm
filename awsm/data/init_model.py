@@ -177,7 +177,7 @@ class modelInit():
             self.get_netcdf_out()
 
         # zero depths under specified threshold
-        restart_var = zero_crash_depths(self.depth_thresh,
+        restart_var = self.zero_crash_depths(self.depth_thresh,
                                         self.init['z_s'],
                                         self.init['rho'],
                                         self.init['T_s_0'],

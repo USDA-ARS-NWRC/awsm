@@ -102,8 +102,12 @@ class modelInit():
         # not passed an iSnobal init file
         if (self.model_type == 'isnobal'):
             if self.init_type != 'ipw' or self.restart_crash is True:
-                self.fp_init = os.path.join(pathinit,
-                                            'init%04d.ipw' % (self.start_wyhr))
+                if self.restart_crash:
+                    self.fp_init = os.path.join(pathinit,
+                                                'init%04d.ipw' % (self.restart_hr))
+                else:
+                    self.fp_init = os.path.join(pathinit,
+                                                'init%04d.ipw' % (self.start_wyhr))
                 self.write_init()
 
     def get_init_file(self):
@@ -145,7 +149,7 @@ class modelInit():
         i_out.new_band(self.init['rho']*mask)  # snow density
 
         i_out.new_band(self.init['T_s_0']*mask)  # active layer temp
-        if self.start_wyhr > 0:
+        if self.start_wyhr > 0 or self.restart_crash:
             i_out.new_band(self.init['T_s_l']*mask)  # lower layer temp
 
         i_out.new_band(self.init['T_s']*mask)  # avgerage snow temp

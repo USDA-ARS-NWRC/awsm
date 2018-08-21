@@ -332,7 +332,7 @@ def get_args(myawsm):
     config['time']['end_date'] = myawsm.end_date
     config['output']['frequency'] = myawsm.output_freq
     # config['output'] = myawsm.config['ipysnobal output']
-    config['output']['location'] = myawsm.pathro
+    config['output']['location'] = myawsm.pathrr
     config['output']['nthreads'] = int(myawsm.ipy_threads)
     config['constants'] = myawsm.config['ipysnobal constants']
     # read in the constants

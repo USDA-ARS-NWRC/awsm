@@ -214,6 +214,7 @@ class AWSM():
         self.run_for_nsteps = self.config['awsm system']['run_for_nsteps']
         # pysnobal output variables
         self.pysnobal_output_vars = self.config['awsm system']['variables']
+        self.pysnobal_output_vars = [wrd.lower() for wrd in self.pysnobal_output_vars]
         # snow and emname
         self.snow_name = self.config['awsm system']['snow_name']
         self.em_name = self.config['awsm system']['em_name']

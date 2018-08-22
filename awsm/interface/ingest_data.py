@@ -3,7 +3,6 @@ import numpy as np
 import os
 import copy
 import pandas as pd
-from matplotlib import pyplot as plt
 from netCDF4 import Dataset
 import netCDF4 as nc
 from collections import OrderedDict

@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from smrf import ipw
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import os
 import sys
 import seaborn as sns
@@ -25,126 +25,126 @@ def plot_dashboard(myawsm):
                                              awsm = myawsm)
 
 
-def plot_waterbalance(myawsm):
-    """
-    Function to plot the mass balance after an AWSM run has completed
-    """
-
-    u = myawsm.topo.u
-    v =  myawsm.topo.v
-    du = myawsm.topo.du
-    dv = myawsm.topo.dv
-    nx = myawsm.topo.nx
-    ny = myawsm.topo.ny
-    pixel = np.abs(du)
-
-    run_dir = myawsm.pathro
-    path_ppt = myawsm.ppt_desc
-
-    mask = myawsm.topo.mask
-    numpix = np.sum(mask)
-
-    # get precip from ipw
-    header = ['hour', 'path']
-    df_ppt = pd.read_csv(path_ppt, names = header, sep = ' ')
-
-    # Paths to the snow and em files
-    run_files   = sorted(os.listdir(run_dir))
-
-    # If we are setting a subrange within the directory, just grab those
-
-    em_files    = [value for value in run_files if 'em' in value]
-    snow_files    = [value for value in run_files if 'snow' in value]
-
-    # Get full domain SWI and then apply masks
-    swi         = np.zeros((ny,nx))
-
-    myawsm._logger.info('Grabbing snow and em for plotting')
-    # Go through the files...
-    for iters,(ename,sname) in enumerate(zip(em_files,snow_files)):
-
-        em_file = ipw.IPW('%s%s'%(run_dir,ename))
-        snow_file = ipw.IPW('%s%s'%(run_dir,sname))
-
-        # Initialize total and daily, and then add up over the run
-        if iters == 0:
-            swi     = np.zeros((ny,nx))
-            swi_day = np.zeros(len(em_files))
-            swi     = swi + em_file.bands[8].data
-
-            swe     = np.zeros((ny,nx))
-            swe_day = np.zeros(len(snow_files))
-            swe = snow_file.bands[2].data
-
-            evap     = np.zeros((ny,nx))
-            evap_day = np.zeros(len(em_files))
-            evap = evap + em_file.bands[6].data
-
-        else:
-            swi = swi + em_file.bands[8].data
-            swe = snow_file.bands[2].data
-            evap = evap + em_file.bands[6].data
-
-        swi_day[iters] = sum(sum(np.multiply(swi,mask)))
-        swe_day[iters] = sum(sum(np.multiply(swe,mask)))
-        evap_day[iters] = sum(sum(np.multiply(evap,mask)))
-
-    # Convert to acre-ft
-    swi_day = np.divide(swi_day,numpix)
-    swe_day = np.divide(swe_day,numpix)
-    evap_day = np.divide(evap_day,numpix)
-
-    sum_snow = swi_day + swe_day - evap_day
-
-    # find ranges and dates
-    startdate = myawsm.start_date.replace(tzinfo=myawsm.tzinfo)
-
-    tt = myawsm.end_date-myawsm.start_date
-    tdiff = tt.days*24 +  tt.seconds//3600 # number of timesteps
-    offset = utils.water_day(startdate)[0]
-    # print(offset)
-    # print(tdiff)
-    day_hr = range(int(offset+23), int(tdiff+offset+23), int(24))
-
-    ppt_hr = df_ppt['hour'].values
-    ppt_desc = df_ppt['path'].values
-    # make ppt arraymyawsf.fp_mask
-    #ppt_m = np.zeros(ppt_hr[-1])
-    ppt_m = np.zeros(int(tdiff+offset))
-
-    myawsm._logger.info('Grabbing precip for plotting')
-
-    for fp, hr in zip(ppt_desc, ppt_hr):
-        # read in file
-        tmp_ppt = ipw.IPW(fp).bands[0].data
-        ppt_sum = np.sum(np.multiply(tmp_ppt,mask))
-        ppt_m[hr] = ppt_sum
-
-    # cumulative ppt_m
-    ppt_m = np.divide(np.cumsum(ppt_m), numpix)
-
-    # print('Getting smrf precip')
-    # # get precip stuff
-    # smppt_ds =         Dataset(path_smrf_ppt,'r')
-    # smppt_spatial = smppt_ds.variables['precip'][:]
-    # smppt_spatial = np.multiply(smppt_spatial,mask)
-    # smppt = np.sum(smppt_spatial, axis=(1,2))
-    # smppt = np.cumsum(np.divide(smppt,numpix))
-    # time = smppt_ds.variables['time'][:]
-
-    #hr_hr = time
-    # Plot it up!
-    myawsm._logger.info('Plotting mass balance')
-    plt.figure(2)
-
-    sns.set_style('darkgrid')
-    sns.set_context("notebook")
-
-    plt.plot(day_hr,swi_day, label='swi')
-    plt.plot(day_hr,swe_day, label = 'swe')
-    plt.plot(day_hr,-1.0*evap_day, label = 'evap')
-    plt.plot(day_hr,sum_snow, label = 'sum snow')
-    #plt.plot(smppt, label = 'smrf precip')
-    plt.plot(ppt_m, label = 'ppt4b precip')
-    plt.legend()
-    plt.show()
+# def plot_waterbalance(myawsm):
+#     """
+#     Function to plot the mass balance after an AWSM run has completed
+#     """
+#
+#     u = myawsm.topo.u
+#     v =  myawsm.topo.v
+#     du = myawsm.topo.du
+#     dv = myawsm.topo.dv
+#     nx = myawsm.topo.nx
+#     ny = myawsm.topo.ny
+#     pixel = np.abs(du)
+#
+#     run_dir = myawsm.pathro
+#     path_ppt = myawsm.ppt_desc
+#
+#     mask = myawsm.topo.mask
+#     numpix = np.sum(mask)
+#
+#     # get precip from ipw
+#     header = ['hour', 'path']
+#     df_ppt = pd.read_csv(path_ppt, names = header, sep = ' ')
+#
+#     # Paths to the snow and em files
+#     run_files   = sorted(os.listdir(run_dir))
+#
+#     # If we are setting a subrange within the directory, just grab those
+#
+#     em_files    = [value for value in run_files if 'em' in value]
+#     snow_files    = [value for value in run_files if 'snow' in value]
+#
+#     # Get full domain SWI and then apply masks
+#     swi         = np.zeros((ny,nx))
+#
+#     myawsm._logger.info('Grabbing snow and em for plotting')
+#     # Go through the files...
+#     for iters,(ename,sname) in enumerate(zip(em_files,snow_files)):
+#
+#         em_file = ipw.IPW('%s%s'%(run_dir,ename))
+#         snow_file = ipw.IPW('%s%s'%(run_dir,sname))
+#
+#         # Initialize total and daily, and then add up over the run
+#         if iters == 0:
+#             swi     = np.zeros((ny,nx))
+#             swi_day = np.zeros(len(em_files))
+#             swi     = swi + em_file.bands[8].data
+#
+#             swe     = np.zeros((ny,nx))
+#             swe_day = np.zeros(len(snow_files))
+#             swe = snow_file.bands[2].data
+#
+#             evap     = np.zeros((ny,nx))
+#             evap_day = np.zeros(len(em_files))
+#             evap = evap + em_file.bands[6].data
+#
+#         else:
+#             swi = swi + em_file.bands[8].data
+#             swe = snow_file.bands[2].data
+#             evap = evap + em_file.bands[6].data
+#
+#         swi_day[iters] = sum(sum(np.multiply(swi,mask)))
+#         swe_day[iters] = sum(sum(np.multiply(swe,mask)))
+#         evap_day[iters] = sum(sum(np.multiply(evap,mask)))
+#
+#     # Convert to acre-ft
+#     swi_day = np.divide(swi_day,numpix)
+#     swe_day = np.divide(swe_day,numpix)
+#     evap_day = np.divide(evap_day,numpix)
+#
+#     sum_snow = swi_day + swe_day - evap_day
+#
+#     # find ranges and dates
+#     startdate = myawsm.start_date.replace(tzinfo=myawsm.tzinfo)
+#
+#     tt = myawsm.end_date-myawsm.start_date
+#     tdiff = tt.days*24 +  tt.seconds//3600 # number of timesteps
+#     offset = utils.water_day(startdate)[0]
+#     # print(offset)
+#     # print(tdiff)
+#     day_hr = range(int(offset+23), int(tdiff+offset+23), int(24))
+#
+#     ppt_hr = df_ppt['hour'].values
+#     ppt_desc = df_ppt['path'].values
+#     # make ppt arraymyawsf.fp_mask
+#     #ppt_m = np.zeros(ppt_hr[-1])
+#     ppt_m = np.zeros(int(tdiff+offset))
+#
+#     myawsm._logger.info('Grabbing precip for plotting')
+#
+#     for fp, hr in zip(ppt_desc, ppt_hr):
+#         # read in file
+#         tmp_ppt = ipw.IPW(fp).bands[0].data
+#         ppt_sum = np.sum(np.multiply(tmp_ppt,mask))
+#         ppt_m[hr] = ppt_sum
+#
+#     # cumulative ppt_m
+#     ppt_m = np.divide(np.cumsum(ppt_m), numpix)
+#
+#     # print('Getting smrf precip')
+#     # # get precip stuff
+#     # smppt_ds =         Dataset(path_smrf_ppt,'r')
+#     # smppt_spatial = smppt_ds.variables['precip'][:]
+#     # smppt_spatial = np.multiply(smppt_spatial,mask)
+#     # smppt = np.sum(smppt_spatial, axis=(1,2))
+#     # smppt = np.cumsum(np.divide(smppt,numpix))
+#     # time = smppt_ds.variables['time'][:]
+#
+#     #hr_hr = time
+#     # Plot it up!
+#     myawsm._logger.info('Plotting mass balance')
+#     plt.figure(2)
+#
+#     sns.set_style('darkgrid')
+#     sns.set_context("notebook")
+#
+#     plt.plot(day_hr,swi_day, label='swi')
+#     plt.plot(day_hr,swe_day, label = 'swe')
+#     plt.plot(day_hr,-1.0*evap_day, label = 'evap')
+#     plt.plot(day_hr,sum_snow, label = 'sum snow')
+#     #plt.plot(smppt, label = 'smrf precip')
+#     plt.plot(ppt_m, label = 'ppt4b precip')
+#     plt.legend()
+#     plt.show()

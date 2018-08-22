@@ -5,7 +5,8 @@
 __author__ = """Micah Sandusky"""
 __email__ = 'micah.sandusky@ars.usda.gov'
 __version__ = '0.7.1'
-
+import matplotlib
+matplotlib.use('Agg')
 import os
 
 __core_config__ = os.path.abspath(os.path.dirname(__file__) + '/framework/CoreConfig.ini')

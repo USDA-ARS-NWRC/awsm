@@ -9,6 +9,9 @@ MAINTAINER Scott Havens <scott.havens@ars.usda.gov>
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends curl \
+    && apt-get install -y texlive-base \
+    && apt-get install -y texlive-lang-english \
+    && apt-get install -y texlive-latex-extra \
     && cd /code \
     && curl -L https://github.com/USDA-ARS-NWRC/pysnobal/archive/master.tar.gz | tar xz \
     && curl -L https://github.com/USDA-ARS-NWRC/snowav/archive/master.tar.gz | tar xz \

@@ -278,20 +278,18 @@ class modelInit():
         # find offset of netcdf start
         offset = (nc_dates[0] - self.wy_start).total_seconds()//3600.0
 
-        # add offset to get in wy hours
-        time = time + offset
-
         if self.restart_crash:
             tmpwyhr = self.restart_hr
         else:
             # start date water year hour
             tmpwyhr = self.start_wyhr
 
+        print(time, tmpwyhr)
         # find closest location that the water year hours equal the restart hr
         idt = np.argmin(np.absolute(time - tmpwyhr))  # returns index
         if np.min(np.absolute(time - tmpwyhr)) > 24.0:
             # raise ValueError('No time in resatrt file that is within a day of restart time')
-            self.error('No time in resatrt file that is within a day of restart time')
+            self.logger.error('No time in resatrt file that is within a day of restart time')
 
         self.logger.warning('Initializing PySnobal with state from water year hour {}'.format(time[idt]))
 

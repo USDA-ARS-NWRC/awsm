@@ -284,7 +284,6 @@ class modelInit():
             # start date water year hour
             tmpwyhr = self.start_wyhr
 
-        print(time, tmpwyhr)
         # find closest location that the water year hours equal the restart hr
         idt = np.argmin(np.absolute(time - tmpwyhr))  # returns index
         if np.min(np.absolute(time - tmpwyhr)) > 24.0:

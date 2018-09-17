@@ -53,10 +53,14 @@ def read_flight(fp_lst, topo_stats, nanval = None, nanup = None):
             print('Padding array {} to fit domain {}'.format(D.shape, (ny,nx)))
 
             # pad left side
-            dleft = 1 + ny - D.shape[0]
+            #dleft = 1 + ny - D.shape[0]
+            dleft = ny - D.shape[0]
             padleft = np.ones((dleft, D.shape[1]))
             padleft[:] = np.nan
+            padagain = np.ones((1, D.shape[1]))
+            padagain[:] = np.nan
             D = np.concatenate((padleft, D), axis=0)
+            D = np.concatenate((D, padagain), axis=0)
 
             # pad the top
             dtop = 1 + nx - D.shape[1]
@@ -65,8 +69,12 @@ def read_flight(fp_lst, topo_stats, nanval = None, nanup = None):
             D = np.concatenate((padtop, D), axis=1)
 
             # get rid of last row and column to fit domain correctly
-            D = np.delete(D, ny, 0)
-            D = np.delete(D, nx, 1)
+            #D = np.delete(D, ny, 0)
+            #D = np.delete(D, nx, 1)
+
+            D = np.delete(D, 0, 0)
+            # correct
+            D = np.delete(D, 0, 1)
 
         # store value
         data_array[idf,:] = D
@@ -108,7 +116,7 @@ def output_files(output_path, fname, start_date, x, y):
 
     if os.path.isfile(netcdfFile):
         print('Opening {}, data may be overwritten!'.format(netcdfFile))
-        ds = nc.Dataset(netcdfFile, 'a')
+        ds = nc.Dataset(netcdfFile, 'w', clobber=True)
         h = '[{}] Data added or updated'.format(
             datetime.now().strftime(fmt))
         setattr(ds, 'last_modified', h)
@@ -197,6 +205,7 @@ def run():
                           '2016-04-26', '2016-05-09', '2016-05-27', '2016-06-07',
                           '2016-06-13', '2016-06-20', '2016-06-25', '2016-07-01',
                           '2016-07-08']
+    #tuol_updates[2016] = ['2016-04-16', '2016-04-26']
 
     if basin == 'TB':
         date_lst = tuol_updates[wy]

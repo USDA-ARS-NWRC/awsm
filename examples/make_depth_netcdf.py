@@ -184,7 +184,7 @@ def run():
     fmt_file = fmt = '%Y%m%d'
     #basin = 'SJ'
     basin = 'TB'
-    wy = 2016
+    wy = 2017
     fpdir = '/home/micahsandusky/Code/awsfTesting/newupdatetest'
 
     sj_updates = {}
@@ -205,13 +205,17 @@ def run():
                           '2016-04-26', '2016-05-09', '2016-05-27', '2016-06-07',
                           '2016-06-13', '2016-06-20', '2016-06-25', '2016-07-01',
                           '2016-07-08']
+    tuol_updates[2017] = ['2017-01-29', '2017-03-03', '2017-04-01',
+                          '2017-05-02', '2017-06-04', '2017-07-09', '2017-07-17',
+                          '2017-08-16']
+
     #tuol_updates[2016] = ['2016-04-16', '2016-04-26']
 
     if basin == 'TB':
         date_lst = tuol_updates[wy]
 
     # put into datetime
-    date_lst = [pd.to_datetime(dt) for dt in date_lst]
+    date_lst = [pd.to_datetime(dt+' 23:00') for dt in date_lst]
     tzinfo = pytz.timezone('UTC')
     tmp_date = date_lst[0]
     tmp_date = tmp_date.replace(tzinfo=tzinfo)

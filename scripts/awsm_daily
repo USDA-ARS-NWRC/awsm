@@ -1,0 +1,27 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+from awsm.framework.framework import run_awsm_daily_ops
+from datetime import datetime
+import sys
+import os
+
+def run():
+    '''
+    awsm is a command line program meant to take a single
+    argument for the config file.  This program will run each day
+    as a seperate run
+    '''
+    # Path for Docker use only
+    configFile = '/code/awsm/test_data/RME_run/docker_pysnobal.ini'
+
+    if not os.path.isfile(configFile):
+        configFile = './test_data/RME_run/config_pysnobal.ini'
+
+    if len(sys.argv) > 1:
+        configFile = sys.argv[1]
+
+    run_awsm_daily_ops(configFile)
+
+if __name__ == '__main__':
+    run()

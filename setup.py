@@ -86,7 +86,7 @@ setup(
 				  './framework/recipes.ini']},
     scripts=['./scripts/awsm','./scripts/wyhr',
 			 './scripts/plot_csv', './scripts/plot_ipw',
-			 './scripts/clean_awsm'],
+			 './scripts/clean_awsm', './scripts/awsm_daily'],
     # install_requires=requirements,
     license="CC0 1.0",
     zip_safe=False,

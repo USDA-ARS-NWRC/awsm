@@ -9,6 +9,7 @@ import copy
 from inicheck.config import MasterConfig, UserConfig
 from inicheck.tools import get_user_config, check_config
 from inicheck.output import print_config_report, generate_config
+from inicheck.tools import cast_all_variables
 import smrf
 # make input the same as raw input if python 2
 try:
@@ -737,6 +738,85 @@ class AWSM():
         self._logger.info('AWSM closed --> %s' % datetime.now())
 
 
+def run_awsm_daily_ops(config_file):
+    """
+    Run each day seperately. Calls run_awsm
+    """
+    # define some formats
+    fmt_day = '%Y-%m-%d'
+    fmt_cfg = '%Y-%m-%d %H:%M'
+    add_day = pd.to_timedelta(23, unit='h')
+
+    # get config instance
+    config = get_user_config(config_file,
+                             modules = ['smrf','awsm', 'snowav'])
+
+    # copy the config and get total start and end
+    # config = deepcopy(base_config)
+    # set naming style
+    config.raw_cfg['paths']['folder_date_style'] = 'day'
+
+    config.apply_recipes()
+    config = cast_all_variables(config, config.mcfg)
+    model_start = config.cfg['time']['start_date']
+    model_end = config.cfg['time']['end_date']
+    isops = config.cfg['paths']['isops']
+    if isops:
+        devops = 'ops'
+    else:
+        devops = 'devel'
+
+    # find output location for previous output
+    paths = config.cfg['paths']
+    tzinfo = pytz.timezone(config.cfg['time']['time_zone'])
+    wy = utils.water_day(model_start.replace(tzinfo=tzinfo))[1]
+    prev_out_base = os.path.join(paths['path_dr'],
+                                 paths['basin'],
+                                 devops,
+                                 'wy{}'.format(wy),
+                                 'runs')
+
+    # find day of start and end
+    start_day = pd.to_datetime(model_start.strftime(fmt_day))
+    end_day = pd.to_datetime(model_end.strftime(fmt_day))
+
+    # find total range of run
+    ndays = int((end_day-start_day).days) + 1
+    date_list = [start_day + pd.to_timedelta(x, unit='D') for x in range(0, ndays)]
+
+    # loop through daily runs and run awsm
+    for idd, sd in enumerate(date_list):
+        # get the end of the day
+        ed = sd + add_day
+
+        # make sure we're in the model date range
+        if sd < model_start:
+            sd = model_start
+        if ed > model_end:
+            ed = model_end
+
+        # set the start and end dates
+        config.raw_cfg['time']['start_date'] = sd.strftime(fmt_cfg)
+        config.raw_cfg['time']['end_date'] = ed.strftime(fmt_cfg)
+
+        # reset the initialization
+        if idd > 0:
+            # find previous output file
+            prev_out = os.path.join(prev_out_base,
+                                    'run{}'.format(sd.strftime(fmt_day)),
+                                    'snow.nc')
+            # reset if running the model
+            if config.cfg['awsm master']['model_type'] is not None:
+                config.raw_cfg['files']['init_type'] = 'netcdf'
+                confg.raw_cfg['files']['init_file'] = prev_out
+
+        # apply recipes with new setttings
+        config.apply_recipes()
+        config = cast_all_variables(config, config.mcfg)
+        # run awsm for the day
+        run_awsm(config)
+
+
 def run_awsm(config):
     """
     Function that runs awsm how it should be operate for full runs.
@@ -804,7 +884,6 @@ def run_awsm(config):
             a.do_reporting()
 
             a._logger.info('AWSM finished in: {}'.format(datetime.now() - start))
-
 
 
 

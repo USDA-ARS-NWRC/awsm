@@ -392,6 +392,17 @@ class AWSM():
                                 filemode='w',
                                 level=numeric_level,
                                 format=fmt)
+
+            # section of code needed to make new log file on daily runs
+            fileh = logging.FileHandler(logfile, 'a')
+            #formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+            #fileh.setFormatter(formatter)
+
+            log = logging.getLogger()  # root logger
+            for hdlr in log.handlers[:]:  # remove all old handlers
+                log.removeHandler(hdlr)
+            log.addHandler(fileh)      #
+
         else:
             logging.basicConfig(level=numeric_level)
             coloredlogs.install(level=numeric_level,
@@ -743,7 +754,7 @@ def run_awsm_daily_ops(config_file):
     Run each day seperately. Calls run_awsm
     """
     # define some formats
-    fmt_day = '%Y-%m-%d'
+    fmt_day = '%Y%m%d'
     fmt_cfg = '%Y-%m-%d %H:%M'
     add_day = pd.to_timedelta(23, unit='h')
 
@@ -774,6 +785,7 @@ def run_awsm_daily_ops(config_file):
                                  paths['basin'],
                                  devops,
                                  'wy{}'.format(wy),
+                                 paths['proj'],
                                  'runs')
 
     # find day of start and end
@@ -786,6 +798,7 @@ def run_awsm_daily_ops(config_file):
 
     # loop through daily runs and run awsm
     for idd, sd in enumerate(date_list):
+        new_config = copy.deepcopy(config)
         # get the end of the day
         ed = sd + add_day
 
@@ -796,25 +809,27 @@ def run_awsm_daily_ops(config_file):
             ed = model_end
 
         # set the start and end dates
-        config.raw_cfg['time']['start_date'] = sd.strftime(fmt_cfg)
-        config.raw_cfg['time']['end_date'] = ed.strftime(fmt_cfg)
+        new_config.raw_cfg['time']['start_date'] = sd.strftime(fmt_cfg)
+        new_config.raw_cfg['time']['end_date'] = ed.strftime(fmt_cfg)
 
         # reset the initialization
         if idd > 0:
             # find previous output file
+            prev_day = sd - pd.to_timedelta(1, unit='D')
             prev_out = os.path.join(prev_out_base,
-                                    'run{}'.format(sd.strftime(fmt_day)),
+                                    'run{}'.format(prev_day.strftime(fmt_day)),
                                     'snow.nc')
             # reset if running the model
-            if config.cfg['awsm master']['model_type'] is not None:
-                config.raw_cfg['files']['init_type'] = 'netcdf'
-                confg.raw_cfg['files']['init_file'] = prev_out
+            if new_config.cfg['awsm master']['model_type'] is not None:
+                new_config.raw_cfg['files']['init_type'] = 'netcdf_out'
+                new_config.raw_cfg['files']['init_file'] = prev_out
 
         # apply recipes with new setttings
-        config.apply_recipes()
-        config = cast_all_variables(config, config.mcfg)
+        new_config.apply_recipes()
+        new_config = cast_all_variables(new_config, new_config.mcfg)
+
         # run awsm for the day
-        run_awsm(config)
+        run_awsm(new_config)
 
 
 def run_awsm(config):

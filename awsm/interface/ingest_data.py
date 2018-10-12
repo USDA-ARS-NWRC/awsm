@@ -241,6 +241,9 @@ class StateUpdater():
         # this is where each run will start from
         offsets = t_wyhr
 
+        if len(offsets) == 0:
+            raise IOError('No update dates in this run')
+
         # do we need to do that run?
         if offsets[0] - test_start_wyhr <= 0:
             firststeps = 0

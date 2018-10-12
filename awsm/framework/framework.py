@@ -756,7 +756,7 @@ def run_awsm_daily_ops(config_file):
     # define some formats
     fmt_day = '%Y%m%d'
     fmt_cfg = '%Y-%m-%d %H:%M'
-    add_day = pd.to_timedelta(23, unit='h')
+    add_day = pd.to_timedelta(24, unit='h')
 
     # get config instance
     config = get_user_config(config_file,

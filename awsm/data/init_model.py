@@ -39,7 +39,7 @@ class modelInit():
 
     """
 
-    def __init__(self, logger, cfg, topo, start_wyhr, pathro,
+    def __init__(self, logger, cfg, topo, start_wyhr, pathro, pathrr,
                  pathinit, wy_start):
         """
         Args:
@@ -48,6 +48,7 @@ class modelInit():
             topo:           AWSM topo class
             start_wyhr:     WYHR of run start date
             pathro:         output directory
+            pathrr:         run<date> directory
             pathinit:       iSnobal init directory
             wy_start:       datetime of water year start date
 
@@ -69,6 +70,7 @@ class modelInit():
         self.model_type = cfg['awsm master']['model_type']
         # paths
         self.pathro = pathro
+        self.pathrr = pathrr
         # restart paramters
         self.restart_crash = cfg['isnobal restart']['restart_crash']
         self.restart_hr = cfg['isnobal restart']['wyh_restart_output']
@@ -177,7 +179,7 @@ class modelInit():
             self.get_ipw_out()
         else:
             self.init_type = 'netcdf_out'
-            self.init_file = os.path.join(self.pathro, 'snow.nc')
+            self.init_file = os.path.join(self.pathrr, 'snow.nc')
             self.get_netcdf_out()
 
         # zero depths under specified threshold

@@ -208,10 +208,14 @@ class QueueIsnobal(threading.Thread):
 
             first_step = j
             if self.updater is not None:
-                if tstep.tz_localize(None) in self.updater.update_dates:
+                #if tstep.tz_localize(None) in self.updater.update_dates:
+                if tstep in self.updater.update_dates:
+                    # self.output_rec = \
+                    #     self.updater.do_update_pysnobal(self.output_rec,
+                    #                                     tstep.tz_localize(None))
                     self.output_rec = \
                         self.updater.do_update_pysnobal(self.output_rec,
-                                                        tstep.tz_localize(None))
+                                                        tstep)
                     first_step = 1
 
             self._logger.info('running PySnobal for timestep: {}'.format(tstep))
@@ -386,10 +390,13 @@ class PySnobal():
 
         # update depth if necessary
         if updater is not None:
-            if tstep.tz_localize(None) in updater.update_dates:
-                print('doing that update thing')
+            # if tstep.tz_localize(None) in updater.update_dates:
+            if tstep in updater.update_dates:
+                # print('doing that update thing')
+                # self.output_rec = \
+                #     updater.do_update_pysnobal(self.output_rec, tstep.tz_localize(None))
                 self.output_rec = \
-                    updater.do_update_pysnobal(self.output_rec, tstep.tz_localize(None))
+                    updater.do_update_pysnobal(self.output_rec, tstep)
                 first_step = 1
 
 

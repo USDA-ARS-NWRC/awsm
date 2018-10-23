@@ -25,21 +25,24 @@ class StateUpdater():
         update_info, x, y = self.initialize_aso_updates(myawsm, self.update_fp)
 
         # callculate offset for each section of the run and filter updates
-        update_info, runsteps, offsets, firststeps = self.calc_offsets_nsteps(myawsm, update_info)
+        # update_info, runsteps, offsets, firststeps = self.calc_offsets_nsteps(myawsm, update_info)
 
         self.x = x
         self.y = y
         self.update_info = update_info
-        self.runsteps = runsteps
-        self.offsets = offsets
-        self.firststeps = firststeps
+        # self.runsteps = runsteps
+        # self.offsets = offsets
+        # self.firststeps = firststeps
 
-        # compare
-        self.update_dates = [self.update_info[k]['date_time'] for k in self.update_info.keys()]
+        # save the dates of each update if there are any updates in the time frame
+        self.update_dates = []
+        if len(self.update_info > 0):
+            self.update_dates = [self.update_info[k]['date_time'] for k in self.update_info.keys()]
 
         # get necessary variables from awsm class
         self.active_layer = myawsm.active_layer
-        self.update_buffer = myawsm.update_buffer  # Buffer size (in cells) for the interpolation to search over.
+        # Buffer size (in cells) for the interpolation to search overself.
+        self.update_buffer = myawsm.update_buffer
 
         self._logger = myawsm._logger
 
@@ -161,7 +164,10 @@ class StateUpdater():
 
         t_wyhr = []
         for t1 in t:
-            tmp_date = t1.replace(tzinfo=myawsm.tzinfo)
+            #tmp_date = t1.replace(tzinfo=myawsm.tzinfo)
+            # this maybe?
+            # .astimezone(self.)
+            tmp_date = t1.astimezone(tzinfo=myawsm.tzinfo)
             # get wyhr
             tmpwyhr = int(utils.water_day(tmp_date)[0]*24)
             t_wyhr.append(tmpwyhr)

@@ -36,7 +36,7 @@ class StateUpdater():
 
         # save the dates of each update if there are any updates in the time frame
         self.update_dates = []
-        if len(self.update_info > 0):
+        if len(self.update_info) > 0:
             self.update_dates = [self.update_info[k]['date_time'] for k in self.update_info.keys()]
 
         # get necessary variables from awsm class
@@ -164,10 +164,7 @@ class StateUpdater():
 
         t_wyhr = []
         for t1 in t:
-            #tmp_date = t1.replace(tzinfo=myawsm.tzinfo)
-            # this maybe?
-            # .astimezone(self.)
-            tmp_date = t1.astimezone(tzinfo=myawsm.tzinfo)
+            tmp_date = t1.replace(tzinfo=myawsm.tzinfo)
             # get wyhr
             tmpwyhr = int(utils.water_day(tmp_date)[0]*24)
             t_wyhr.append(tmpwyhr)
@@ -182,7 +179,7 @@ class StateUpdater():
             update_info[k] = {}
             # set update number
             update_info[k]['number'] = k
-            update_info[k]['date_time'] = t[idk]
+            update_info[k]['date_time'] = t[idk].replace(tzinfo=myawsm.tzinfo)
             update_info[k]['wyhr'] = t_wyhr[idk]
             # set depth
             update_info[k]['depth'] = D_all[idk,:]

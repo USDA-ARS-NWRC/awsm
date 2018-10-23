@@ -5,21 +5,23 @@ threaded together
 20170731 Micah Sandusky
 """
 
-import smrf
-from smrf.utils import queue
-from smrf import ipw
-from smrf.envphys import radiation
 import sys
 import numpy as np
 import pandas as pd
 from datetime import datetime
+import pytz
+import netCDF4 as nc
+
+import smrf
+from smrf.utils import queue
+from smrf import ipw
+from smrf.envphys import radiation
 from awsm.interface import ipysnobal
 from awsm.interface import interface
 from awsm.interface import initialize_model as initmodel
 from awsm.interface import pysnobal_io as io_mod
 from awsm.interface.ingest_data import StateUpdater
-import pytz
-import netCDF4 as nc
+
 try:
     from pysnobal import snobal
 except Exception as e:

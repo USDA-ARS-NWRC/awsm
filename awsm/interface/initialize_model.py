@@ -9,9 +9,10 @@ import os
 import numpy as np
 from datetime import timedelta
 import netCDF4 as nc
+import pytz
+
 from smrf import ipw
 from smrf.utils import utils
-
 
 DEFAULT_MAX_H2O_VOL = 0.01
 
@@ -105,8 +106,15 @@ def get_timestep_netcdf(force, tstep, point=None):
             # compare the dimensions and variables to get the variable name
             v = list(set(force[f].variables.keys())-set(force[f].dimensions.keys()))[0]
 
+            # make sure you're in the same timezone
+            if hasattr(force[f].variables['time'], 'time_zone'):
+                tstep_zone = tstep.astimezone(pytz.timezone(force[f].variables['time'].time_zone))
+                tstep_zone = tstep.tz_localize(None)
+            else:
+                tstep_zone = tstep.tz_localize(None)
+
             # find the index based on the time step
-            t = nc.date2index(tstep, force[f].variables['time'],
+            t = nc.date2index(tstep_zone, force[f].variables['time'],
                               calendar=force[f].variables['time'].calendar,
                               select='exact')
 
@@ -150,8 +158,7 @@ def get_timestep_ipw(tstep, input_list, ppt_list, myawsm):
                     3: 'T_pp'}
 
     # get wy hour
-    tmp_date = tstep.replace(tzinfo=myawsm.tzinfo)
-    wyhr = int(utils.water_day(tmp_date)[0]*24)
+    wyhr = int(utils.water_day(tstep)[0]*24)
     # if we have inputs matching this water year hour
     if np.any(input_list == wyhr):
         i_in = ipw.IPW(os.path.join(myawsm.pathi, 'in.%04i' % (wyhr)))
@@ -365,8 +372,9 @@ def get_args(myawsm):
     nsteps = int(nsteps / config['time']['time_step'])
 
     # create a date time vector
-    dv = date_range(start_date, end_date,
+    tmp_dv = date_range(start_date, end_date,
                     timedelta(minutes=config['constants']['time_step']))
+    dv = [di.replace(tzinfo=myawsm.tzinfo) for di in tmp_dv]
 
     if len(dv) != nsteps + 1:
         raise Exception('nsteps does not work with selected start and end dates')

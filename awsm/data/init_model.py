@@ -1,9 +1,12 @@
-from smrf import ipw
 import numpy as np
 import os
 import logging
 import netCDF4 as nc
 from datetime import timedelta
+import pytz
+
+from smrf import ipw
+from smrf.utils import utils
 
 C_TO_K = 273.16
 FREEZE = C_TO_K
@@ -77,6 +80,7 @@ class modelInit():
         self.start_wyhr = start_wyhr
         # datetime of october 1 of the correct year
         self.wy_start = wy_start
+        self.tzinfo = pytz.timezone(cfg['time']['time_zone'])
 
         # dictionary to store init data
         self.init = {}
@@ -275,8 +279,6 @@ class modelInit():
         t_units = i.variables['time'].units
         nc_calendar = i.variables['time'].calendar
         nc_dates = nc.num2date(time, t_units, nc_calendar)
-        # find offset of netcdf start
-        offset = (nc_dates[0] - self.wy_start).total_seconds()//3600.0
 
         if self.restart_crash:
             tmpwyhr = self.restart_hr
@@ -284,13 +286,25 @@ class modelInit():
             # start date water year hour
             tmpwyhr = self.start_wyhr
 
-        # find closest location that the water year hours equal the restart hr
-        idt = np.argmin(np.absolute(time - tmpwyhr))  # returns index
-        if np.min(np.absolute(time - tmpwyhr)) > 24.0:
-            # raise ValueError('No time in resatrt file that is within a day of restart time')
-            self.logger.error('No time in resatrt file that is within a day of restart time')
+        # make sure we account for time zones
+        if hasattr(i.variables['time'], 'time_zone'):
+            tzn = pytz.timezone(i.variables['time'].time_zone)
+            nc_dates = [ndt.replace(tzinfo=tzn) for ndt in nc_dates]
+            nc_dates = [ndt.replace(tzinfo=self.tzinfo) for ndt in nc_dates]
+        else:
+            nc_dates = [ndt.replace(tzinfo=self.tzinfo) for ndt in nc_dates]
 
-        self.logger.warning('Initializing PySnobal with state from water year hour {}'.format(time[idt]))
+        # find water year hours
+        nc_wyhr = np.array([utils.water_day(ndt)[0]*24.0 for ndt in nc_dates])
+
+        # find closest location that the water year hours equal the restart hr
+        idt = np.argmin(np.absolute(nc_wyhr - tmpwyhr))  # returns index
+
+        if np.min(np.absolute(nc_wyhr - tmpwyhr)) > 24.0:
+            # raise ValueError('No time in resatrt file that is within a day of restart time')
+            self.logger.error('No time in restart file that is within a day of restart time')
+
+        self.logger.warning('Initializing PySnobal with state from water year hour {}'.format(nc_wyhr[idt]))
 
         self.init['z_s'] = i.variables['thickness'][idt, :]
         self.init['rho'] = i.variables['snow_density'][idt, :]

@@ -136,9 +136,9 @@ def output_files(options, init, start_date, myawsm):
                         'Snowcover cold content']
 
     emname = myawsm.em_name+'.nc'
-    if myawsm.restart_run:
-        emname = 'em_restart_{}.nc'.format(myawsm.restart_hr)
-        start_date = myawsm.restart_date
+    # if myawsm.restart_run:
+    #     emname = 'em_restart_{}.nc'.format(myawsm.restart_hr)
+    #     start_date = myawsm.restart_date
 
     netcdfFile = os.path.join(options['output']['location'], emname)
 
@@ -204,8 +204,8 @@ def output_files(options, init, start_date, myawsm):
                         'Predicted percentage of liquid water saturation of the snowcover']
 
     snowname = myawsm.snow_name + '.nc'
-    if myawsm.restart_run:
-        snowname = 'snow_restart_{}.nc'.format(myawsm.restart_hr)
+    # if myawsm.restart_run:
+    #     snowname = 'snow_restart_{}.nc'.format(myawsm.restart_hr)
 
     netcdfFile = os.path.join(options['output']['location'], snowname)
 

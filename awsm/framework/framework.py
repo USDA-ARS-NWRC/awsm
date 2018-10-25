@@ -301,7 +301,7 @@ class AWSM():
         # if we have a model, initialize it
         if self.model_type is not None:
             self.myinit = modelInit(self._logger, self.config, self.topo,
-                                    self.start_wyhr, self.pathro,
+                                    self.start_wyhr, self.pathro, self.pathrr,
                                     self.pathinit, self.wy_start)
 
 

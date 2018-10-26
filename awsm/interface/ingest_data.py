@@ -10,7 +10,6 @@ import glob
 from datetime import datetime
 
 from smrf.utils import utils
-from
 
 C_TO_K = 273.16
 FREEZE = C_TO_K
@@ -26,6 +25,12 @@ class StateUpdater():
         # read in updates and store both dates and images
         update_info, x, y = self.initialize_aso_updates(myawsm, self.update_fp)
 
+        self._logger = myawsm._logger
+        self.end_date = myawsm.end_date
+        self.x = x
+        self.y = y
+        self.update_info = update_info
+
         # check to see if we're outputting the changes resulting from each update
         self.update_change_file = myawsm.config['update depth']['update_change_file']
         if self.update_change_file is not None:
@@ -37,10 +42,7 @@ class StateUpdater():
 
         # callculate offset for each section of the run and filter updates
         update_info, runsteps, offsets, firststeps = self.calc_offsets_nsteps(myawsm, update_info)
-
-        self.x = x
-        self.y = y
-        self.update_info = update_info
+        
         self.runsteps = runsteps
         self.offsets = offsets
         self.firststeps = firststeps
@@ -51,8 +53,6 @@ class StateUpdater():
         # get necessary variables from awsm class
         self.active_layer = myawsm.active_layer
         self.update_buffer = myawsm.update_buffer  # Buffer size (in cells) for the interpolation to search over.
-
-        self._logger = myawsm._logger
 
         self.ny = myawsm.topo.ny
         self.nx = myawsm.topo.nx
@@ -93,12 +93,27 @@ class StateUpdater():
                                                          self.update_info[un])
 
         # calculate the change from the update
-        diff_z = update_fields['D'] - output_rec['z_s']
-        diff_rho = update_fields['rho'] - output_rec['rho']
-        diff_swe = update_fields['D'] * updated_fields['rho'] - output_rec['m_s']
+        idsnow = updated_fields['D'] > 0
+        # difference in depth
+        diff_z = updated_fields['D'] - output_rec['z_s']
+        # difference in density
+        diff_rho = updated_fields['rho'] - output_rec['rho']
+        diff_rho[~idsnow] = np.nan
+        # difference in SWE
+        diff_swe = updated_fields['D'] * updated_fields['rho'] - output_rec['m_s']
+        diff_swe[~idsnow] = np.nan
 
-        # check to see if last update
-        islast = self.update_info == un
+        # check to see if last update for the time period
+        
+        islast = False
+        update_numbers = list(self.update_info.keys())
+        if update_numbers[-1] == un:
+            islast = True
+        else:
+            next_un_date = self.update_info[un+1]['date_time']
+            if next_un_date > self.end_date:
+                islast = True
+
         # write a file to show the change in updates
         self.output_update_changes(diff_z, diff_rho, diff_swe, dt, islast)
 
@@ -658,7 +673,7 @@ class StateUpdater():
 
         return updated_fields
 
-    def output_update_changes(diff_z, diff_rho, diff_swe, dt, islast):
+    def output_update_changes(self, diff_z, diff_rho, diff_swe, dt, islast):
         """
         Output the effect of the depth update each time that the state is
         updated.
@@ -673,7 +688,7 @@ class StateUpdater():
         variable_list = ['depth_change', 'rho_change', 'swe_change']
         # now find the correct index
         # the current time integer
-        times = self.detla_ds.variables['time']
+        times = self.delta_ds.variables['time']
         # convert to index
         t = nc.date2num(dt.replace(tzinfo=None), times.units, times.calendar)
         # find index in context of file
@@ -687,7 +702,7 @@ class StateUpdater():
             index = len(times)
 
         # insert the time and data
-        self.detla_ds.variables['time'][index] = t
+        self.delta_ds.variables['time'][index] = t
         self.delta_ds.variables['depth_change'][index, :] = diff_z
         self.delta_ds.variables['rho_change'][index, :] = diff_rho
         self.delta_ds.variables['swe_change'][index, :] = diff_swe
@@ -698,7 +713,7 @@ class StateUpdater():
         if islast:
             self.delta_ds.close()
 
-    def initialize_update_output(start_date, time_zone, awsm_version,
+    def initialize_update_output(self, start_date, time_zone, awsm_version,
                                  smrf_version):
         """
         Initialize the output files to track the changes in the state Variables
@@ -718,15 +733,15 @@ class StateUpdater():
         variable_dict = {
                         'depth_change' : {
                                           'units': 'meters',
-                                          'description': 'change in depth'
+                                          'description': 'change in depth from update'
                                          },
                         'rho_change' : {
                                         'units': 'kg*m^-2',
-                                        'description': 'change in density'
+                                        'description': 'change in density from update'
                                        },
                         'swe_change' : {
-                                        'units': 'mm',,
-                                        'description': 'change in SWE'
+                                        'units': 'mm',
+                                        'description': 'change in SWE from update'
                                        }
                         }
         # determine the x,y vectors for the netCDF file
@@ -738,8 +753,8 @@ class StateUpdater():
         self.date_time = {}
 
         if os.path.isfile(self.update_change_file):
-            myawsm._logger.warning(
-                    'Opening {}, data may be overwritten!'.format(netcdfFile))
+            self._logger.warning(
+                    'Opening {}, data may be overwritten!'.format(self.update_change_file))
             ds = nc.Dataset(self.update_change_file, 'a')
             h = '[{}] Data added or updated'.format(
                 datetime.now().strftime(fmt))
@@ -752,8 +767,8 @@ class StateUpdater():
 
             # create the dimensions
             ds.createDimension('time', None)
-            ds.createDimension('y', len(init['y']))
-            ds.createDimension('x', len(init['x']))
+            ds.createDimension('y', len(y))
+            ds.createDimension('x', len(x))
 
             # create some variables
             ds.createVariable('time', 'f', dimensions[0])
@@ -768,20 +783,22 @@ class StateUpdater():
             ds.variables['x'][:] = x
 
             # em image
-            for v, f in enumerate(variable_dict.items()):
+            for v, f in variable_dict.items():
                 ds.createVariable(v, 'f', dimensions[:3], chunksizes=cs)
-                setattr(ds.variables[v], 'units', f['units'][i])
-                setattr(ds.variables[v], 'description', f['description'][i])
+                setattr(ds.variables[v], 'units', f['units'])
+                setattr(ds.variables[v], 'description', f['description'])
 
 
 
             # define some global attributes
             ds.setncattr_string('Conventions', 'CF-1.6')
-            ds.setncattr_string('dateCreated', datetime.now().strftime(self.fmt))
+            ds.setncattr_string('dateCreated', datetime.now().strftime(fmt))
             ds.setncattr_string('created_with', 'Created with awsm {} and smrf {}'.format(awsm_version, smrf_version))
             ds.setncattr_string('history', '[{}] Create netCDF4 file'.format(datetime.now().strftime(fmt)))
             ds.setncattr_string('institution',
                     'USDA Agricultural Research Service, Northwest Watershed Research Center')
 
         # save the open dataset so we can write to it
+        ds.sync()
+
         return ds

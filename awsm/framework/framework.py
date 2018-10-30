@@ -228,6 +228,7 @@ class AWSM():
             self.depth_thresh = self.config['isnobal restart']['depth_thresh']
             self.restart_hr = \
                 int(self.config['isnobal restart']['wyh_restart_output'])
+            self.restart_folder = self.config['isnobal restart']['output_folders']
 
         # iSnobal active layer
         self.active_layer = self.config['grid']['active_layer']
@@ -247,7 +248,7 @@ class AWSM():
             # find restart hour datetime
             reset_offset = pd.to_timedelta(self.restart_hr, unit='h')
             # set a new start date for this run
-            self.restart_date = self.start_date + reset_offset
+            self.restart_date = self.wy_start + reset_offset
             self.tmp_log.append('Restart date is {}'.format(self.start_date))
 
         # read in update depth parameters
@@ -766,10 +767,23 @@ def run_awsm_daily_ops(config_file):
     # config = deepcopy(base_config)
     # set naming style
     config.raw_cfg['paths']['folder_date_style'] = 'day'
-
     config.apply_recipes()
     config = cast_all_variables(config, config.mcfg)
-    model_start = config.cfg['time']['start_date']
+
+    # get the water year
+    cfg_start_date = pd.to_datetime(config.cfg['time']['start_date'])
+    tzinfo = pytz.timezone(config.cfg['time']['time_zone'])
+    wy = utils.water_day(cfg_start_date.replace(tzinfo=tzinfo))[1]
+
+    # find the model start depending on restart
+    if config.cfg['isnobal restart']['restart_crash']:
+        offset_wyhr = int(config.cfg['isnobal restart']['wyh_restart_output'])
+        wy_start = pd.to_datetime('{:d}-10-01'.format(wy - 1))
+        model_start = wy_start + pd.to_timedelta(offset_wyhr, unit='h')
+    else:
+        model_start = config.cfg['time']['start_date']
+
+
     model_end = config.cfg['time']['end_date']
     isops = config.cfg['paths']['isops']
     if isops:
@@ -779,14 +793,20 @@ def run_awsm_daily_ops(config_file):
 
     # find output location for previous output
     paths = config.cfg['paths']
-    tzinfo = pytz.timezone(config.cfg['time']['time_zone'])
-    wy = utils.water_day(model_start.replace(tzinfo=tzinfo))[1]
+
     prev_out_base = os.path.join(paths['path_dr'],
                                  paths['basin'],
                                  devops,
                                  'wy{}'.format(wy),
                                  paths['proj'],
                                  'runs')
+
+    prev_data_base = os.path.join(paths['path_dr'],
+                                 paths['basin'],
+                                 devops,
+                                 'wy{}'.format(wy),
+                                 paths['proj'],
+                                 'data')
 
     # find day of start and end
     start_day = pd.to_datetime(model_start.strftime(fmt_day))
@@ -799,6 +819,11 @@ def run_awsm_daily_ops(config_file):
     # loop through daily runs and run awsm
     for idd, sd in enumerate(date_list):
         new_config = copy.deepcopy(config)
+        if idd > 0:
+            new_config.raw_cfg['isnobal restart']['restart_crash'] = False
+            new_config.raw_cfg['grid']['thresh_normal'] = 60
+            new_config.raw_cfg['grid']['thresh_medium'] = 10
+            new_config.raw_cfg['grid']['thresh_small'] = 1
         # get the end of the day
         ed = sd + add_day
 
@@ -823,6 +848,13 @@ def run_awsm_daily_ops(config_file):
             if new_config.cfg['awsm master']['model_type'] is not None:
                 new_config.raw_cfg['files']['init_type'] = 'netcdf_out'
                 new_config.raw_cfg['files']['init_file'] = prev_out
+
+            # if we have a previous storm day file, use it
+            prev_storm = os.path.join(prev_data_base,
+                                      'data{}'.format(prev_day.strftime(fmt_day)),
+                                      'smrfOutputs', 'storm_days.nc')
+            if os.path.isfile(prev_storm):
+                new_config.raw_cfg['precip']['storm_days_restart'] = prev_storm
 
         # apply recipes with new setttings
         new_config.apply_recipes()

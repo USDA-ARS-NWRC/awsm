@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import os
 import logging
 import netCDF4 as nc
@@ -78,6 +79,7 @@ class modelInit():
         self.restart_crash = cfg['isnobal restart']['restart_crash']
         self.restart_hr = cfg['isnobal restart']['wyh_restart_output']
         self.depth_thresh = cfg['isnobal restart']['depth_thresh']
+        self.restart_folder = cfg['isnobal restart']['output_folders']
         # water year hours
         self.start_wyhr = start_wyhr
         # datetime of october 1 of the correct year
@@ -183,7 +185,20 @@ class modelInit():
             self.get_ipw_out()
         else:
             self.init_type = 'netcdf_out'
-            self.init_file = os.path.join(self.pathrr, 'snow.nc')
+            # find the correct output folder from which to restart
+            if self.restart_folder == 'stadard':
+                self.init_file = os.path.join(self.pathrr, 'snow.nc')
+            elif self.restart_folder == 'daily':
+                fmt = '%Y%m%d'
+                # get the date string
+                day_str = self.pathrr[-8:]
+                day_dt = pd.to_datetime(day_str) - pd.to_timedelta(1, unit='days')
+                day_dt_str = day_dt.strftime(fmt)
+                # get the previous day
+                path_prev_day = os.path.join(self.pathrr,
+                                            '..' , 'run'+day_dt_str)
+                self.init_file = os.path.join(path_prev_day, 'snow.nc')
+
             self.get_netcdf_out()
 
         # zero depths under specified threshold

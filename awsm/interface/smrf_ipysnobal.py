@@ -94,8 +94,8 @@ def run_ipysnobal(myawsm):
                                   nthreads=myawsm.ipy_threads)
 
         if rt != -1:
-            print('ipysnobal error on time step %s, pixel %i' % (tstep, rt))
-            break
+            raise ValueError('ipysnobal error on time step %s, pixel %i' % (tstep, rt))
+            # break
 
         input1 = input2.copy()
 

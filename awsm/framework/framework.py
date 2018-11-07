@@ -560,7 +560,7 @@ class AWSM():
             self.path_ppt = os.path.join(self.pathdd, 'ppt_4b')
 
             # used to check if data direcotry exists
-            check_if_data = self.pathdd
+            check_if_data = not os.path.exists(self.pathdd)
         else:
             path_names_att = ['pathdd', 'pathrr', 'pathi',
                               'pathinit', 'pathro', 'paths', 'path_ppt']
@@ -580,10 +580,12 @@ class AWSM():
             self.path_ppt = os.path.join(self.pathdd, 'ppt_4b')
 
             # used to check if data direcotry exists
-            check_if_data = self.pathdd
+            check_if_data = not os.path.exists(self.pathdd)
 
         # add log path to create directory
         path_names_att.append('pathll')
+        # always check paths
+        check_if_data = True
 
         # Only start if your drive exists
         if os.path.exists(self.path_dr):
@@ -610,13 +612,13 @@ class AWSM():
                     self.make_rigid_directories(path_names_att)
 
             # If WY exists, but not this exact run for the dates, create it
-            elif not os.path.exists(check_if_data):
+            elif check_if_data:
                 y_n = 'a'
                 while y_n not in ['y', 'n']:
                     if self.prompt_dirs:
                         y_n = input('Directory %s does not exist. Create base '
                                     'directory and all subdirectories? '
-                                    '(y n): ' % check_if_data)
+                                    '(y n): ' % self.pathdd)
                     else:
                         y_n = 'y'
 
@@ -630,7 +632,7 @@ class AWSM():
 
             else:
                 self.tmp_warn.append('Directory structure leading to '
-                                     '{} already exists.'.format(check_if_data))
+                                     '{} already exists.'.format(self.pathdd))
 
             # make sure runs exists
             if not os.path.exists(os.path.join(self.path_wy, 'runs/')):

@@ -20,11 +20,7 @@ def create_smrf_config(myawsm):
     # ### read in base and write out the specific config file for smrf #######
     # ########################################################################
 
-    # append snowav keys if we're doing reporting
-    if myawsm.do_report:
-        delete_keys = myawsm.sec_awsm.append(myawsm.sec_snowav)
-    else:
-        delete_keys = myawsm.sec_awsm
+    delete_keys = myawsm.sec_awsm
 
     # Write out config file to run smrf
     # make copy and delete only awsm sections
@@ -49,10 +45,9 @@ def create_smrf_config(myawsm):
     else:
         fp_smrfini = myawsm.smrfini
 
-    myawsm._logger.info('Writing the config file for SMRF')
-    generate_config(smrf_cfg, fp_smrfini)
+    myawsm._logger.info('Making SMRF config!')
 
-    return fp_smrfini
+    return smrf_cfg
 
 
 def smrfMEAS(myawsm):
@@ -71,13 +66,12 @@ def smrfMEAS(myawsm):
     # #####################################################################
     if myawsm.end_date > myawsm.start_date:
         myawsm._logger.info('Running SMRF')
-        # first create config file to run smrf
-        fp_smrfini = create_smrf_config(myawsm)
+        # first create config to run smrf
+        smrf_cfg = create_smrf_config(myawsm)
 
         start = datetime.now()
 
-        # with smrf.framework.SMRF(meas_ini_file) as s:
-        with smrf.framework.SMRF(fp_smrfini, myawsm._logger) as s:
+        with smrf.framework.SMRF(smrf_cfg, myawsm._logger) as s:
             # 2. load topo data
             s.loadTopo()
 
@@ -99,163 +93,6 @@ def smrfMEAS(myawsm):
 
             s._logger.info(datetime.now() - start)
 
-def make_init_file(myawsm, offset):
-    i_out = ipw.IPW()
-
-    # making dem band
-    if myawsm.topotype == 'ipw':
-        i_dem = ipw.IPW(myawsm.fp_dem)
-        i_out.new_band(i_dem.bands[0].data)
-    elif myawsm.topotype == 'netcdf':
-        dem_file = nc.Dataset(myawsm.fp_dem, 'r')
-        i_dem = dem_file['dem'][:]
-        i_out.new_band(i_dem)
-        dem_file.close()
-
-    if myawsm.mask_isnobal:
-        i_mask = ipw.IPW(myawsm.fp_mask).bands[0].data
-        myawsm._logger.info('Masking init file')
-    else:
-        i_mask = np.ones((myawsm.ny, myawsm.nx))
-
-    if offset > 0:
-        # use given rougness from old init file if given
-        if myawsm.roughness_init is not None:
-            i_out.new_band(ipw.IPW(myawsm.roughness_init).bands[1].data)
-        else:
-            myawsm._logger.warning('No roughness given from old init,'
-                                   ' using value of 0.005 m')
-            i_out.new_band(0.005*np.ones((myawsm.ny, myawsm.nx)))
-
-        # if we have a previous mod file
-        if myawsm.prev_mod_file is not None:
-            i_in = ipw.IPW(myawsm.prev_mod_file)
-
-            i_out.new_band(i_in.bands[0].data*i_mask)  # snow depth
-            i_out.new_band(i_in.bands[1].data*i_mask)  # snow density
-
-            i_out.new_band(i_in.bands[4].data*i_mask)  # active layer temp
-            i_out.new_band(i_in.bands[5].data*i_mask)  # lower layer temp
-            i_out.new_band(i_in.bands[6].data*i_mask)  # avgerage snow temp
-
-            i_out.new_band(i_in.bands[8].data*i_mask)  # percent saturatio
-
-        else:
-            myawsm._logger.warning('Offset is greater than zero, but no prev_mod_file given!')
-            i_out.new_band(0.0*i_mask)  # snow depth
-            i_out.new_band(0.0*i_mask)  # snow density
-
-            i_out.new_band(-75.0*i_mask)  # active layer temp
-            i_out.new_band(-75.0*i_mask)  # lower layer temp
-            i_out.new_band(-75.0*i_mask)  # avgerage snow temp
-
-            i_out.new_band(0.0*i_mask)  # percent saturation
-
-        i_out.add_geo_hdr([myawsm.u, myawsm.v], [myawsm.du, myawsm.dv],
-                          myawsm.units, myawsm.csys)
-        i_out.write(os.path.join(myawsm.pathinit,
-                                 'init%04d.ipw' % (offset)), myawsm.nbits)
-
-    else:
-        zs0 = np.zeros((myawsm.ny, myawsm.nx))
-        if myawsm.roughness_init is not None:
-            i_out.new_band(ipw.IPW(myawsm.roughness_init).bands[1].data)
-        else:
-            myawsm._logger.warning('No roughness given from old init,'
-                                   ' using value of 0.005 m')
-            i_out.new_band(0.005*np.ones((myawsm.ny, myawsm.nx)))
-        #             i_out.new_band(i_rl0.bands[0].data)
-        i_out.new_band(zs0)  # zeros snow cover depth
-        i_out.new_band(zs0)  # 0density
-        i_out.new_band(zs0)  # 0ts active
-        i_out.new_band(zs0)  # 0ts avg
-        i_out.new_band(zs0)  # 0liquid
-        i_out.add_geo_hdr([myawsm.u, myawsm.v], [myawsm.du, myawsm.dv],
-                          myawsm.units, myawsm.csys)
-
-    init_file = os.path.join(myawsm.pathinit,
-                             'init%04d.ipw' % (offset))
-    i_out.write(init_file, myawsm.nbits)
-
-    myawsm._logger.debug('Wrote init file {}'.format(init_file))
-
-    return init_file
-
-def make_init_restart(myawsm):
-    # find water year hour and file paths
-    name_crash = 'snow.%04d' % myawsm.restart_hr
-    fp_crash = os.path.join(myawsm.pathro, name_crash)
-    fp_new_init = os.path.join(myawsm.pathinit,
-                               'init%04d.ipw' % myawsm.restart_hr)
-
-    # new ipw image for initializing restart
-    myawsm._logger.info("making new init image")
-    i_out = ipw.IPW()
-
-    # read in crash image and old init image
-    i_crash = ipw.IPW(fp_crash)
-    # ########################################################
-
-    # making dem band
-    if myawsm.topotype == 'ipw':
-        i_dem = ipw.IPW(myawsm.fp_dem)
-        i_out.new_band(i_dem.bands[0].data)
-    elif myawsm.topotype == 'netcdf':
-        dem_file = nc.Dataset(myawsm.fp_dem, 'r')
-        i_dem = dem_file['dem'][:]
-        i_out.new_band(i_dem)
-        dem_file.close()
-
-    if myawsm.roughness_init is not None:
-        i_out.new_band(ipw.IPW(myawsm.roughness_init).bands[1].data)
-    else:
-        myawsm._logger.warning('No roughness given from old init, '
-                               'using value of 0.005 m')
-        i_out.new_band(0.005*np.ones((myawsm.ny, myawsm.nx)))
-
-    # pull apart crash image and zero out values at index with depths < thresh
-    z_s = i_crash.bands[0].data  # snow depth
-    rho = i_crash.bands[1].data  # snow density
-    T_s_0 = i_crash.bands[4].data  # active layer temp
-    T_s_l = i_crash.bands[5].data  # lower layer temp
-    T_s = i_crash.bands[6].data  # avgerage snow temp
-    h20_sat = i_crash.bands[8].data  # percent saturation
-
-    myawsm._logger.info("correcting crash image, deleting "
-                        "depths under {} [m]".format(myawsm.depth_thresh))
-
-    # find pixels that need reset
-    idz = z_s < myawsm.depth_thresh
-
-    # find number of pixels reset
-    num_pix = len(np.where(idz)[0])
-    num_pix_tot = z_s.size
-
-    myawsm._logger.warning('Zeroing depth in '
-                           '{} out of {} total pixels'.format(num_pix,
-                                                              num_pix_tot))
-
-    z_s[idz] = 0.0
-    rho[idz] = 0.0
-    T_s_0[idz] = -75.0
-    T_s_l[idz] = -75.0
-    T_s[idz] = -75.0
-    h20_sat[idz] = 0.0
-
-    # fill in init image
-    i_out.new_band(z_s)
-    i_out.new_band(rho)
-    i_out.new_band(T_s_0)
-    i_out.new_band(T_s_l)
-    i_out.new_band(T_s)
-    i_out.new_band(h20_sat)
-    i_out.add_geo_hdr([myawsm.u, myawsm.v], [myawsm.du, myawsm.dv],
-                      myawsm.units, myawsm.csys)
-
-    myawsm._logger.info('Writing to {}'.format(fp_new_init))
-    i_out.write(fp_new_init, myawsm.nbits)
-
-    return fp_new_init
 
 def run_isnobal(myawsm, offset=None):
     '''
@@ -277,23 +114,12 @@ def run_isnobal(myawsm, offset=None):
     # set number of bits
     nbits = myawsm.nbits
 
-    # making initial conditions file
-    myawsm._logger.debug("Making initial conds img for iSnobal")
-    # if we were not given an init file, make one
-    if myawsm.init_file is None:
-        if myawsm.restart_crash:
-            init_file = make_init_restart(myawsm)
-            offset = myawsm.restart_hr+1
-        else:
-            init_file = make_init_file(myawsm, offset)
-            # print('init', init_file)
-    else:
-        if myawsm.restart_crash:
-            init_file = make_init_restart(myawsm)
-            offset = myawsm.restart_hr+1
-        else:
-            myawsm._logger.info('Initializing iSnobal with given init file')
-            init_file = myawsm.init_file
+    # set offset for restart
+    if myawsm.restart_crash:
+        offset = myawsm.restart_hr+1
+
+    # init file
+    init_file = myawsm.myinit.fp_init
 
     # develop the command to run the model
     myawsm._logger.debug("Developing command and running iSnobal")
@@ -342,7 +168,7 @@ def run_isnobal(myawsm, offset=None):
         myawsm._logger.warning('Time frame has no precip!')
 
     if myawsm.mask_isnobal:
-        run_cmd += ' -m %s' % (myawsm.fp_mask)
+        run_cmd += ' -m %s' % (myawsm.topo.fp_mask)
 
     # add output frequency in hours
     run_cmd += ' -O {}'.format(int(myawsm.output_freq))

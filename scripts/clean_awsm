@@ -1,0 +1,68 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+from awsm.framework.framework import AWSM
+import sys, os, shutil
+import argparse
+
+def delete_path(fp):
+    if os.path.isdir(fp):
+        y_n = 'n'
+        y_n = input('Do you want to delete [{}] (y/n):  '.format(fp))
+        if y_n == 'y':
+            print('Deleting {}'.format(fp))
+            shutil.rmtree(fp)
+        else:
+            print('Not deleting {}'.format(fp))
+    else:
+        print('{} does not exist'.format(fp))
+
+
+def run():
+    '''
+    command line program meant to clean data from awsm.
+    this will delete the run, data, or log folder for the date range in the
+    config file provided to the script.
+    argument for the config file.  From this program, smrf.framework
+    will be loaded to run the full program.
+    '''
+    # Path for Docker use only
+    parser = argparse.ArgumentParser(description='Clean unwanted awsm directories.'\
+                                    'this will delete the run, data, or log folder for the date range in the '\
+                                    'config file provided to the script.')
+    parser.add_argument('fps', metavar='F', type=str, help='awsm config file')
+    parser.add_argument('--runs', action="store_true", help='delete runs directory')
+    parser.add_argument('--data', action="store_true", help='delete data directory')
+    parser.add_argument('--logs', action="store_true", help='delete logs directory')
+
+    # get args
+    args = parser.parse_args()
+
+    fps = args.fps
+    if not os.path.isfile(fps):
+        raise IOError('File incorrect or not given')
+    # should we delete folders
+    del_runs = False
+    del_data = False
+    del_logs = False
+    if args.runs:
+        del_runs = True
+    if args.data:
+        del_data = True
+    if args.logs:
+        del_logs = True
+
+    if not del_runs and not del_data and not del_logs:
+        print('Not deleting anything')
+    else:
+        with AWSM(fps) as a:
+            if del_runs:
+                delete_path(a.pathrr)
+            if del_data:
+                delete_path(a.pathdd)
+            if del_logs:
+                delete_path(a.pathll)
+
+
+if __name__ == '__main__':
+    run()

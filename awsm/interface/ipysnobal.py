@@ -15,6 +15,7 @@ except Exception as e:
     print(e)
     print('pysnobal not installed, ignoring')
 
+import pandas as pd
 import sys
 import numpy as np
 from smrf.utils import utils
@@ -58,14 +59,10 @@ def init_from_smrf(myawsm, mysmrf=None, dem=None):
                                                   myawsm.mass_thresh)
 
     if dem is None:
-        dem = mysmrf.topo.dem
+        dem = myawsm.topo.dem
 
-    # open the files and read in data
-    if not myawsm.restart_run:
-        init = initmodel.open_init_files(myawsm, options, dem)
-    # open restart files and zero small depths
-    else:
-        init = initmodel.open_restart_files(myawsm, options, dem)
+    # get init params
+    init = myawsm.myinit.init
 
     output_rec = initmodel.initialize(params, tstep_info, init)
 
@@ -82,7 +79,8 @@ class QueueIsnobal(threading.Thread):
 
     def __init__(self, queue, date_time, thread_variables, awsm_output_vars,
                  options, params, tstep_info, init,
-                 output_rec, nx, ny, soil_temp, logger, tzi):
+                 output_rec, nx, ny, soil_temp, logger, tzi,
+                 updater=None):
         """
         Args:
             queue:      dictionary of the queue
@@ -99,6 +97,7 @@ class QueueIsnobal(threading.Thread):
             soil_temp:  uniform soil temperature (float)
             logger:     initialized AWSM logger
             tzi:        time zone information
+            updater:    depth updater
         """
 
         threading.Thread.__init__(self, name='isnobal')
@@ -116,6 +115,7 @@ class QueueIsnobal(threading.Thread):
         self.soil_temp = soil_temp
         self.nthreads = self.options['output']['nthreads']
         self.tzinfo = tzi
+        self.updater = updater
 
         # get AWSM logger
         self._logger = logger
@@ -206,13 +206,21 @@ class QueueIsnobal(threading.Thread):
             input2['T_pp'] += FREEZE
             input2['T_g'] += FREEZE
 
+            first_step = j
+            if self.updater is not None:
+                if tstep.tz_localize(None) in self.updater.update_dates:
+                    self.output_rec = \
+                        self.updater.do_update_pysnobal(self.output_rec,
+                                                        tstep.tz_localize(None))
+                    first_step = 1
+
             self._logger.info('running PySnobal for timestep: {}'.format(tstep))
             rt = snobal.do_tstep_grid(input1, input2,
                                       self.output_rec,
                                       self.tstep_info,
                                       self.options['constants'],
                                       self.params,
-                                      first_step=j,
+                                      first_step=first_step,
                                       nthreads=self.nthreads)
 
             if rt != -1:
@@ -342,7 +350,7 @@ class PySnobal():
 
         self._logger.info('Finished initializing first timestep for iPySnobal')
 
-    def run_single(self, tstep, s):
+    def run_single(self, tstep, s, updater=None):
         """
         Runs each timestep of Pysnobal when running with SMRF in non-threaded
         application.
@@ -350,6 +358,7 @@ class PySnobal():
         Args:
             tstep: datetime timestep
             s:     smrf class instance
+            updater: depth updater class
 
         """
         # pbar = progressbar.ProgressBar(max_value=len(options['time']['date_time']))
@@ -374,6 +383,15 @@ class PySnobal():
         self.input2['T_g'] += FREEZE
 
         first_step = self.j
+
+        # update depth if necessary
+        if updater is not None:
+            if tstep.tz_localize(None) in updater.update_dates:
+                print('doing that update thing')
+                self.output_rec = \
+                    updater.do_update_pysnobal(self.output_rec, tstep.tz_localize(None))
+                first_step = 1
+
 
         self._logger.info('running PySnobal for timestep: {}'.format(tstep))
         rt = snobal.do_tstep_grid(self.input1, self.input2, self.output_rec,

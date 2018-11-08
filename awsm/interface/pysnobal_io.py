@@ -40,13 +40,13 @@ def open_files_nc(myawsm):
     try:
         force['soil_temp'] = nc.Dataset(options['inputs']['soil_temp'], 'r')
     except:
-        force['soil_temp'] = float(myawsm.soil_temp) * np.ones((myawsm.ny,
-                                                                myawsm.nx))
+        force['soil_temp'] = float(myawsm.soil_temp) * np.ones((myawsm.topo.ny,
+                                                                myawsm.topo.nx))
 
     force['precip_mass'] = nc.Dataset(os.path.join(myawsm.paths, 'precip.nc'), 'r')
     force['percent_snow'] = nc.Dataset(os.path.join(myawsm.paths, 'percent_snow.nc'), 'r')
     force['snow_density'] = nc.Dataset(os.path.join(myawsm.paths, 'snow_density.nc'), 'r')
-    force['precip_temp'] = nc.Dataset(os.path.join(myawsm.paths, 'dew_point.nc'), 'r')
+    force['precip_temp'] = nc.Dataset(os.path.join(myawsm.paths, 'precip_temp.nc'), 'r')
 
     return force
 
@@ -113,7 +113,7 @@ def output_files(options, init, start_date, myawsm):
     fmt = '%Y-%m-%d %H:%M:%S'
     # chunk size
     cs = (6, 10, 10)
-    if myawsm.nx < 10:
+    if myawsm.topo.nx < 10:
         cs = (3, 3, 3)
 
     # ------------------------------------------------------------------------
@@ -136,9 +136,9 @@ def output_files(options, init, start_date, myawsm):
                         'Snowcover cold content']
 
     emname = myawsm.em_name+'.nc'
-    if myawsm.restart_run:
-        emname = 'em_restart_{}.nc'.format(myawsm.restart_hr)
-        start_date = myawsm.restart_date
+    # if myawsm.restart_run:
+    #     emname = 'em_restart_{}.nc'.format(myawsm.restart_hr)
+    #     start_date = myawsm.restart_date
 
     netcdfFile = os.path.join(options['output']['location'], emname)
 
@@ -203,8 +203,8 @@ def output_files(options, init, start_date, myawsm):
                         'Predicted percentage of liquid water saturation of the snowcover']
 
     snowname = myawsm.snow_name + '.nc'
-    if myawsm.restart_run:
-        snowname = 'snow_restart_{}.nc'.format(myawsm.restart_hr)
+    # if myawsm.restart_run:
+    #     snowname = 'snow_restart_{}.nc'.format(myawsm.restart_hr)
 
     netcdfFile = os.path.join(options['output']['location'], snowname)
 

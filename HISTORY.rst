@@ -39,7 +39,7 @@ History
 
 * Inicheck integration
 * SNOWAV interface established
-* API Documentation 
+* API Documentation
 
 
 0.6.0 (2018-07-13)
@@ -48,3 +48,11 @@ History
 * Added model state updating using lidar images
 * Added a feature to enable the use of wet bulb for precip temp (mirroring SMRF)
 * Automatically detecting domain parameters from topo file
+
+
+0.7.0 (2018-08-13)
+------------------
+
+* Added unit tests that run on Travis CI and Coveralls
+* Added LiDAR depth updating functionality to iPySnobal runs
+* Merged iSnobal and PySnobal init file options in config

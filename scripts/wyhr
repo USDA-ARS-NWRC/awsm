@@ -83,11 +83,15 @@ def calculate_wyhr_from_date(date_time):
 
 def main():
     parser = argparse.ArgumentParser(description="Converts dates and water year hour")
+    parser.add_argument('convertable', nargs='+', default=None,
+                        help="Receives either a datetime or wyhr and "
+                        "infers automatically")
+
     parser.add_argument("--date","-d", type=str, dest='date',nargs='+',
                     help="String of date time to convert to water year hour")
     parser.add_argument('--wyhr', dest='wyhr', type=int,
                         help="Integer of water year hours")
-    parser.add_argument('--year', dest='year', type=int,
+    parser.add_argument('--year','-y', dest='year', type=int,
                         help="Integer of year, required when converting from"
                              " wyhr")
     parser.add_argument('--eod', dest='eod', action='store_true',
@@ -96,6 +100,34 @@ def main():
 
     # Snag todays date
     today = datetime.datetime.now()
+
+    # Print a header
+    msg = "WYHR Conversion Utility:"
+    hdr = "=" * len(msg)
+    print("\n")
+    print(msg)
+    print(hdr)
+
+    # Try to infer the users input if no args are provided.
+    if args.convertable != None:
+
+        # Check for wyhr
+        try:
+            args.wyhr = int(" ".join(args.convertable))
+
+        except:
+            args.wyhr = None
+
+        # Check for datetime
+        if args.wyhr == None:
+            try:
+                date = get_datetime_from_args(" ".join(args.convertable))
+                args.date = args.convertable
+
+            except Exception as e:
+                print("\nERROR: Could not distinguish argument as a WYHR or a"
+                      " datetime.\nException: {}\n".format(e))
+                sys.exit()
 
     # Convert from date specified
     if args.date != None:
@@ -131,15 +163,9 @@ def main():
         date = calculate_date_from_wyhr(wyhr, year)
 
 
-    msg = "WYHR Conversion Utility:"
-    hdr = "=" * len(msg)
-
-    print("\n")
-    print(msg)
-    print(hdr)
     print("Date: {0}".format(date.strftime("%Y-%m-%d %H:00")))
     print("WYHR: {0}".format(wyhr))
-
+    print('\n')
 
 if __name__ == '__main__':
     main()

@@ -263,7 +263,8 @@ def run_smrf_ipysnobal_single(myawsm, s):
 
         # 3. Wind_speed and wind_direction
         s.distribute['wind'].distribute(s.data.wind_speed.loc[t],
-                                           s.data.wind_direction.loc[t])
+                                        s.data.wind_direction.loc[t],
+                                        t)
 
         # 4. Precipitation
         s.distribute['precip'].distribute(s.data.precip.loc[t],
@@ -293,15 +294,16 @@ def run_smrf_ipysnobal_single(myawsm, s):
                                             s.distribute['albedo'].albedo_ir)
 
         # 7. thermal radiation
-        if s.distribute['thermal'].gridded:
+        if s.distribute['thermal'].gridded and \
+           s.config['gridded']['data_type'] != 'hrrr':
             s.distribute['thermal'].distribute_thermal(s.data.thermal.loc[t],
                                                           s.distribute['air_temp'].air_temp)
         else:
             s.distribute['thermal'].distribute(t,
-                                                  s.distribute['air_temp'].air_temp,
-                                                  s.distribute['vapor_pressure'].vapor_pressure,
-                                                  s.distribute['vapor_pressure'].dew_point,
-                                                  s.distribute['solar'].cloud_factor)
+                                               s.distribute['air_temp'].air_temp,
+                                               s.distribute['vapor_pressure'].vapor_pressure,
+                                               s.distribute['vapor_pressure'].dew_point,
+                                               s.distribute['solar'].cloud_factor)
 
         # 8. Soil temperature
         s.distribute['soil_temp'].distribute()

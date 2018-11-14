@@ -289,12 +289,11 @@ class AWSM():
             self.parseReport()
 
         # ################ Generate config backup ##################
-        if self.config['output']['input_backup']:
-
-            # set location for backup and output backup of awsm sections
-            config_backup_location = \
-                os.path.join(self.pathdd, 'awsm_config_backup.ini')
-            generate_config(self.ucfg, config_backup_location)
+        # if self.config['output']['input_backup']:
+        # set location for backup and output backup of awsm sections
+        config_backup_location = \
+            os.path.join(self.pathdd, 'awsm_config_backup.ini')
+        generate_config(self.ucfg, config_backup_location)
 
         # create log now that directory structure is done
         self.createLog()
@@ -304,7 +303,6 @@ class AWSM():
             self.myinit = modelInit(self._logger, self.config, self.topo,
                                     self.start_wyhr, self.pathro, self.pathrr,
                                     self.pathinit, self.wy_start)
-
 
     def parseReport(self):
         """

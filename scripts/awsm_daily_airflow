@@ -10,6 +10,10 @@ from datetime import datetime
 import sys
 import os
 import argparse
+import numpy as np
+import pandas as pd
+import pytz
+import copy
 
 
 def mod_config(config_file, start_date, no_previous):
@@ -79,12 +83,12 @@ def mod_config(config_file, start_date, no_previous):
             new_config.raw_cfg['files']['init_type'] = 'netcdf_out'
             new_config.raw_cfg['files']['init_file'] = prev_out
 
-    # if we have a previous storm day file, use it
-    prev_storm = os.path.join(prev_data_base,
-                              'data{}'.format(prev_day.strftime(fmt_day)),
-                              'smrfOutputs', 'storm_days.nc')
-    if os.path.isfile(prev_storm):
-        new_config.raw_cfg['precip']['storm_days_restart'] = prev_storm
+        # if we have a previous storm day file, use it
+        prev_storm = os.path.join(prev_data_base,
+                                  'data{}'.format(prev_day.strftime(fmt_day)),
+                                  'smrfOutputs', 'storm_days.nc')
+        if os.path.isfile(prev_storm):
+            new_config.raw_cfg['precip']['storm_days_restart'] = prev_storm
 
     return new_config
 
@@ -95,7 +99,7 @@ def run():
     '''
 
     # Parse arguments
-    p = argparse.ArgumentParser(description='Run AWSM for airflow purposes.')
+    p = argparse.ArgumentParser(description='Run AWSM using Airflow scheduler.')
 
     p.add_argument('-c', '--cfg', required=True,
                    help='Config file that will be modified for the current run date')
@@ -113,7 +117,12 @@ def run():
     fp_cfg = args.cfg
     no_previous = args.no_previous
 
+    # set dates and paths
     new_config = mod_config(fp_cfg, start_date, no_previous)
+
+    # apply recipes with new setttings
+    new_config.apply_recipes()
+    new_config = cast_all_variables(new_config, new_config.mcfg)
 
     run_awsm(new_config)
 

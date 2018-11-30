@@ -56,3 +56,12 @@ History
 * Added unit tests that run on Travis CI and Coveralls
 * Added LiDAR depth updating functionality to iPySnobal runs
 * Merged iSnobal and PySnobal init file options in config
+
+
+0.8.0 (2018-11-28)
+------------------
+
+* Daily run script with crash manual crash restart ability
+* SNOWAV and dependencies added to Docker
+* Automatic depth update difference file writing
+* Daily run script for use with Airflow

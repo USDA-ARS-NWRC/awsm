@@ -80,6 +80,7 @@ class modelInit():
         self.restart_hr = cfg['isnobal restart']['wyh_restart_output']
         self.depth_thresh = cfg['isnobal restart']['depth_thresh']
         self.restart_folder = cfg['isnobal restart']['output_folders']
+
         # water year hours
         self.start_wyhr = start_wyhr
         # datetime of october 1 of the correct year
@@ -178,6 +179,7 @@ class modelInit():
         Modifies:
             init:    dictionary of initialized variables
         """
+
         # restart procedure from failed run
         if self.model_type == 'isnobal':
             self.init_type = 'ipw_out'
@@ -186,8 +188,9 @@ class modelInit():
         else:
             self.init_type = 'netcdf_out'
             # find the correct output folder from which to restart
-            if self.restart_folder == 'stadard':
+            if self.restart_folder == 'standard':
                 self.init_file = os.path.join(self.pathrr, 'snow.nc')
+
             elif self.restart_folder == 'daily':
                 fmt = '%Y%m%d'
                 # get the date string

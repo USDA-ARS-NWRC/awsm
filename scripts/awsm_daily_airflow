@@ -46,17 +46,22 @@ def mod_config(config_file, start_date, no_previous):
 
     # # find output location for previous output
     paths = config.cfg['paths']
+    isops = paths['isops']
+    if isops:
+        ops = 'ops'
+    else:
+        ops = 'devel'
 
     prev_out_base = os.path.join(paths['path_dr'],
                                  paths['basin'],
-                                 'ops',
+                                 ops,
                                  'wy{}'.format(wy),
                                  paths['proj'],
                                  'runs')
 
     prev_data_base = os.path.join(paths['path_dr'],
                                  paths['basin'],
-                                 'ops',
+                                 ops,
                                  'wy{}'.format(wy),
                                  paths['proj'],
                                  'data')

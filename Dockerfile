@@ -43,6 +43,7 @@ WORKDIR /data
 
 COPY ./docker-entrypoint.sh /
 RUN chmod +x /docker-entrypoint.sh
+RUN echo "umask 0002" >> /etc/bash.bashrc
 ENTRYPOINT ["/docker-entrypoint.sh"]
 #CMD ["python3", "/code/awsm/scripts/awsm"]
 

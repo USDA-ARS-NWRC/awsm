@@ -10,6 +10,8 @@ from inicheck.config import MasterConfig, UserConfig
 from inicheck.tools import get_user_config, check_config
 from inicheck.output import print_config_report, generate_config
 from inicheck.tools import cast_all_variables
+from spatialnc.topo import topo as mytopo
+
 import smrf
 # make input the same as raw input if python 2
 try:
@@ -33,7 +35,6 @@ from awsm.interface import interface as smin
 from awsm.interface import smrf_ipysnobal as smrf_ipy
 from awsm.interface import ingest_data
 from awsm.utils import utilities as awsm_utils
-from awsm.data.topo import topo as mytopo
 from awsm.data.init_model import modelInit
 import awsm.reporting.reportingtools as retools
 

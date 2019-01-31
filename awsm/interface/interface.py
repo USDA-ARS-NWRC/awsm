@@ -1,5 +1,6 @@
 import smrf
-from smrf import ipw, data
+from smrf import data
+from spatialnc import ipw
 from smrf.utils import io, utils
 import os
 import numpy as np

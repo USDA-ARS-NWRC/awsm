@@ -1,10 +1,10 @@
 from .gitinfo import __gitVersion__, __gitPath__
 import os
 import numpy as np
-from smrf import ipw
 import awsm
 from awsm import __version__
 import smrf
+from spatialnc import ipw
 from netCDF4 import Dataset
 
 def getgitinfo():

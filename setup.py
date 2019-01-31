@@ -52,10 +52,6 @@ with open('README.md',encoding='utf-8') as readme_file:
 with open('HISTORY.rst', encoding='utf-8') as history_file:
     history = history_file.read()
 
-requirements = [
-    # TODO: put package requirements here
-]
-
 setup_requirements = [
     # TODO(micahsandusky5): put setup requirements (distutils extensions, etc.) here
 ]
@@ -97,11 +93,8 @@ setup(
         'Intended Audience :: Developers',
         'License :: OSI Approved :: CC0 1.-',
         'Natural Language :: English',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.3',
-        'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
-		'Programming Language :: Python :: 3.6',
+	'Programming Language :: Python :: 3.6',
     ],
     test_suite='tests',
     # tests_require=test_requirements,

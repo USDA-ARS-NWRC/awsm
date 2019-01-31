@@ -14,7 +14,7 @@ import netCDF4 as nc
 
 import smrf
 from smrf.utils import queue
-from smrf import ipw
+from spatialnc import ipw
 from smrf.envphys import radiation
 from awsm.interface import ipysnobal
 from awsm.interface import interface

@@ -11,7 +11,7 @@ from datetime import timedelta
 import netCDF4 as nc
 import pytz
 
-from smrf import ipw
+from spatialnc import ipw
 from smrf.utils import utils
 
 DEFAULT_MAX_H2O_VOL = 0.01

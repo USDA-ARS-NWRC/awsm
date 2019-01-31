@@ -1,4 +1,4 @@
-from smrf import ipw
+from spatialnc import ipw
 import numpy as np
 import os
 import copy

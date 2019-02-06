@@ -5,6 +5,7 @@ from datetime import datetime
 import netCDF4 as nc
 import glob
 from copy import copy
+from spatialnc.proj import add_proj
 
 C_TO_K = 273.16
 FREEZE = C_TO_K
@@ -150,6 +151,9 @@ def output_files(options, init, start_date, myawsm):
             datetime.now().strftime(fmt))
         setattr(em, 'last_modified', h)
 
+        if 'projection' not in em.variables.keys():
+            em = add_proj(em, None, myawsm.topo.topoConfig['filename'])
+
     else:
         em = nc.Dataset(netcdfFile, 'w')
 
@@ -181,6 +185,9 @@ def output_files(options, init, start_date, myawsm):
                 em.createVariable(v, 'f', dimensions[:3], chunksizes=cs)
                 setattr(em.variables[v], 'units', m['units'][i])
                 setattr(em.variables[v], 'description', m['description'][i])
+
+        # add projection info
+        em = add_proj(em, None, myawsm.topo.topoConfig['filename'])
 
     options['output']['em'] = em
 
@@ -217,6 +224,9 @@ def output_files(options, init, start_date, myawsm):
             datetime.now().strftime(fmt))
         setattr(snow, 'last_modified', h)
 
+        if 'projection' not in snow.variables.keys():
+            snow = add_proj(snow, None, myawsm.topo.topoConfig['filename'])
+
     else:
         dimensions = ('time', 'y', 'x')
 
@@ -247,6 +257,9 @@ def output_files(options, init, start_date, myawsm):
                 # snow.createVariable(v, 'f', dimensions[:3])
                 setattr(snow.variables[v], 'units', s['units'][i])
                 setattr(snow.variables[v], 'description', s['description'][i])
+
+        # add projection info
+        snow = add_proj(snow, None, myawsm.topo.topoConfig['filename'])
 
     options['output']['snow'] = snow
 

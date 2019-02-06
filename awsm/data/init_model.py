@@ -6,7 +6,7 @@ import netCDF4 as nc
 from datetime import timedelta
 import pytz
 
-from smrf import ipw
+from spatialnc import ipw
 from smrf.utils import utils
 
 C_TO_K = 273.16

@@ -1,7 +1,6 @@
 import pandas as pd
 import numpy as np
-from smrf import ipw
-#import matplotlib.pyplot as plt
+from spatialnc import ipw
 import os
 import sys
 import seaborn as sns

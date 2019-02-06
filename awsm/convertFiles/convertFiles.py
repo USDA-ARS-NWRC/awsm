@@ -1,5 +1,5 @@
 import smrf
-from smrf import ipw
+from spatialnc import ipw
 import os
 import sys
 import numpy as np
@@ -99,7 +99,7 @@ def nc2ipw_mea(myawsm, runtype):
 
         in_step = os.path.join(in_path, 'in.%04i' % (t))
 
-        i = smrf.ipw.IPW()
+        i = ipw.IPW()
         i.new_band(trad_step)
         i.new_band(ta_step)
         i.new_band(ea_step)
@@ -122,7 +122,7 @@ def nc2ipw_mea(myawsm, runtype):
             tp_step = tp_file.variables[tp_var][idxt, :]
             in_stepp = os.path.join(os.path.abspath(in_pathp),
                                     'ppt.4b_%04i' % (t))
-            i = smrf.ipw.IPW()
+            i = ipw.IPW()
             i.new_band(mp_step)
             i.new_band(ps_step)
             i.new_band(rho_step)

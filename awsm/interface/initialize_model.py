@@ -11,7 +11,7 @@ from datetime import timedelta
 import netCDF4 as nc
 import pytz
 
-from smrf import ipw
+from spatialnc import ipw
 from smrf.utils import utils
 
 DEFAULT_MAX_H2O_VOL = 0.01
@@ -104,7 +104,8 @@ def get_timestep_netcdf(force, tstep, point=None):
             # determine the index in the netCDF file
 
             # compare the dimensions and variables to get the variable name
-            v = list(set(force[f].variables.keys())-set(force[f].dimensions.keys()))[0]
+            v = list(set(force[f].variables.keys())-set(force[f].dimensions.keys()))
+            v = [fv for fv in v if fv != 'projection'][0]
 
             # make sure you're in the same timezone
             if hasattr(force[f].variables['time'], 'time_zone'):

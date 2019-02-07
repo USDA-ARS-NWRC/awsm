@@ -1,7 +1,13 @@
 # AWSM is built on SMRF
-FROM usdaarsnwrc/smrf:0.8.0
+FROM usdaarsnwrc/smrf:0.8.1
 
 MAINTAINER Scott Havens <scott.havens@ars.usda.gov>
+
+####################################################
+# Software version
+####################################################
+ENV VPYSNOBAL "0.2.0"
+ENV VSNOWAV "0.5.1"
 
 ####################################################
 # Install dependencies
@@ -13,8 +19,8 @@ RUN apt-get update \
     && apt-get install -y texlive-lang-english \
     && apt-get install -y texlive-latex-extra \
     && cd /code \
-    && curl -L https://github.com/USDA-ARS-NWRC/pysnobal/archive/master.tar.gz | tar xz \
-    && curl -L https://github.com/USDA-ARS-NWRC/snowav/archive/master.tar.gz | tar xz \
+    && curl -L https://github.com/USDA-ARS-NWRC/pysnobal/archive/v${VPYSNOBAL}.tar.gz | tar xz \
+    && curl -L https://github.com/USDA-ARS-NWRC/snowav/archive/v${VSNOWAV}.tar.gz | tar xz \
     && rm -rf /var/lib/apt/lists/* \
     && apt remove -y curl \
     && apt autoremove -y
@@ -27,15 +33,15 @@ COPY . / /code/awsm/
 
 #ENV PYTHONPATH=/code/awsm/
 
-RUN cd /code/pysnobal-master \
+RUN cd /code/pysnobal-${VPYSNOBAL} \
     && python3 -m pip install --upgrade pip \
     && python3 -m pip install -r requirements_smrf.txt \
     && python3 setup.py install \
     && cd /code/awsm \
     && python3 -m pip install -r /code/awsm/requirements.txt \
     && python3 setup.py install \
-    && cd /code/snowav-master \
-    && python3 -m pip install -r /code/snowav-master/requirements.txt \
+    && cd /code/snowav-${VSNOWAV} \
+    && python3 -m pip install -r /code/snowav-${VSNOWAV}/requirements.txt \
     && python3 setup.py install \
     && rm -r /root/.cache/pip
 

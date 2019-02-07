@@ -4,7 +4,7 @@
 
 __author__ = """Micah Sandusky"""
 __email__ = 'micah.sandusky@ars.usda.gov'
-__version__ = '0.9.0'
+__version__ = '0.9.1'
 import matplotlib
 matplotlib.use('Agg')
 import os

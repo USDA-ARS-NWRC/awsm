@@ -1,5 +1,5 @@
 # AWSM is built on SMRF
-FROM usdaarsnwrc/smrf:0.8.1
+FROM usdaarsnwrc/smrf:0.8.2
 
 MAINTAINER Scott Havens <scott.havens@ars.usda.gov>
 
@@ -7,7 +7,7 @@ MAINTAINER Scott Havens <scott.havens@ars.usda.gov>
 # Software version
 ####################################################
 ENV VPYSNOBAL "0.2.0"
-ENV VSNOWAV "0.5.1"
+ENV VSNOWAV "0.5.2"
 
 ####################################################
 # Install dependencies

@@ -538,48 +538,48 @@ class AWSM():
         self.forecastini = os.path.join(self.path_wy,
                                         'tmp_smrf_forecast_config.ini')
 
-        if not self.do_forecast:
-            # assign path names for isnobal, path_names_att will be used
-            # to create necessary directories
-            path_names_att = ['pathdd', 'pathrr', 'pathi',
-                              'pathinit', 'pathro', 'paths', 'path_ppt']
-            self.pathdd = \
-                os.path.join(self.pathd,
-                             'data{}'.format(self.folder_date_stamp))
-            self.pathrr = \
-                os.path.join(self.pathr,
-                             'run{}'.format(self.folder_date_stamp))
-            self.pathi = os.path.join(self.pathdd, 'input/')
-            self.pathinit = os.path.join(self.pathdd, 'init/')
-            self.pathro = os.path.join(self.pathrr, 'output/')
-            self.paths = os.path.join(self.pathdd, 'smrfOutputs')
-            self.ppt_desc = \
-                os.path.join(self.pathdd,
-                             'ppt_desc{}.txt'.format(self.folder_date_stamp))
-            self.path_ppt = os.path.join(self.pathdd, 'ppt_4b')
+        # if not self.do_forecast:
+        # assign path names for isnobal, path_names_att will be used
+        # to create necessary directories
+        path_names_att = ['pathdd', 'pathrr', 'pathi',
+                          'pathinit', 'pathro', 'paths', 'path_ppt']
+        self.pathdd = \
+            os.path.join(self.pathd,
+                         'data{}'.format(self.folder_date_stamp))
+        self.pathrr = \
+            os.path.join(self.pathr,
+                         'run{}'.format(self.folder_date_stamp))
+        self.pathi = os.path.join(self.pathdd, 'input/')
+        self.pathinit = os.path.join(self.pathdd, 'init/')
+        self.pathro = os.path.join(self.pathrr, 'output/')
+        self.paths = os.path.join(self.pathdd, 'smrfOutputs')
+        self.ppt_desc = \
+            os.path.join(self.pathdd,
+                         'ppt_desc{}.txt'.format(self.folder_date_stamp))
+        self.path_ppt = os.path.join(self.pathdd, 'ppt_4b')
 
-            # used to check if data direcotry exists
-            check_if_data = not os.path.exists(self.pathdd)
-        else:
-            path_names_att = ['pathdd', 'pathrr', 'pathi',
-                              'pathinit', 'pathro', 'paths', 'path_ppt']
-            self.pathdd = \
-                os.path.join(self.pathd,
-                             'forecast{}'.format(self.folder_date_stamp))
-            self.pathrr = \
-                os.path.join(self.pathr,
-                             'forecast{}'.format(self.folder_date_stamp))
-            self.pathi = os.path.join(self.pathdd, 'input/')
-            self.pathinit = os.path.join(self.pathdd, 'init/')
-            self.pathro = os.path.join(self.pathrr, 'output/')
-            self.paths = os.path.join(self.pathdd, 'smrfOutputs')
-            self.ppt_desc = \
-                os.path.join(self.pathdd,
-                             'ppt_desc{}.txt'.format(self.folder_date_stamp))
-            self.path_ppt = os.path.join(self.pathdd, 'ppt_4b')
-
-            # used to check if data direcotry exists
-            check_if_data = not os.path.exists(self.pathdd)
+        # used to check if data direcotry exists
+        check_if_data = not os.path.exists(self.pathdd)
+        # else:
+        #     path_names_att = ['pathdd', 'pathrr', 'pathi',
+        #                       'pathinit', 'pathro', 'paths', 'path_ppt']
+        #     self.pathdd = \
+        #         os.path.join(self.pathd,
+        #                      'forecast{}'.format(self.folder_date_stamp))
+        #     self.pathrr = \
+        #         os.path.join(self.pathr,
+        #                      'forecast{}'.format(self.folder_date_stamp))
+        #     self.pathi = os.path.join(self.pathdd, 'input/')
+        #     self.pathinit = os.path.join(self.pathdd, 'init/')
+        #     self.pathro = os.path.join(self.pathrr, 'output/')
+        #     self.paths = os.path.join(self.pathdd, 'smrfOutputs')
+        #     self.ppt_desc = \
+        #         os.path.join(self.pathdd,
+        #                      'ppt_desc{}.txt'.format(self.folder_date_stamp))
+        #     self.path_ppt = os.path.join(self.pathdd, 'ppt_4b')
+        #
+        #     # used to check if data direcotry exists
+        #     check_if_data = not os.path.exists(self.pathdd)
 
         # add log path to create directory
         path_names_att.append('pathll')

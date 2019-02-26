@@ -6,7 +6,7 @@ awsm='python3 /code/awsm/scripts/awsm'
 if [ $# -eq 0 ]; then
     echo "Run AWSM docker test"
     umask 0002
-    exec $awsm /code/awsm/test_data/RME_run/docker_pysnobal.ini
+    exec $awsm /code/awsm/tests/RME/config.ini
 
 elif [ "$1" = "test" ]; then
     echo "Run AWSM docker test"

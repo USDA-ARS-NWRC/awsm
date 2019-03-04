@@ -31,6 +31,7 @@ class StateUpdater():
         self.y = y
         self.update_info = update_info
 
+        self.tzinfo = myawsm.tzinfo
         # check to see if we're outputting the changes resulting from each update
         self.update_change_file = myawsm.config['update depth']['update_change_file']
         if self.update_change_file is not None:
@@ -39,7 +40,6 @@ class StateUpdater():
             self.delta_ds = self.initialize_update_output(start_date, time_zone,
                                                           myawsm.gitVersion,
                                                           myawsm.smrf_version)
-            self.tzinfo = myawsm.tzinfo
 
         # callculate offset for each section of the run and filter updates
         # update_info, runsteps, offsets, firststeps = self.calc_offsets_nsteps(myawsm, update_info)
@@ -119,7 +119,8 @@ class StateUpdater():
                 islast = True
 
         # write a file to show the change in updates
-        self.output_update_changes(diff_z, diff_rho, diff_swe, dt, islast)
+        if self.update_change_file is not None:
+            self.output_update_changes(diff_z, diff_rho, diff_swe, dt, islast)
 
         # save the fields
         output_rec['m_s'] = updated_fields['D'] * updated_fields['rho']

@@ -190,8 +190,12 @@ class StateUpdater():
         ds = Dataset(fp, 'r')
         # get all depths, x, y, time
         D_all = ds.variables['depth'][:]
+        D_all[np.isinf(D_all)] = np.nan
+        D_all[D_all > 200.0] = np.nan
         if np.any(D_all) > 100:
             print('Check D_all')
+            D_all[D_all > 100.0] = np.nan
+
         x = ds.variables['x'][:]
         y = ds.variables['y'][:]
         times = ds.variables['time']

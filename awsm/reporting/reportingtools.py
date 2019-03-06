@@ -19,10 +19,7 @@ def plot_dashboard(myawsm):
 
     # initialize reporting tool
     myawsm._logger.info('Plotting summary information as requested')
-    snow = snowav.framework.framework.SNOWAV(config_file = myawsm.report_config,
-                                             external_logger = myawsm._logger,
-                                             awsm = myawsm)
-
+    snow = snowav.framework.framework.SNOWAV(config_file = myawsm.report_config)
 
 # def plot_waterbalance(myawsm):
 #     """

@@ -319,10 +319,10 @@ class AWSM():
             os.makedirs(self.path_report_i)
 
         # fill in some of the config options
-        self.config['report']['rep_path'] = self.path_report_i
+        # self.config['report']['rep_path'] = self.path_report_i
         self.config['snowav system']['save_path'] = self.path_report_i
         self.config['snowav system']['wy'] = self.wy
-        self.config['runs']['run_dirs'] = [self.pathro]
+        self.config['runs']['run_dirs'] = [self.pathr]
         # create updated config for report
         self.report_config = os.path.join(self.path_report_o, 'snowav_cfg.ini')
         #generate_config(self.ucfg, self.report_config)

@@ -450,7 +450,7 @@ class StateUpdater():
         D = update_info['depth']
 
         # make mask
-        D[self.topo.mask == 0.0] = np.nan
+        # D[self.topo.mask == 0.0] = np.nan
         mask = np.ones_like(D)
         mask[np.isnan(D)] = 0.0
 

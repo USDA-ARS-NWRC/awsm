@@ -1,5 +1,5 @@
 # AWSM is built on SMRF
-FROM usdaarsnwrc/smrf:0.8.7
+FROM usdaarsnwrc/smrf:0.8.8
 
 MAINTAINER Scott Havens <scott.havens@ars.usda.gov>
 

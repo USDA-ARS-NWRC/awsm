@@ -7,7 +7,7 @@ MAINTAINER Scott Havens <scott.havens@ars.usda.gov>
 # Software version
 ####################################################
 ENV VPYSNOBAL "0.2.0"
-ENV VSNOWAV "0.7.5"
+ENV VSNOWAV "0.8.0"
 
 ####################################################
 # Install dependencies

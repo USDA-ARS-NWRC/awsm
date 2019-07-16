@@ -286,8 +286,8 @@ class AWSM():
                            self.model_type, self.csys, self.pathdd)
 
         # parse reporting section and make reporting folder
-        if self.do_report:
-            self.parseReport()
+        # if self.do_report:
+        #     self.parseReport()
 
         # ################ Generate config backup ##################
         # if self.config['output']['input_backup']:
@@ -312,23 +312,16 @@ class AWSM():
         # get all relevant options
         snowav_mcfg = MasterConfig(modules = 'snowav')
         self.sec_snowav = snowav_mcfg.cfg.keys()
-        # make reporting directory
         self.path_report_o = os.path.join(self.path_wy, 'reports')
         self.path_report_i = os.path.join(self.path_report_o, 'report_{}'.format(self.folder_date_stamp))
         if not os.path.exists(self.path_report_i):
             os.makedirs(self.path_report_i)
 
-        # fill in some of the config options
-        # self.config['report']['rep_path'] = self.path_report_i
         self.config['snowav system']['save_path'] = self.path_report_i
         self.config['snowav system']['wy'] = self.wy
         self.config['runs']['run_dirs'] = [self.pathrr]
-        # create updated config for report
         self.report_config = os.path.join(self.path_report_o, 'snowav_cfg.ini')
-        #generate_config(self.ucfg, self.report_config)
 
-        ##### new stuff
-        # Write out config file to run smrf
         # make copy and delete only awsm sections
         snowav_cfg = copy.deepcopy(self.ucfg)
         for key in self.ucfg.cfg.keys():

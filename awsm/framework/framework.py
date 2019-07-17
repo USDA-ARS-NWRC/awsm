@@ -107,7 +107,7 @@ class AWSM():
         if len(errors) > 0:
             print("Errors in the config file. "
                   "See configuration status report above.")
-            sys.exit()
+            # sys.exit()
 
         # ################## Decide which modules to run #####################
         self.do_smrf = self.config['awsm master']['run_smrf']

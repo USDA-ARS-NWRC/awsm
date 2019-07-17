@@ -66,11 +66,11 @@ class AWSM():
             configFile = config
 
             try:
-                try:
-                    snowav_mcfg = MasterConfig(modules = 'snowav')
-                    combined_mcfg = MasterConfig(modules = ['smrf','awsm','snowav'])
-                except:
-                    combined_mcfg = MasterConfig(modules = ['smrf','awsm'])
+                # try:
+                #     snowav_mcfg = MasterConfig(modules = 'snowav')
+                #     combined_mcfg = MasterConfig(modules = ['smrf','awsm','snowav'])
+                # except:
+                combined_mcfg = MasterConfig(modules = ['smrf','awsm'])
 
                 # Read in the original users config
                 self.ucfg = get_user_config(configFile, mcfg=combined_mcfg)
@@ -755,7 +755,7 @@ def run_awsm_daily_ops(config_file):
 
     # get config instance
     config = get_user_config(config_file,
-                             modules = ['smrf','awsm', 'snowav'])
+                             modules = ['smrf','awsm'])
 
     # copy the config and get total start and end
     # config = deepcopy(base_config)

@@ -27,7 +27,7 @@ def mod_config(config_file, start_date, no_previous):
 
     # get config instance
     config = get_user_config(config_file,
-                             modules = ['smrf','awsm', 'snowav'])
+                             modules = ['smrf','awsm'])
 
     # copy the config and get total start and end
     # config = deepcopy(base_config)

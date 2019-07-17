@@ -310,26 +310,26 @@ class AWSM():
         Parse the options related to reporting
         """
         # get all relevant options
-        snowav_mcfg = MasterConfig(modules = 'snowav')
-        self.sec_snowav = snowav_mcfg.cfg.keys()
-        self.path_report_o = os.path.join(self.path_wy, 'reports')
-        self.path_report_i = os.path.join(self.path_report_o, 'report_{}'.format(self.folder_date_stamp))
-        if not os.path.exists(self.path_report_i):
-            os.makedirs(self.path_report_i)
-
-        self.config['snowav system']['save_path'] = self.path_report_i
-        self.config['snowav system']['wy'] = self.wy
-        self.config['runs']['run_dirs'] = [self.pathrr]
-        self.report_config = os.path.join(self.path_report_o, 'snowav_cfg.ini')
-
-        # make copy and delete only awsm sections
-        snowav_cfg = copy.deepcopy(self.ucfg)
-        for key in self.ucfg.cfg.keys():
-            if key in self.sec_awsm or key in self.sec_smrf:
-                del snowav_cfg.cfg[key]
-
-        self.tmp_log.append('Writing the config file for snowav')
-        generate_config(snowav_cfg, self.report_config)
+        # snowav_mcfg = MasterConfig(modules = 'snowav')
+        # self.sec_snowav = snowav_mcfg.cfg.keys()
+        # self.path_report_o = os.path.join(self.path_wy, 'reports')
+        # self.path_report_i = os.path.join(self.path_report_o, 'report_{}'.format(self.folder_date_stamp))
+        # if not os.path.exists(self.path_report_i):
+        #     os.makedirs(self.path_report_i)
+        #
+        # self.config['snowav system']['save_path'] = self.path_report_i
+        # self.config['snowav system']['wy'] = self.wy
+        # self.config['runs']['run_dirs'] = [self.pathrr]
+        # self.report_config = os.path.join(self.path_report_o, 'snowav_cfg.ini')
+        #
+        # # make copy and delete only awsm sections
+        # snowav_cfg = copy.deepcopy(self.ucfg)
+        # for key in self.ucfg.cfg.keys():
+        #     if key in self.sec_awsm or key in self.sec_smrf:
+        #         del snowav_cfg.cfg[key]
+        #
+        # self.tmp_log.append('Writing the config file for snowav')
+        # generate_config(snowav_cfg, self.report_config)
 
     def createLog(self):
         '''

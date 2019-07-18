@@ -127,7 +127,8 @@ class AWSM():
         self.do_make_in = self.config['awsm master']['make_in']
         self.do_make_nc = self.config['awsm master']['make_nc']
         # do report?
-        self.do_report = self.config['awsm master']['run_report']
+        # self.do_report = self.config['awsm master']['do_report']
+        self.snowav_config = self.config['awsm master']['snowav_config']
 
         # options for masking isnobal
         self.mask_isnobal = self.config['awsm master']['mask_isnobal']
@@ -920,7 +921,7 @@ def run_awsm(config):
                 a.run_smrf_ipysnobal()
 
         # create report
-        if a.do_report:
+        if a.snowav_config is not None:
             a._logger.info('AWSM finished run, starting report')
             a.do_reporting()
 

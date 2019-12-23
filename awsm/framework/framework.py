@@ -279,7 +279,7 @@ class AWSM():
 
         # ################ Topo data for iSnobal ##################
         # get topo stats
-        self.csys = self.config['grid']['csys']
+        self.csys = self.config['grid']['csys'].upper()
         self.nbits = int(self.config['grid']['nbits'])
         self.soil_temp = self.config['soil_temp']['temp']
         # get topo class

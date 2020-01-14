@@ -275,9 +275,6 @@ class AWSM():
         # Make rigid directory structure
         self.mk_directories()
 
-        # ################ Topo information ##################
-        self.topotype = self.config['topo']['type']
-
         # ################ Topo data for iSnobal ##################
         # get topo stats
         self.csys = self.config['grid']['csys'].upper()

@@ -284,8 +284,11 @@ def run_smrf_ipysnobal_single(myawsm, s):
                                              illum_ang,
                                              s.distribute['precip'].storm_days)
 
-        # 6. Solar
-        s.distribute['solar'].distribute(s.data.cloud_factor.loc[t],
+        # 6. cloud factor
+        self.distribute['cloud_factor'].distribute(self.data.cloud_factor.loc[t])
+
+        # 7. solar
+        s.distribute['solar'].distribute(self.distribute["cloud_factor"].cloud_factor,
                                             illum_ang,
                                             cosz,
                                             azimuth,
@@ -303,7 +306,7 @@ def run_smrf_ipysnobal_single(myawsm, s):
                                                s.distribute['air_temp'].air_temp,
                                                s.distribute['vapor_pressure'].vapor_pressure,
                                                s.distribute['vapor_pressure'].dew_point,
-                                               s.distribute['solar'].cloud_factor)
+                                               s.distribute['cloud_factor'].cloud_factor)
 
         # 8. Soil temperature
         s.distribute['soil_temp'].distribute()

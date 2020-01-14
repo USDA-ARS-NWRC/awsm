@@ -295,7 +295,7 @@ def run_smrf_ipysnobal_single(myawsm, s):
 
         # 7. thermal radiation
         if s.distribute['thermal'].gridded and \
-           s.config['gridded']['data_type'] != 'hrrr':
+           s.config['gridded']['data_type'] != 'hrrr_grib':
             s.distribute['thermal'].distribute_thermal(s.data.thermal.loc[t],
                                                           s.distribute['air_temp'].air_temp)
         else:

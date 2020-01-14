@@ -117,13 +117,14 @@ class AWSM():
         #     self.config['awsm master']['run_smrf_ipysnobal']
         # self.do_ipysnobal = self.config['awsm master']['run_ipysnobal']
 
-        if 'gridded' in self.config:
-            self.do_forecast = self.config['gridded']['forecast_flag']
-            self.n_forecast_hours = self.config['gridded']['n_forecast_hours']
-        else:
-            self.do_forecast = False
+        if 'gridded' in self.config and self.do_smrf:
+            self.do_forecast = self.config['gridded']['hrrr_forecast_flag']
 
-        # options for converting files
+            # WARNING: The value here is inferred in SMRF.data.loadGrid. A
+            # change here requires a change there
+            self.n_forecast_hours = 18
+
+        # Options for converting files
         self.do_make_in = self.config['awsm master']['make_in']
         self.do_make_nc = self.config['awsm master']['make_nc']
         # do report?
@@ -187,7 +188,7 @@ class AWSM():
         if self.do_forecast:
             self.tmp_log.append('Forecasting set to True')
 
-            # self.fp_forecastdata = self.config['gridded']['file']
+            # self.fp_forecastdata = self.config['gridded']['wrf_file']
             # if self.fp_forecastdata is None:
             #     self.tmp_err.append('Forecast set to true, '
             #                         'but no grid file given')

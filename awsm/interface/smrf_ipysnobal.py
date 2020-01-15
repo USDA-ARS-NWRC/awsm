@@ -285,16 +285,17 @@ def run_smrf_ipysnobal_single(myawsm, s):
                                              s.distribute['precip'].storm_days)
 
         # 6. cloud factor
-        self.distribute['cloud_factor'].distribute(self.data.cloud_factor.loc[t])
+        s.distribute['cloud_factor'].distribute(s.data.cloud_factor.loc[t])
 
         # 7. solar
-        s.distribute['solar'].distribute(self.distribute["cloud_factor"].cloud_factor,
-                                            illum_ang,
-                                            cosz,
-                                            azimuth,
-                                            s.distribute['precip'].last_storm_day_basin,
-                                            s.distribute['albedo'].albedo_vis,
-                                            s.distribute['albedo'].albedo_ir)
+        s.distribute['solar'].distribute(t,
+                                         s.distribute["cloud_factor"].cloud_factor,
+                                         illum_ang,
+                                         cosz,
+                                         azimuth,
+                                         s.distribute['precip'].last_storm_day_basin,
+                                         s.distribute['albedo'].albedo_vis,
+                                         s.distribute['albedo'].albedo_ir)
 
         # 7. thermal radiation
         if s.distribute['thermal'].gridded and \

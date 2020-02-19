@@ -116,7 +116,7 @@ class AWSM():
         # self.do_smrf_ipysnobal = \
         #     self.config['awsm master']['run_smrf_ipysnobal']
         # self.do_ipysnobal = self.config['awsm master']['run_ipysnobal']
-        self.do_forecast =False
+        self.do_forecast = False
         if 'gridded' in self.config and self.do_smrf:
             self.do_forecast = self.config['gridded']['hrrr_forecast_flag']
 

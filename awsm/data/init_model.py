@@ -198,8 +198,8 @@ class modelInit():
                 day_dt = pd.to_datetime(day_str) - pd.to_timedelta(1, unit='days')
                 day_dt_str = day_dt.strftime(fmt)
                 # get the previous day
-                path_prev_day = os.path.join(self.pathrr,
-                                            '..' , 'run'+day_dt_str)
+                path_prev_day = os.path.abspath(os.path.join(self.pathrr,
+                                            '..' , 'run'+day_dt_str))
                 self.init_file = os.path.join(path_prev_day, 'snow.nc')
 
             self.get_netcdf_out()

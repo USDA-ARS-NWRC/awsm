@@ -3,6 +3,8 @@ FROM usdaarsnwrc/smrf:latest
 
 MAINTAINER Scott Havens <scott.havens@ars.usda.gov>
 
+ARG REQUIREMENTS=''
+
 ####################################################
 # Software version
 ####################################################
@@ -38,7 +40,7 @@ RUN cd /code/pysnobal-${VPYSNOBAL} \
     && python3 setup.py install
 
 RUN cd /code/awsm \
-    && python3 -m pip install -r /code/awsm/requirements.txt \
+    && python3 -m pip install --no-cache-dir -r /code/awsm/requirements${REQUIREMENTS}.txt \
     && python3 setup.py install \
     && rm -r /root/.cache/pip
 

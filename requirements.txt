@@ -4,4 +4,3 @@ tox==2.3.1
 matplotlib==2.0.0
 seaborn==0.8
 snowav>=0.11.0,<0.12
-pandas<1.0.0

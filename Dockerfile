@@ -17,6 +17,7 @@ RUN apt-get update \
     && apt-get install -y texlive-base \
     && apt-get install -y texlive-lang-english \
     && apt-get install -y texlive-latex-extra \
+    && apt-get install -y gcc \
     && cd /code \
     && curl -L https://github.com/USDA-ARS-NWRC/pysnobal/archive/v${VPYSNOBAL}.tar.gz | tar xz \
     && rm -rf /var/lib/apt/lists/* \

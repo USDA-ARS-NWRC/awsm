@@ -60,7 +60,6 @@ class TestConfigurations(AWSMTestCase):
         # test the base run with the config file
         result = can_i_run_awsm(self.config_file)
         self.assertTrue(result)
-        # self.assertTrue(False)
 
         # test the base run with the config file
         result = can_i_run_awsm(self.base_config)

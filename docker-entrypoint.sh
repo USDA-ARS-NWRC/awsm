@@ -12,7 +12,6 @@ elif [ "$1" = "test" ]; then
     echo "Run AWSM docker test"
     cd /code/awsm
     coverage run --source awsm setup.py test
-
     coverage report --fail-under=40
     coveralls
     exit 0

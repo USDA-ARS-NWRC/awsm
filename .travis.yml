@@ -8,7 +8,8 @@ services:
   - docker
 
 before_install:
-  - docker build -t usdaarsnwrc/awsm .
+  - docker pull usdaarsnwrc/smrf:latest
+  - docker build --build-arg REQUIREMENTS=_dev -t usdaarsnwrc/awsm .
 
 script:
   docker run -it usdaarsnwrc/awsm test

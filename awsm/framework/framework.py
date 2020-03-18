@@ -116,14 +116,15 @@ class AWSM():
         # self.do_smrf_ipysnobal = \
         #     self.config['awsm master']['run_smrf_ipysnobal']
         # self.do_ipysnobal = self.config['awsm master']['run_ipysnobal']
+        self.do_forecast = False
+        if 'gridded' in self.config and self.do_smrf:
+            self.do_forecast = self.config['gridded']['hrrr_forecast_flag']
 
-        if 'gridded' in self.config:
-            self.do_forecast = self.config['gridded']['forecast_flag']
-            self.n_forecast_hours = self.config['gridded']['n_forecast_hours']
-        else:
-            self.do_forecast = False
+            # WARNING: The value here is inferred in SMRF.data.loadGrid. A
+            # change here requires a change there
+            self.n_forecast_hours = 18
 
-        # options for converting files
+        # Options for converting files
         self.do_make_in = self.config['awsm master']['make_in']
         self.do_make_nc = self.config['awsm master']['make_nc']
         # do report?
@@ -187,7 +188,7 @@ class AWSM():
         if self.do_forecast:
             self.tmp_log.append('Forecasting set to True')
 
-            # self.fp_forecastdata = self.config['gridded']['file']
+            # self.fp_forecastdata = self.config['gridded']['wrf_file']
             # if self.fp_forecastdata is None:
             #     self.tmp_err.append('Forecast set to true, '
             #                         'but no grid file given')
@@ -273,9 +274,6 @@ class AWSM():
 
         # Make rigid directory structure
         self.mk_directories()
-
-        # ################ Topo information ##################
-        self.topotype = self.config['topo']['type']
 
         # ################ Topo data for iSnobal ##################
         # get topo stats
@@ -942,5 +940,5 @@ def can_i_run_awsm(config):
         return success
 
     except Exception as e:
-        print(e)
+        raise(e)
         return False

@@ -259,7 +259,7 @@ def run_awsm_daily(myawsm):
             os.makedirs(myawsm.pathro)
 
         # turn off forecast for daily run (will be turned on later if it was true)
-        myawsm.config['gridded']['forecast_flag'] = False
+        myawsm.config['gridded']['hrrr_forecast_flag'] = False
 
         # ################# run_model for day ###############################
         myawsm.run_smrf_ipysnobal()
@@ -272,7 +272,7 @@ def run_awsm_daily(myawsm):
         # do the 18hr forecast on each hour if forecast is true
         if myawsm.do_forecast:
             # turn forecast back on in smrf config
-            myawsm.config['gridded']['forecast_flag'] = True
+            myawsm.config['gridded']['hrrr_forecast_flag'] = True
 
             # now loop through the forecast hours for 18hr forecasts
             d_inner = data.mysql_data.date_range(myawsm.start_date,

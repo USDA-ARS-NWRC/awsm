@@ -1,7 +1,9 @@
 # AWSM is built on SMRF
-FROM usdaarsnwrc/smrf:0.9
+FROM usdaarsnwrc/smrf:latest
 
 MAINTAINER Scott Havens <scott.havens@ars.usda.gov>
+
+ARG REQUIREMENTS=''
 
 ####################################################
 # Software version
@@ -17,6 +19,7 @@ RUN apt-get update \
     && apt-get install -y texlive-base \
     && apt-get install -y texlive-lang-english \
     && apt-get install -y texlive-latex-extra \
+    && apt-get install -y gcc \
     && cd /code \
     && curl -L https://github.com/USDA-ARS-NWRC/pysnobal/archive/v${VPYSNOBAL}.tar.gz | tar xz \
     && rm -rf /var/lib/apt/lists/* \
@@ -34,10 +37,10 @@ COPY . / /code/awsm/
 RUN cd /code/pysnobal-${VPYSNOBAL} \
     && python3 -m pip install --upgrade pip \
     && python3 -m pip install -r requirements_smrf.txt \
-    && python3 setup.py install \
-    && cd /code/awsm \
-    && python3 -m pip install -r /code/awsm/requirements.txt \
-    && python3 setup.py install \
+    && python3 setup.py install
+
+RUN cd /code/awsm \
+    && python3 -m pip install --no-cache-dir -r /code/awsm/requirements${REQUIREMENTS}.txt \
     && python3 setup.py install \
     && rm -r /root/.cache/pip
 

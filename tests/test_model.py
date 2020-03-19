@@ -1,10 +1,9 @@
-from copy import deepcopy
-from inicheck.tools import cast_all_variables
-from inicheck.utilities import pcfg
 import unittest
+from copy import deepcopy
 
-from awsm.framework.framework import can_i_run_awsm
+from inicheck.tools import cast_all_variables
 
+from awsm.framework.framework import run_awsm
 from .test_configurations import AWSMTestCase
 
 
@@ -23,12 +22,10 @@ class TestModel(AWSMTestCase):
 
         config = cast_all_variables(config, config.mcfg)
 
-
         # ensure that the recipes are used
         self.assertTrue(config.cfg['awsm master']['model_type'] == 'isnobal')
 
-        result = can_i_run_awsm(config)
-        self.assertTrue(result)
+        self.assertIsNone(run_awsm(config))
 
     def test_isnobal_restart(self):
         """ Test standard iSnobal with crash restart """
@@ -42,8 +39,9 @@ class TestModel(AWSMTestCase):
 
         config = cast_all_variables(config, config.mcfg)
 
-        result = can_i_run_awsm(config)
+        result = run_awsm(config)
 
+        # TODO - Not currently tested
         # run again with restart
         config = deepcopy(self.base_config)
 
@@ -56,7 +54,7 @@ class TestModel(AWSMTestCase):
 
         config = cast_all_variables(config, config.mcfg)
 
-        self.assertTrue(result)
+        # self.assertTrue(run_awsm(config))
 
     def test_pysnobal(self):
         """ Test standard Pysnobal """
@@ -71,8 +69,7 @@ class TestModel(AWSMTestCase):
         # ensure that the recipes are used
         self.assertTrue(config.cfg['awsm master']['model_type'] == 'ipysnobal')
 
-        result = can_i_run_awsm(config)
-        self.assertTrue(result)
+        self.assertIsNone(run_awsm(config))
 
     def test_pysnobal_netcdf(self):
         """ Test PySnobal with netCDF Forcing """
@@ -86,8 +83,7 @@ class TestModel(AWSMTestCase):
         config.apply_recipes()
         config = cast_all_variables(config, config.mcfg)
 
-        result = can_i_run_awsm(config)
-        self.assertTrue(result)
+        self.assertIsNone(run_awsm(config))
 
     def test_smrf_pysnobal_single(self):
         """ Test smrf passing variables to PySnobal """
@@ -101,10 +97,11 @@ class TestModel(AWSMTestCase):
         config.apply_recipes()
         config = cast_all_variables(config, config.mcfg)
 
-        self.assertTrue(config.cfg['awsm master']['model_type'] == 'smrf_ipysnobal')
+        self.assertTrue(
+            config.cfg['awsm master']['model_type'] == 'smrf_ipysnobal'
+        )
 
-        result = can_i_run_awsm(config)
-        self.assertTrue(result)
+        self.assertIsNone(run_awsm(config))
 
     def test_smrf_pysnobal_thread(self):
         """  Test smrf passing variables to PySnobal threaded """
@@ -118,5 +115,8 @@ class TestModel(AWSMTestCase):
         config.apply_recipes()
         config = cast_all_variables(config, config.mcfg)
 
-        result = can_i_run_awsm(config)
-        self.assertTrue(result)
+        self.assertIsNone(run_awsm(config))
+
+
+if __name__ == '__main__':
+    unittest.main()

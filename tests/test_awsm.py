@@ -8,23 +8,25 @@ test_awsm
 Tests for an entire awsm run. The AWSM integration run!
 """
 
-import unittest
-import shutil
 import os
-import awsm
-from awsm.framework.framework import can_i_run_awsm
+import shutil
+import unittest
+
 import numpy as np
 from netCDF4 import Dataset
-import matplotlib.pyplot as plt
 
-def compare_image(v_name,gold_image,test_image):
+import awsm
+from awsm.framework.framework import run_awsm
+
+
+def compare_image(v_name, gold_image, test_image):
     """
     Compares two netcdfs images to and determines if they are the same.
 
     Args:
         v_name: Name with in the file contains
-        gold_dir: Directory containing gold standard results
-        test_dir: Directory containing test results to be compared
+        gold_image: Directory containing gold standard results
+        test_image: Directory containing test results to be compared
     Returns:
         Boolean: Whether the two images were the same
     """
@@ -37,9 +39,9 @@ def compare_image(v_name,gold_image,test_image):
     rough = d2.variables[v_name][:]
     d2.close()
 
-    result = np.abs(gold-rough)
+    result = np.abs(gold - rough)
 
-    return  not np.any(result>0.0)
+    return not np.any(result > 0.0)
 
 
 class TestStandardRME(unittest.TestCase):
@@ -48,28 +50,34 @@ class TestStandardRME(unittest.TestCase):
     """
 
     @classmethod
-    def setUpClass(self):
+    def setUpClass(cls):
         """
         Runs the short simulation over reynolds mountain east
         """
-        run_dir = os.path.abspath(os.path.join(os.path.dirname(awsm.__file__),
-                                                '..', 'tests', 'RME'))
+        run_dir = os.path.abspath(os.path.join(
+            os.path.dirname(awsm.__file__), '..', 'tests', 'RME')
+        )
 
         # Gold paths
-        self.gold = os.path.abspath(os.path.join(os.path.dirname(awsm.__file__),
-                                                '..', 'tests', 'RME', 'gold'))
-        self.gold_em = os.path.join(self.gold, 'em.nc')
-        self.gold_snow = os.path.join(self.gold, 'snow.nc')
+        cls.gold = os.path.abspath(
+            os.path.join(
+                os.path.dirname(awsm.__file__), '..', 'tests', 'RME', 'gold'
+            )
+        )
+        cls.gold_em = os.path.join(cls.gold, 'em.nc')
+        cls.gold_snow = os.path.join(cls.gold, 'snow.nc')
 
         # Output
-        self.output = os.path.join(run_dir,
-                        'output/rme/devel/wy1986/rme_test/runs/run3337_3344')
-        self.output_em = os.path.join(self.output, 'em.nc')
-        self.output_snow = os.path.join(self.output, 'snow.nc')
+        cls.output = os.path.join(
+            run_dir,
+            'output/rme/devel/wy1986/rme_test/runs/run3337_3344'
+        )
+        cls.output_em = os.path.join(cls.output, 'em.nc')
+        cls.output_snow = os.path.join(cls.output, 'snow.nc')
 
         # Remove any potential files to ensure fresh run
-        if os.path.isdir(self.output):
-            shutil.rmtree(self.output)
+        if os.path.isdir(cls.output):
+            shutil.rmtree(cls.output)
             # for f in [self.output_snow,self.output_em]:
             #     if os.path.isfile(f):
             #         os.remove(f)
@@ -77,140 +85,121 @@ class TestStandardRME(unittest.TestCase):
         config = os.path.join(run_dir, 'config.ini')
 
         # Run simulation
-        can_i_run_awsm(config)
+        run_awsm(config)
 
     def test_thickness(self):
-    	"""
-    	Check the simulated thickness is the same as the gold file
-    	"""
-    	a = compare_image("thickness", self.output_snow,self.gold_snow)
-    	assert(a)
+        """
+        Check the simulated thickness is the same as the gold file
+        """
+        assert compare_image("thickness", self.output_snow, self.gold_snow)
 
     def test_snow_density(self):
-    	"""
-    	Check the simulated snow density is the same as the gold file
-    	"""
-    	a = compare_image("snow_density", self.output_snow,self.gold_snow)
-    	assert(a)
+        """
+        Check the simulated snow density is the same as the gold file
+        """
+        assert compare_image("snow_density", self.output_snow, self.gold_snow)
 
     def test_specific_mass(self):
-    	"""
-    	Check the simulated specific mass is the same as the gold file
-    	"""
-    	a = compare_image("specific_mass", self.output_snow,self.gold_snow)
-    	assert(a)
+        """
+        Check the simulated specific mass is the same as the gold file
+        """
+        assert compare_image("specific_mass", self.output_snow, self.gold_snow)
 
     def test_liquid_water(self):
-    	"""
-    	Check the simulated liquid water is the same as the gold file
-    	"""
-    	a = compare_image("liquid_water", self.output_snow,self.gold_snow)
-    	assert(a)
+        """
+        Check the simulated liquid water is the same as the gold file
+        """
+        assert compare_image("liquid_water", self.output_snow, self.gold_snow)
 
     def test_temp_surf(self):
-    	"""
-    	Check the simulated temp surf is the same as the gold file
-    	"""
-    	a = compare_image("temp_surf", self.output_snow,self.gold_snow)
-    	assert(a)
+        """
+        Check the simulated temp surf is the same as the gold file
+        """
+        assert compare_image("temp_surf", self.output_snow, self.gold_snow)
 
     def test_temp_lower(self):
-    	"""
-    	Check the simulated temp lower is the same as the gold file
-    	"""
-    	a = compare_image("temp_lower", self.output_snow,self.gold_snow)
-    	assert(a)
+        """
+        Check the simulated temp lower is the same as the gold file
+        """
+        assert compare_image("temp_lower", self.output_snow, self.gold_snow)
 
     def test_temp_snowcover(self):
-    	"""
-    	Check the simulated temp snowcover is the same as the gold file
-    	"""
-    	a = compare_image("temp_snowcover", self.output_snow,self.gold_snow)
-    	assert(a)
+        """
+        Check the simulated temp snowcover is the same as the gold file
+        """
+        assert compare_image("temp_snowcover", self.output_snow, self.gold_snow)
 
     def test_thickness_lower(self):
-    	"""
-    	Check the simulated thickness lower is the same as the gold file
-    	"""
-    	a = compare_image("thickness_lower", self.output_snow,self.gold_snow)
-    	assert(a)
+        """
+        Check the simulated thickness lower is the same as the gold file
+        """
+        assert compare_image("thickness_lower", self.output_snow, self.gold_snow)
 
     def test_water_saturation(self):
-    	"""
-    	Check the simulated water saturation is the same as the gold file
-    	"""
-    	a = compare_image("water_saturation", self.output_snow,self.gold_snow)
-    	assert(a)
+        """
+        Check the simulated water saturation is the same as the gold file
+        """
+        assert compare_image("water_saturation", self.output_snow, self.gold_snow)
 
     def test_net_rad(self):
-    	"""
-    	Check the simulated net rad is the same as the gold file
-    	"""
-    	a = compare_image("net_rad", self.output_em,self.gold_em)
-    	assert(a)
+        """
+        Check the simulated net rad is the same as the gold file
+        """
+        assert compare_image("net_rad", self.output_em, self.gold_em)
 
     def test_sensible_heat(self):
-    	"""
-    	Check the simulated sensible heat is the same as the gold file
-    	"""
-    	a = compare_image("sensible_heat", self.output_em,self.gold_em)
-    	assert(a)
+        """
+        Check the simulated sensible heat is the same as the gold file
+        """
+        assert compare_image("sensible_heat", self.output_em, self.gold_em)
 
     def test_latent_heat(self):
-    	"""
-    	Check the simulated latent heat is the same as the gold file
-    	"""
-    	a = compare_image("latent_heat", self.output_em,self.gold_em)
-    	assert(a)
+        """
+        Check the simulated latent heat is the same as the gold file
+        """
+        assert compare_image("latent_heat", self.output_em, self.gold_em)
 
     def test_snow_soil(self):
-    	"""
-    	Check the simulated snow soil is the same as the gold file
-    	"""
-    	a = compare_image("snow_soil", self.output_em,self.gold_em)
-    	assert(a)
+        """
+        Check the simulated snow soil is the same as the gold file
+        """
+        assert compare_image("snow_soil", self.output_em, self.gold_em)
 
     def test_precip_advected(self):
-    	"""
-    	Check the simulated precip advected is the same as the gold file
-    	"""
-    	a = compare_image("precip_advected", self.output_em,self.gold_em)
-    	assert(a)
+        """
+        Check the simulated precip advected is the same as the gold file
+        """
+        assert compare_image("precip_advected", self.output_em, self.gold_em)
 
     def test_sum_EB(self):
-    	"""
-    	Check the simulated sum EB is the same as the gold file
-    	"""
-    	a = compare_image("sum_EB", self.output_em,self.gold_em)
-    	assert(a)
+        """
+        Check the simulated sum EB is the same as the gold file
+        """
+        assert compare_image("sum_EB", self.output_em, self.gold_em)
 
     def test_evaporation(self):
-    	"""
-    	Check the simulated evaporation is the same as the gold file
-    	"""
-    	a = compare_image("evaporation", self.output_em,self.gold_em)
-    	assert(a)
+        """
+        Check the simulated evaporation is the same as the gold file
+        """
+        assert compare_image("evaporation", self.output_em, self.gold_em)
 
     def test_snowmelt(self):
-    	"""
-    	Check the simulated snowmelt is the same as the gold file
-    	"""
-    	a = compare_image("snowmelt", self.output_em,self.gold_em)
-    	assert(a)
+        """
+        Check the simulated snowmelt is the same as the gold file
+        """
+        assert compare_image("snowmelt", self.output_em, self.gold_em)
 
     def test_SWI(self):
-    	"""
-    	Check the simulated SWI is the same as the gold file
-    	"""
-    	a = compare_image("SWI", self.output_em,self.gold_em)
-    	assert(a)
+        """
+        Check the simulated SWI is the same as the gold file
+        """
+        assert compare_image("SWI", self.output_em, self.gold_em)
 
     def test_cold_content(self):
-    	"""
-    	Check the simulated cold content is the same as the gold file
-    	"""
-    	a = compare_image("cold_content", self.output_em,self.gold_em)
-    	assert(a)
+        """
+        Check the simulated cold content is the same as the gold file
+        """
+        assert compare_image("cold_content", self.output_em, self.gold_em)
 
 
 if __name__ == '__main__':

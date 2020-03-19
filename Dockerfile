@@ -21,7 +21,7 @@ RUN apt-get update \
     && apt-get install -y texlive-latex-extra \
     && apt-get install -y gcc \
     && cd /code \
-    && curl -L https://github.com/USDA-ARS-NWRC/pysnobal/archive/v${VPYSNOBAL}.tar.gz | tar xz \
+    && git clone --depth 1 https://github.com/USDA-ARS-NWRC/pysnobal.git \
     && rm -rf /var/lib/apt/lists/* \
     && apt remove -y curl \
     && apt autoremove -y
@@ -34,9 +34,8 @@ COPY . / /code/awsm/
 
 #ENV PYTHONPATH=/code/awsm/
 
-RUN cd /code/pysnobal-${VPYSNOBAL} \
+RUN cd /code/pysnobal \
     && python3 -m pip install --upgrade pip \
-    && python3 -m pip install -r requirements_smrf.txt \
     && python3 setup.py install
 
 RUN cd /code/awsm \

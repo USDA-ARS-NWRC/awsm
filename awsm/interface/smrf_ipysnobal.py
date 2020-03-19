@@ -23,7 +23,7 @@ from awsm.interface import pysnobal_io as io_mod
 from awsm.interface.ingest_data import StateUpdater
 
 try:
-    from pysnobal import snobal
+    from pysnobal.c_snobal import snobal
 except Exception as e:
     print(e)
     print('pysnobal not installed, ignoring')

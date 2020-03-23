@@ -15,8 +15,8 @@ import unittest
 import numpy.testing as npt
 from netCDF4 import Dataset
 
-from tests.awsm_test_case import AWSMTestCase
 from awsm.framework.framework import run_awsm
+from tests.awsm_test_case import AWSMTestCase
 
 
 def compare_image(variable, test_image, gold_image):

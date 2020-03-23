@@ -2,6 +2,7 @@ import os
 import unittest
 
 from inicheck.tools import get_user_config
+
 from awsm.framework.framework import run_awsm
 from .awsm_test_case import AWSMTestCase
 
@@ -17,7 +18,7 @@ class TestConfigurations(AWSMTestCase):
 
         # Base configuration
         cls.base_config = get_user_config(
-            cls.config_file, modules=['smrf','awsm']
+            cls.config_file, modules=['smrf', 'awsm']
         )
 
         cls.run_dir = os.path.join(cls.test_dir, 'RME')

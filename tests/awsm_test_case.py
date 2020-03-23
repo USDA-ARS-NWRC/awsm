@@ -2,8 +2,6 @@ import os
 import shutil
 import unittest
 
-from inicheck.tools import get_user_config
-
 import awsm
 
 

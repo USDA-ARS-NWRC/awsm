@@ -53,14 +53,14 @@ class TestStandardRME(AWSMTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        run_dir = os.path.abspath(os.path.join(cls.test_dir, 'RME'))
+        cls.run_dir = os.path.abspath(os.path.join(cls.test_dir, 'RME'))
 
-        cls.gold_path = os.path.join(run_dir, 'gold')
+        cls.gold_path = os.path.join(cls.run_dir, 'gold')
         cls.gold_em = os.path.join(cls.gold_path, 'em.nc')
         cls.gold_snow = os.path.join(cls.gold_path, 'snow.nc')
 
         cls.output = os.path.join(
-            run_dir,
+            cls.run_dir,
             'output/rme/devel/wy1986/rme_test/runs/run3337_3344'
         )
         cls.output_em = os.path.join(cls.output, 'em.nc')
@@ -70,7 +70,7 @@ class TestStandardRME(AWSMTestCase):
         if os.path.isdir(cls.output):
             shutil.rmtree(cls.output)
 
-        config = os.path.join(run_dir, 'config.ini')
+        config = os.path.join(cls.run_dir, 'config.ini')
 
         cls.cache_run = True
         run_awsm(config)

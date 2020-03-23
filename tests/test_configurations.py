@@ -20,6 +20,8 @@ class TestConfigurations(AWSMTestCase):
             cls.config_file, modules=['smrf','awsm']
         )
 
+        cls.run_dir = os.path.join(cls.test_dir, 'RME')
+
     def test_base_config_file(self):
         self.assertIsNone(run_awsm(self.config_file))
 

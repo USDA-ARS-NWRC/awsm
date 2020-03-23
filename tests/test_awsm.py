@@ -15,7 +15,7 @@ import unittest
 import numpy.testing as npt
 from netCDF4 import Dataset
 
-import awsm
+from tests.awsm_test_case import AWSMTestCase
 from awsm.framework.framework import run_awsm
 
 
@@ -45,22 +45,17 @@ def compare_image(variable, test_image, gold_image):
     )
 
 
-class TestStandardRME(unittest.TestCase):
+class TestStandardRME(AWSMTestCase):
     """
     Integration test for AWSM using reynolds mountain east
     """
 
     @classmethod
     def setUpClass(cls):
-        run_dir = os.path.abspath(os.path.join(
-            os.path.dirname(awsm.__file__), '..', 'tests', 'RME')
-        )
+        super().setUpClass()
+        run_dir = os.path.abspath(os.path.join(cls.test_dir, 'RME'))
 
-        cls.gold_path = os.path.abspath(
-            os.path.join(
-                os.path.dirname(awsm.__file__), '..', 'tests', 'RME', 'gold'
-            )
-        )
+        cls.gold_path = os.path.join(run_dir, 'gold')
         cls.gold_em = os.path.join(cls.gold_path, 'em.nc')
         cls.gold_snow = os.path.join(cls.gold_path, 'snow.nc')
 
@@ -77,6 +72,7 @@ class TestStandardRME(unittest.TestCase):
 
         config = os.path.join(run_dir, 'config.ini')
 
+        cls.cache_run = True
         run_awsm(config)
 
     def test_thickness(self):

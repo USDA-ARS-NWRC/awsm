@@ -5,21 +5,17 @@ threaded together
 20170731 Micah Sandusky
 """
 
-import sys
+from datetime import datetime
+
 import numpy as np
 import pandas as pd
-from datetime import datetime
 import pytz
-import netCDF4 as nc
-
 import smrf
-from smrf.utils import queue
-from spatialnc import ipw
 from smrf.envphys import radiation
-from awsm.interface import ipysnobal
-from awsm.interface import interface
-from awsm.interface import initialize_model as initmodel
-from awsm.interface import pysnobal_io as io_mod
+from smrf.utils import queue
+
+from awsm.interface import ipysnobal, interface, initialize_model as initmodel, \
+    pysnobal_io as io_mod
 from awsm.interface.ingest_data import StateUpdater
 
 try:
@@ -239,12 +235,11 @@ def run_smrf_ipysnobal_single(myawsm, s):
 
         s._logger.info('Distributing time step %s' % t)
         # 0.1 sun angle for time step
-        cosz, azimuth = radiation.sunang(t.astimezone(pytz.utc),
-                                         s.topo.topoConfig['basin_lat'],
-                                         s.topo.topoConfig['basin_lon'],
-                                         zone=0,
-                                         slope=0,
-                                         aspect=0)
+        cosz, azimuth, rad_vec = radiation.sunang.sunang(
+            t.astimezone(pytz.utc),
+            s.topo.topoConfig['basin_lat'],
+            s.topo.topoConfig['basin_lon'],
+        )
 
         # 0.2 illumination angle
         illum_ang = None

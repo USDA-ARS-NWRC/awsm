@@ -38,7 +38,7 @@ def compare_image(variable, test_image, gold_image):
     test_data = d2.variables[variable][:]
     d2.close()
 
-    npt.assert_almost_equal(
+    npt.assert_array_equal(
         test_data,
         gold_data,
         err_msg=f"Variable ${variable} did not match with gold image"

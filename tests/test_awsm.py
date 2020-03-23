@@ -52,9 +52,6 @@ class TestStandardRME(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        """
-        Runs the short simulation over reynolds mountain east
-        """
         run_dir = os.path.abspath(os.path.join(
             os.path.dirname(awsm.__file__), '..', 'tests', 'RME')
         )

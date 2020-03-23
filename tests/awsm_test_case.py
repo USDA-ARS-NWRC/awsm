@@ -9,9 +9,9 @@ import awsm
 
 class AWSMTestCase(unittest.TestCase):
     """
-    The base test case for SMRF that will load in the configuration file and
-    store as the base config. Also will remove the output directory upon
-    tear down.
+    Base AWSM test case class.
+
+    Has an attribute set for with the location of the root test folder.
     """
 
     @classmethod
@@ -22,7 +22,10 @@ class AWSMTestCase(unittest.TestCase):
 
     def tearDown(self):
         """
-        Clean up the output directory
+        Clean up the output directory if set via `cls.run_dir`.
+
+        To skip this automated clean up, set the `cls.cache_run` on the
+        test class.
         """
         if hasattr(self, 'cache_run') and self.cache_run:
             return

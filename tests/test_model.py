@@ -4,10 +4,10 @@ from copy import deepcopy
 from inicheck.tools import cast_all_variables
 
 from awsm.framework.framework import run_awsm
-from tests.test_configurations import AWSMTestCase
+from tests.test_configurations import TestConfigurations
 
 
-class TestModel(AWSMTestCase):
+class TestModel(TestConfigurations):
     def test_isnobal(self):
         """ Test standard iSnobal """
 

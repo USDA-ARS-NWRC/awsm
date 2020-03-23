@@ -19,12 +19,6 @@ class AWSMTestCase(unittest.TestCase):
         cls.test_dir = os.path.abspath(os.path.join(
             os.path.dirname(awsm.__file__), '..', 'tests'
         ))
-        cls.config_file = os.path.join(cls.test_dir, 'test_base_config.ini')
-
-        # Base configuration
-        cls.base_config = get_user_config(
-            cls.config_file, modules=['smrf','awsm']
-        )
 
     def tearDown(self):
         """

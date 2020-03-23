@@ -924,21 +924,3 @@ def run_awsm(config):
             a.do_reporting()
 
             a._logger.info('AWSM finished in: {}'.format(datetime.now() - start))
-
-
-
-def can_i_run_awsm(config):
-    """
-    Function that wraps run_awsm in try, except.
-
-    Args:
-        config: string path to the config file or inicheck UserConfig instance
-    """
-    try:
-        run_awsm(config)
-        success = True
-        return success
-
-    except Exception as e:
-        raise(e)
-        return False

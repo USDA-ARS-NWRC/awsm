@@ -1,15 +1,14 @@
+import copy
+import os
+import subprocess
+from datetime import datetime
+
+import numpy as np
+import pandas as pd
 import smrf
 from smrf import data
-from spatialnc import ipw
-from smrf.utils import io, utils
-import os
-import numpy as np
-import netCDF4 as nc
-from datetime import datetime
-import pandas as pd
-import subprocess
-import copy
-from inicheck.output import generate_config
+from smrf.utils import utils
+
 
 def create_smrf_config(myawsm):
     """
@@ -179,18 +178,26 @@ def run_isnobal(myawsm, offset=None):
 
     # change directories, run, and move back
     myawsm._logger.debug("Running {}".format(run_cmd))
-    os.chdir(myawsm.pathro)
+
     # call iSnobal
-    p = subprocess.Popen(run_cmd, shell=True, stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE)
+    with subprocess.Popen(
+            run_cmd,
+            cwd=myawsm.pathro,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            bufsize=1,
+            shell=True,
+            universal_newlines=True) as pipe:
 
-    while True:
-        line = p.stdout.readline()
-        myawsm._logger.info(line)
-        if not line:
-            break
+        for line in pipe.stdout:
+            myawsm._logger.info(line.strip())
 
-    os.chdir(cwd)
+        pipe.wait()  # Get the return code
+
+        if pipe.returncode != 0:
+            raise subprocess.CalledProcessError(pipe.returncode, pipe.args)
+        else:
+            return pipe.returncode
 
 
 def run_awsm_daily(myawsm):

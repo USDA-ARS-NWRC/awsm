@@ -62,7 +62,7 @@ test_requirements = [
 
 setup(
     name='awsm',
-    version='0.10.0',
+    version='0.10.1',
     description="Automated Water Supply Model",
     # long_description=readme + '\n\n' + history,
     author="Micah Sandusky",

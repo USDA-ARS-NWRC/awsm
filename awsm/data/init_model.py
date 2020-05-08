@@ -298,7 +298,11 @@ class modelInit():
         time = i.variables['time'][:]
         t_units = i.variables['time'].units
         nc_calendar = i.variables['time'].calendar
-        nc_dates = nc.num2date(time, t_units, nc_calendar)
+        nc_dates = nc.num2date(
+            time, t_units, nc_calendar,
+            only_use_cftime_datetimes=False,
+            only_use_python_datetimes=True,
+        )
 
         if self.restart_crash:
             tmpwyhr = self.restart_hr
@@ -309,8 +313,9 @@ class modelInit():
         # make sure we account for time zones
         if hasattr(i.variables['time'], 'time_zone'):
             tzn = pytz.timezone(i.variables['time'].time_zone)
-            nc_dates = [ndt.replace(tzinfo=tzn) for ndt in nc_dates]
-            nc_dates = [ndt.replace(tzinfo=self.tzinfo) for ndt in nc_dates]
+            nc_dates = [tzn.localize(ndt) for ndt in nc_dates]
+            if self.tzinfo != tzn:
+                nc_dates = [self.tzinfo.localize(ndt) for ndt in nc_dates]
         else:
             nc_dates = [ndt.replace(tzinfo=self.tzinfo) for ndt in nc_dates]
 

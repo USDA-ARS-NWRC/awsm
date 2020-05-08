@@ -237,8 +237,8 @@ def run_smrf_ipysnobal_single(myawsm, s):
         # 0.1 sun angle for time step
         cosz, azimuth, rad_vec = radiation.sunang.sunang(
             t.astimezone(pytz.utc),
-            s.topo.topoConfig['basin_lat'],
-            s.topo.topoConfig['basin_lon'],
+            s.topo.basin_lat,
+            s.topo.basin_long,
         )
 
         # 0.2 illumination angle

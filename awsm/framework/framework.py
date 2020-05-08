@@ -1,37 +1,24 @@
+import copy
 import logging
 import os
 import sys
-import coloredlogs
 from datetime import datetime
+
+import coloredlogs
 import pandas as pd
 import pytz
-import copy
 from inicheck.config import MasterConfig, UserConfig
-from inicheck.tools import get_user_config, check_config
 from inicheck.output import print_config_report, generate_config
-from inicheck.tools import cast_all_variables
+from inicheck.tools import get_user_config, check_config, cast_all_variables
+from smrf.utils import utils
 from spatialnc.topo import topo as mytopo
 
-import smrf
-# make input the same as raw input if python 2
-try:
-    input = raw_input
-except NameError:
-    pass
-
-
-from smrf import __core_config__ as __smrf_core_config__
-from smrf import __recipes__ as __smrf_recipes__
-from awsm import __core_config__ as __awsm_core_config__
-from awsm import __config_titles__
-
-from smrf.utils import utils, io
 from awsm.convertFiles import convertFiles as cvf
-from awsm.interface import interface as smin
-from awsm.interface import smrf_ipysnobal as smrf_ipy
-from awsm.interface import ingest_data
-from awsm.utils import utilities as awsm_utils
 from awsm.data.init_model import modelInit
+from awsm.interface import interface as smin, smrf_ipysnobal as smrf_ipy, \
+    ingest_data
+from awsm.utils import utilities as awsm_utils
+
 
 class AWSM():
     """

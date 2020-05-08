@@ -1,5 +1,3 @@
 # -*- coding: utf-8 -*-
+from .ascii_art import TITLE, MOUNTAIN
 from . import framework
-
-__author__ = """Micah Sandusky"""
-__email__ = 'micah.sandusky@ars.usda.gov'

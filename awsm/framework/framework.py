@@ -18,6 +18,7 @@ from awsm.data.init_model import modelInit
 from awsm.interface import interface as smin, smrf_ipysnobal as smrf_ipy, \
     ingest_data
 from awsm.utils import utilities as awsm_utils
+from awsm.framework import ascii_art
 
 
 class AWSM():
@@ -354,12 +355,9 @@ class AWSM():
 
         self._logger = logging.getLogger(__name__)
 
-        # print title and mountains
-        title, mountain = self.title()
-        for line in mountain:
-            self._logger.info(line)
-        for line in title:
-            self._logger.info(line)
+        self._logger.info(ascii_art.MOUNTAIN)
+        self._logger.info(ascii_art.TITLE)
+
         # dump saved logs
         if len(self.tmp_log) > 0:
             for l in self.tmp_log:
@@ -627,59 +625,6 @@ class AWSM():
             snowav.framework.framework.snowav(config_file=self.snowav_config)
         except ModuleNotFoundError:
             print('Library snowav not installed - skip reporting')
-
-    def title(self):
-        """
-        AWSM titles
-        Text generated from:    http://patorjk.com/software/taag/#p=testall&f=Swamp%20Land&t=AWSM
-        Mountain ascii from:    https://www.ascii-code.com/ascii-art/nature/mountains.php
-        """
-        mountain = [r"                      _  ",
-                    r"                     /#\    ",
-                    r"                    /###\     /\    ",
-                    r"                   /  ###\   /##\  /\   ",
-                    r"                  /      #\ /####\/##\  ",
-                    r"                 /  /      /   # /  ##\             _       /\  ",
-                    r"               // //  /\  /    _/  /  #\ _         /#\    _/##\    /\   ",
-                    r"              // /   /  \     /   /    #\ \      _/###\_ /   ##\__/ _\ ",
-                    r"             /  \   / .. \   / /   _   { \ \   _/       / //    /    \\    ",
-                    r"     /\     /    /\  ...  \_/   / / \   } \ | /  /\  \ /  _    /  /    \ /\    ",
-                    r"  _ /  \  /// / .\  ..%:.  /... /\ . \ {:  \\   /. \     / \  /   ___   /  \   ",
-                    r" /.\ .\.\// \/... \.::::..... _/..\ ..\:|:. .  / .. \\  /.. \    /...\ /  \ \  ",
-                    r"/...\.../..:.\. ..:::::::..:..... . ...\{:... / %... \\/..%. \  /./:..\__   \  ",
-                    r" .:..\:..:::....:::;;;;;;::::::::.:::::.\}.....::%.:. \ .:::. \/.%:::.:..\ ",
-                    r"::::...:::;;:::::;;;;;;;;;;;;;;:::::;;::{:::::::;;;:..  .:;:... ::;;::::.. ",
-                    r";;;;:::;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;];;;;;;;;;;::::::;;;;:.::;;;;;;;;:..  ",
-                    r";;;;;;;;;;;;;;ii;;;;;;;;;;;;;;;;;;;;;;;;[;;;;;;;;;;;;;;;;;;;;;;:;;;;;;;;;;;;;  ",
-                    r";;;;;;;;;;;;;;;;;;;iiiiiiii;;;;;;;;;;;;;;};;ii;;iiii;;;;i;;;;;;;;;;;;;;;ii;;;  ",
-                    r"iiii;;;iiiiiiiiiiIIIIIIIIIIIiiiiiIiiiiii{iiIIiiiiiiiiiiiiiiii;;;;;iiiilliiiii  ",
-                    r"IIIiiIIllllllIIlllIIIIlllIIIlIiiIIIIIIIIIIIIlIIIIIllIIIIIIIIiiiiiiiillIIIllII  ",
-                    r"IIIiiilIIIIIIIllTIIIIllIIlIlIIITTTTlIlIlIIIlIITTTTTTTIIIIlIIllIlIlllIIIIIIITT  ",
-                    r"IIIIilIIIIITTTTTTTIIIIIIIIIIIIITTTTTIIIIIIIIITTTTTTTTTTIIIIIIIIIlIIIIIIIITTTT  ",
-                    r"IIIIIIIIITTTTTTTTTTTTTIIIIIIIITTTTTTTTIIIIIITTTTTTTTTTTTTTIIIIIIIIIIIIIITTTTT  ",
-                    "",
-                    "",
-                    ""]  # noqa
-        title = [
-                '               AAA   WWWWWWWW                           WWWWWWWW   SSSSSSSSSSSSSSS MMMMMMMM               MMMMMMMM',
-                '              A:::A  W::::::W                           W::::::W SS:::::::::::::::SM:::::::M             M:::::::M',
-                '             A:::::A W::::::W                           W::::::WS:::::SSSSSS::::::SM::::::::M           M::::::::M',
-                '            A:::::::AW::::::W                           W::::::WS:::::S     SSSSSSSM:::::::::M         M:::::::::M',
-                '           A:::::::::AW:::::W           WWWWW           W:::::W S:::::S            M::::::::::M       M::::::::::M',
-                '          A:::::A:::::AW:::::W         W:::::W         W:::::W  S:::::S            M:::::::::::M     M:::::::::::M',
-                '         A:::::A A:::::AW:::::W       W:::::::W       W:::::W    S::::SSSS         M:::::::M::::M   M::::M:::::::M',
-                '        A:::::A   A:::::AW:::::W     W:::::::::W     W:::::W      SS::::::SSSSS    M::::::M M::::M M::::M M::::::M',
-                '       A:::::A     A:::::AW:::::W   W:::::W:::::W   W:::::W         SSS::::::::SS  M::::::M  M::::M::::M  M::::::M',
-                '      A:::::AAAAAAAAA:::::AW:::::W W:::::W W:::::W W:::::W             SSSSSS::::S M::::::M   M:::::::M   M::::::M',
-                '     A:::::::::::::::::::::AW:::::W:::::W   W:::::W:::::W                   S:::::SM::::::M    M:::::M    M::::::M',
-                '    A:::::AAAAAAAAAAAAA:::::AW:::::::::W     W:::::::::W                    S:::::SM::::::M     MMMMM     M::::::M',
-                '   A:::::A             A:::::AW:::::::W       W:::::::W         SSSSSSS     S:::::SM::::::M               M::::::M',
-                '  A:::::A               A:::::AW:::::W         W:::::W          S::::::SSSSSS:::::SM::::::M               M::::::M',
-                ' A:::::A                 A:::::AW:::W           W:::W           S:::::::::::::::SS M::::::M               M::::::M',
-                'AAAAAAA                   AAAAAAAWWW             WWW             SSSSSSSSSSSSSSS   MMMMMMMM               MMMMMMMM'
-                ]
-
-        return title, mountain
 
     def __enter__(self):
         self.start_time = datetime.now()

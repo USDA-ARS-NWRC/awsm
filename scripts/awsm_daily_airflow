@@ -1,19 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-from inicheck.config import MasterConfig, UserConfig
-from inicheck.tools import get_user_config, check_config
-from inicheck.output import print_config_report, generate_config
-from inicheck.tools import cast_all_variables
-from smrf.utils import utils, io
-from awsm.framework.framework import run_awsm
-from datetime import datetime
-import sys
-import os
 import argparse
-import numpy as np
+import copy
+import os
+
 import pandas as pd
 import pytz
-import copy
+from inicheck.tools import get_user_config, cast_all_variables
+from smrf.utils import utils
+
+from awsm.framework.framework import run_awsm
 
 
 def mod_config(config_file, start_date, no_previous):

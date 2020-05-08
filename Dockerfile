@@ -16,9 +16,6 @@ ENV VPYSNOBAL "0.2.0"
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends curl \
-    && apt-get install -y texlive-base \
-    && apt-get install -y texlive-lang-english \
-    && apt-get install -y texlive-latex-extra \
     && apt-get install -y gcc \
     && cd /code \
     && git clone --depth 1 https://github.com/USDA-ARS-NWRC/pysnobal.git \

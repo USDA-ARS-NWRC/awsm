@@ -244,7 +244,7 @@ def run_smrf_ipysnobal_single(myawsm, s):
         # 0.2 illumination angle
         illum_ang = None
         if cosz > 0:
-            illum_ang = radiation.shade(s.topo.slope,
+            illum_ang = radiation.shade(s.topo.sin_slope,
                                         s.topo.aspect,
                                         azimuth,
                                         cosz)
@@ -262,22 +262,26 @@ def run_smrf_ipysnobal_single(myawsm, s):
                                         t)
 
         # 4. Precipitation
-        s.distribute['precip'].distribute(s.data.precip.loc[t],
-                                            s.distribute['vapor_pressure'].dew_point,
-                                            s.distribute['vapor_pressure'].precip_temp,
-                                            s.distribute['air_temp'].air_temp,
-                                            t,
-                                            s.data.wind_speed.loc[t],
-                                            s.data.air_temp.loc[t],
-                                            s.distribute['wind'].wind_direction,
-                                            s.distribute['wind'].dir_round_cell,
-                                            s.distribute['wind'].wind_speed,
-                                            s.distribute['wind'].cellmaxus)
+        s.distribute['precip'].distribute(
+            s.data.precip.loc[t],
+            s.distribute['vapor_pressure'].dew_point,
+            s.distribute['vapor_pressure'].precip_temp,
+            s.distribute['air_temp'].air_temp,
+            t,
+            s.data.wind_speed.loc[t],
+            s.data.air_temp.loc[t],
+            s.distribute['wind'].wind_direction,
+            s.distribute['wind'].wind_model.dir_round_cell,
+            s.distribute['wind'].wind_speed,
+            s.distribute['wind'].wind_model.cellmaxus
+        )
 
         # 5. Albedo
-        s.distribute['albedo'].distribute(t,
-                                             illum_ang,
-                                             s.distribute['precip'].storm_days)
+        s.distribute['albedo'].distribute(
+            t,
+            illum_ang,
+            s.distribute['precip'].storm_days
+        )
 
         # 6. cloud factor
         s.distribute['cloud_factor'].distribute(s.data.cloud_factor.loc[t])

@@ -1,42 +1,25 @@
+import copy
 import logging
 import os
 import sys
-import coloredlogs
 from datetime import datetime
+
+import coloredlogs
 import pandas as pd
 import pytz
-import copy
 from inicheck.config import MasterConfig, UserConfig
-from inicheck.tools import get_user_config, check_config
 from inicheck.output import print_config_report, generate_config
-from inicheck.tools import cast_all_variables
+from inicheck.tools import get_user_config, check_config, cast_all_variables
+from smrf.utils import utils
 from spatialnc.topo import topo as mytopo
 
-import smrf
-# make input the same as raw input if python 2
-try:
-    input = raw_input
-except NameError:
-    pass
-
-try:
-    import snowav
-except:
-    print('snowav not installed')
-
-from smrf import __core_config__ as __smrf_core_config__
-from smrf import __recipes__ as __smrf_recipes__
-from awsm import __core_config__ as __awsm_core_config__
-from awsm import __config_titles__
-
-from smrf.utils import utils, io
 from awsm.convertFiles import convertFiles as cvf
-from awsm.interface import interface as smin
-from awsm.interface import smrf_ipysnobal as smrf_ipy
-from awsm.interface import ingest_data
-from awsm.utils import utilities as awsm_utils
 from awsm.data.init_model import modelInit
-import awsm.reporting.reportingtools as retools
+from awsm.interface import interface as smin, smrf_ipysnobal as smrf_ipy, \
+    ingest_data
+from awsm.utils import utilities as awsm_utils
+from awsm.framework import ascii_art
+
 
 class AWSM():
     """
@@ -66,10 +49,6 @@ class AWSM():
             configFile = config
 
             try:
-                # try:
-                #     snowav_mcfg = MasterConfig(modules = 'snowav')
-                #     combined_mcfg = MasterConfig(modules = ['smrf','awsm','snowav'])
-                # except:
                 combined_mcfg = MasterConfig(modules = ['smrf','awsm'])
 
                 # Read in the original users config
@@ -284,10 +263,6 @@ class AWSM():
         self.topo = mytopo(self.config['topo'], self.mask_isnobal,
                            self.model_type, self.csys, self.pathdd)
 
-        # parse reporting section and make reporting folder
-        # if self.do_report:
-        #     self.parseReport()
-
         # ################ Generate config backup ##################
         # if self.config['output']['input_backup']:
         # set location for backup and output backup of awsm sections
@@ -303,32 +278,6 @@ class AWSM():
             self.myinit = modelInit(self._logger, self.config, self.topo,
                                     self.start_wyhr, self.pathro, self.pathrr,
                                     self.pathinit, self.wy_start)
-
-    def parseReport(self):
-        """
-        Parse the options related to reporting
-        """
-        # get all relevant options
-        # snowav_mcfg = MasterConfig(modules = 'snowav')
-        # self.sec_snowav = snowav_mcfg.cfg.keys()
-        # self.path_report_o = os.path.join(self.path_wy, 'reports')
-        # self.path_report_i = os.path.join(self.path_report_o, 'report_{}'.format(self.folder_date_stamp))
-        # if not os.path.exists(self.path_report_i):
-        #     os.makedirs(self.path_report_i)
-        #
-        # self.config['snowav system']['save_path'] = self.path_report_i
-        # self.config['snowav system']['wy'] = self.wy
-        # self.config['runs']['run_dirs'] = [self.pathrr]
-        # self.report_config = os.path.join(self.path_report_o, 'snowav_cfg.ini')
-        #
-        # # make copy and delete only awsm sections
-        # snowav_cfg = copy.deepcopy(self.ucfg)
-        # for key in self.ucfg.cfg.keys():
-        #     if key in self.sec_awsm or key in self.sec_smrf:
-        #         del snowav_cfg.cfg[key]
-        #
-        # self.tmp_log.append('Writing the config file for snowav')
-        # generate_config(snowav_cfg, self.report_config)
 
     def createLog(self):
         '''
@@ -406,12 +355,9 @@ class AWSM():
 
         self._logger = logging.getLogger(__name__)
 
-        # print title and mountains
-        title, mountain = self.title()
-        for line in mountain:
-            self._logger.info(line)
-        for line in title:
-            self._logger.info(line)
+        self._logger.info(ascii_art.MOUNTAIN)
+        self._logger.info(ascii_art.TITLE)
+
         # dump saved logs
         if len(self.tmp_log) > 0:
             for l in self.tmp_log:
@@ -672,67 +618,16 @@ class AWSM():
             else:
                 self.tmp_log.append('Directory --{}-- exists, not creating.\n')
 
-    def do_reporting(self):
-        """
-        Outer most function for controlling what gets plotted to the dashboard
-        or written to the report
-        """
-        retools.plot_dashboard(self)
-
-    def title(self):
-        """
-        AWSM titles
-        Text generated from:    http://patorjk.com/software/taag/#p=testall&f=Swamp%20Land&t=AWSM
-        Mountain ascii from:    https://www.ascii-code.com/ascii-art/nature/mountains.php
-        """
-        mountain = [r"                      _  ",
-                    r"                     /#\    ",
-                    r"                    /###\     /\    ",
-                    r"                   /  ###\   /##\  /\   ",
-                    r"                  /      #\ /####\/##\  ",
-                    r"                 /  /      /   # /  ##\             _       /\  ",
-                    r"               // //  /\  /    _/  /  #\ _         /#\    _/##\    /\   ",
-                    r"              // /   /  \     /   /    #\ \      _/###\_ /   ##\__/ _\ ",
-                    r"             /  \   / .. \   / /   _   { \ \   _/       / //    /    \\    ",
-                    r"     /\     /    /\  ...  \_/   / / \   } \ | /  /\  \ /  _    /  /    \ /\    ",
-                    r"  _ /  \  /// / .\  ..%:.  /... /\ . \ {:  \\   /. \     / \  /   ___   /  \   ",
-                    r" /.\ .\.\// \/... \.::::..... _/..\ ..\:|:. .  / .. \\  /.. \    /...\ /  \ \  ",
-                    r"/...\.../..:.\. ..:::::::..:..... . ...\{:... / %... \\/..%. \  /./:..\__   \  ",
-                    r" .:..\:..:::....:::;;;;;;::::::::.:::::.\}.....::%.:. \ .:::. \/.%:::.:..\ ",
-                    r"::::...:::;;:::::;;;;;;;;;;;;;;:::::;;::{:::::::;;;:..  .:;:... ::;;::::.. ",
-                    r";;;;:::;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;];;;;;;;;;;::::::;;;;:.::;;;;;;;;:..  ",
-                    r";;;;;;;;;;;;;;ii;;;;;;;;;;;;;;;;;;;;;;;;[;;;;;;;;;;;;;;;;;;;;;;:;;;;;;;;;;;;;  ",
-                    r";;;;;;;;;;;;;;;;;;;iiiiiiii;;;;;;;;;;;;;;};;ii;;iiii;;;;i;;;;;;;;;;;;;;;ii;;;  ",
-                    r"iiii;;;iiiiiiiiiiIIIIIIIIIIIiiiiiIiiiiii{iiIIiiiiiiiiiiiiiiii;;;;;iiiilliiiii  ",
-                    r"IIIiiIIllllllIIlllIIIIlllIIIlIiiIIIIIIIIIIIIlIIIIIllIIIIIIIIiiiiiiiillIIIllII  ",
-                    r"IIIiiilIIIIIIIllTIIIIllIIlIlIIITTTTlIlIlIIIlIITTTTTTTIIIIlIIllIlIlllIIIIIIITT  ",
-                    r"IIIIilIIIIITTTTTTTIIIIIIIIIIIIITTTTTIIIIIIIIITTTTTTTTTTIIIIIIIIIlIIIIIIIITTTT  ",
-                    r"IIIIIIIIITTTTTTTTTTTTTIIIIIIIITTTTTTTTIIIIIITTTTTTTTTTTTTTIIIIIIIIIIIIIITTTTT  ",
-                    "",
-                    "",
-                    ""]  # noqa
-        title = [
-                '               AAA   WWWWWWWW                           WWWWWWWW   SSSSSSSSSSSSSSS MMMMMMMM               MMMMMMMM',
-                '              A:::A  W::::::W                           W::::::W SS:::::::::::::::SM:::::::M             M:::::::M',
-                '             A:::::A W::::::W                           W::::::WS:::::SSSSSS::::::SM::::::::M           M::::::::M',
-                '            A:::::::AW::::::W                           W::::::WS:::::S     SSSSSSSM:::::::::M         M:::::::::M',
-                '           A:::::::::AW:::::W           WWWWW           W:::::W S:::::S            M::::::::::M       M::::::::::M',
-                '          A:::::A:::::AW:::::W         W:::::W         W:::::W  S:::::S            M:::::::::::M     M:::::::::::M',
-                '         A:::::A A:::::AW:::::W       W:::::::W       W:::::W    S::::SSSS         M:::::::M::::M   M::::M:::::::M',
-                '        A:::::A   A:::::AW:::::W     W:::::::::W     W:::::W      SS::::::SSSSS    M::::::M M::::M M::::M M::::::M',
-                '       A:::::A     A:::::AW:::::W   W:::::W:::::W   W:::::W         SSS::::::::SS  M::::::M  M::::M::::M  M::::::M',
-                '      A:::::AAAAAAAAA:::::AW:::::W W:::::W W:::::W W:::::W             SSSSSS::::S M::::::M   M:::::::M   M::::::M',
-                '     A:::::::::::::::::::::AW:::::W:::::W   W:::::W:::::W                   S:::::SM::::::M    M:::::M    M::::::M',
-                '    A:::::AAAAAAAAAAAAA:::::AW:::::::::W     W:::::::::W                    S:::::SM::::::M     MMMMM     M::::::M',
-                '   A:::::A             A:::::AW:::::::W       W:::::::W         SSSSSSS     S:::::SM::::::M               M::::::M',
-                '  A:::::A               A:::::AW:::::W         W:::::W          S::::::SSSSSS:::::SM::::::M               M::::::M',
-                ' A:::::A                 A:::::AW:::W           W:::W           S:::::::::::::::SS M::::::M               M::::::M',
-                'AAAAAAA                   AAAAAAAWWW             WWW             SSSSSSSSSSSSSSS   MMMMMMMM               MMMMMMMM'
-                ]
-
-        return title, mountain
+    def run_report(self):
+        try:
+            import snowav
+            self._logger.info('AWSM finished run, starting report')
+            snowav.framework.framework.snowav(config_file=self.snowav_config)
+        except ModuleNotFoundError:
+            print('Library snowav not installed - skip reporting')
 
     def __enter__(self):
+        self.start_time = datetime.now()
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
@@ -740,6 +635,9 @@ class AWSM():
         Provide some logging info about when AWSM was closed
         """
 
+        self._logger.info(
+            'AWSM finished in: {}'.format(datetime.now() - self.start_time)
+        )
         self._logger.info('AWSM closed --> %s' % datetime.now())
 
 
@@ -864,8 +762,6 @@ def run_awsm(config):
     Args:
         config: string path to the config file or inicheck UserConfig instance
     """
-    start = datetime.now()
-
     with AWSM(config) as a:
         if a.do_forecast:
             runtype = 'forecast'
@@ -920,7 +816,4 @@ def run_awsm(config):
 
         # create report
         if a.snowav_config is not None:
-            a._logger.info('AWSM finished run, starting report')
-            a.do_reporting()
-
-            a._logger.info('AWSM finished in: {}'.format(datetime.now() - start))
+            a.run_report()

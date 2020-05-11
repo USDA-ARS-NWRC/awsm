@@ -77,7 +77,6 @@ setup(
               'awsm.framework',
               'awsm.knn',
               'awsm.utils',
-              'awsm.reporting',
               'awsm.data'
               ],
     include_package_data=True,

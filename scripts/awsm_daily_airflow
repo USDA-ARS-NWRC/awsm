@@ -1,24 +1,20 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-from inicheck.config import MasterConfig, UserConfig
-from inicheck.tools import get_user_config, check_config
-from inicheck.output import print_config_report, generate_config
-from inicheck.tools import cast_all_variables
-from smrf.utils import utils, io
-from awsm.framework.framework import run_awsm
-from datetime import datetime
-import sys
-import os
 import argparse
-import numpy as np
+import copy
+import os
+
 import pandas as pd
 import pytz
-import copy
+from inicheck.tools import get_user_config, cast_all_variables
+from smrf.utils import utils
+
+from awsm.framework.framework import run_awsm
 
 
 def mod_config(config_file, start_date, no_previous):
     """
-    Run each day seperately. Calls run_awsm
+    Run each day separately. Calls run_awsm
     """
     # define some formats
     fmt_day = '%Y%m%d'
@@ -98,25 +94,37 @@ def mod_config(config_file, start_date, no_previous):
     return new_config
 
 
+def parse_arguments():
+    parser = argparse.ArgumentParser(
+        description='Run AWSM using Airflow scheduler.'
+    )
+
+    parser.add_argument(
+        '-c', '--cfg',
+        required=True,
+        help='Config file that will be modified for the current run date'
+    )
+    parser.add_argument(
+        '-sd','--start_date',
+        required=True,
+        help='start date for run'
+    )
+    parser.add_argument(
+        "-np", "--no_previous",
+        action="store_true",
+        default=False,
+        help="Doesn't need to find a previous snow state "
+             "from directory structure"
+    )
+
+    return parser.parse_args()
+
+
 def run():
-    '''
-    This program will run each day as a seperate run
-    '''
-
-    # Parse arguments
-    p = argparse.ArgumentParser(description='Run AWSM using Airflow scheduler.')
-
-    p.add_argument('-c', '--cfg', required=True,
-                   help='Config file that will be modified for the current run date')
-
-    p.add_argument('-sd','--start_date', required=True,
-                    help="start date for run")
-
-    p.add_argument("-np", "--no_previous",
-                   action="store_true", default=False,
-                   help="Doesn't need to find a previous snow state from directory structure")
-
-    args = p.parse_args()
+    """
+    This program will run each day as a separate run
+    """
+    args = parse_arguments()
 
     start_date = pd.to_datetime(args.start_date)
     fp_cfg = args.cfg
@@ -125,7 +133,7 @@ def run():
     # set dates and paths
     new_config = mod_config(fp_cfg, start_date, no_previous)
 
-    # apply recipes with new setttings
+    # apply recipes with new settings
     new_config.apply_recipes()
     new_config = cast_all_variables(new_config, new_config.mcfg)
 

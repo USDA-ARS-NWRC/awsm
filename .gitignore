@@ -12,6 +12,8 @@ test_data/stoporad.ip
 *.prof
 *.ipw
 
+output/*.png
+
 test_data/wrfout_d02_2016-03-10.nc
 test_data/stoporad*
 examples/*.nc

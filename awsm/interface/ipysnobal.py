@@ -10,7 +10,8 @@ Authors: Scott Havens, Micah Sandusky
 """
 
 try:
-    from pysnobal.c_snobal import snobal
+    from pysnobal import snobal
+    # from pysnobal.c_snobal import snobal
 except Exception as e:
     print(e)
     print('pysnobal not installed, ignoring')
@@ -33,7 +34,9 @@ C_TO_K = 273.16
 FREEZE = C_TO_K
 
 # Kelvin to Celcius
-K_TO_C = lambda x: x - FREEZE
+
+
+def K_TO_C(x): return x - FREEZE
 
 # ###############################################################
 # ########## Functions for interfacing with smrf run ############
@@ -144,8 +147,10 @@ class QueueIsnobal(threading.Thread):
         step_time = start_step * data_tstep
         # step_time = start_step * 60.0
 
-        self.output_rec['current_time'] = step_time * np.ones(self.output_rec['elevation'].shape)
-        self.output_rec['time_since_out'] = timeSinceOut * np.ones(self.output_rec['elevation'].shape)
+        self.output_rec['current_time'] = step_time * \
+            np.ones(self.output_rec['elevation'].shape)
+        self.output_rec['time_since_out'] = timeSinceOut * \
+            np.ones(self.output_rec['elevation'].shape)
 
         # map function from these values to the ones requried by snobal
         map_val = {'air_temp': 'T_a', 'net_solar': 'S_n', 'thermal': 'I_lw',
@@ -159,7 +164,8 @@ class QueueIsnobal(threading.Thread):
         for v in force_variables:
             if v in self.queue.keys():
 
-                data = self.queue[v].get(self.date_time[0], block=True, timeout=None)
+                data = self.queue[v].get(
+                    self.date_time[0], block=True, timeout=None)
                 if data is None:
                     data = np.zeros((self.ny, self.nx))
                     self._logger.info('No data from smrf to iSnobal for {} in {}'
@@ -195,7 +201,8 @@ class QueueIsnobal(threading.Thread):
                     if data is None:
 
                         data = np.zeros((self.ny, self.nx))
-                        self._logger.info('No data from smrf to iSnobal for {} in {}'.format(v, tstep))
+                        self._logger.info(
+                            'No data from smrf to iSnobal for {} in {}'.format(v, tstep))
                         input2[map_val[v]] = data
                     else:
                         input2[map_val[v]] = data
@@ -208,7 +215,7 @@ class QueueIsnobal(threading.Thread):
 
             first_step = j
             if self.updater is not None:
-                #if tstep.tz_localize(None) in self.updater.update_dates:
+                # if tstep.tz_localize(None) in self.updater.update_dates:
                 if tstep in self.updater.update_dates:
                     # self.output_rec = \
                     #     self.updater.do_update_pysnobal(self.output_rec,
@@ -218,7 +225,8 @@ class QueueIsnobal(threading.Thread):
                                                         tstep)
                     first_step = 1
 
-            self._logger.info('running PySnobal for timestep: {}'.format(tstep))
+            self._logger.info(
+                'running PySnobal for timestep: {}'.format(tstep))
             rt = snobal.do_tstep_grid(input1, input2,
                                       self.output_rec,
                                       self.tstep_info,
@@ -326,21 +334,24 @@ class PySnobal():
         step_time = start_step * self.data_tstep
         # step_time = start_step * 60.0
 
-        self.output_rec['current_time'] = step_time * np.ones(self.output_rec['elevation'].shape)
-        self.output_rec['time_since_out'] = self.timeSinceOut * np.ones(self.output_rec['elevation'].shape)
+        self.output_rec['current_time'] = step_time * \
+            np.ones(self.output_rec['elevation'].shape)
+        self.output_rec['time_since_out'] = self.timeSinceOut * \
+            np.ones(self.output_rec['elevation'].shape)
 
         # get first timestep
         self.input1 = {}
         for var, v in self.variable_list.items():
                 # get the data desired
-                data = getattr(s.distribute[v['module']], v['variable'])
+            data = getattr(s.distribute[v['module']], v['variable'])
 
-                if data is None:
-                    data = np.zeros((self.ny, self.nx))
-                    self._logger.info('No data from smrf to iSnobal for {} in {}'.format(v, self.date_time[0]))
-                    self.input1[self.map_val[var]] = data
-                else:
-                    self.input1[self.map_val[var]] = data
+            if data is None:
+                data = np.zeros((self.ny, self.nx))
+                self._logger.info(
+                    'No data from smrf to iSnobal for {} in {}'.format(v, self.date_time[0]))
+                self.input1[self.map_val[var]] = data
+            else:
+                self.input1[self.map_val[var]] = data
 
         # set ground temp
         self.input1['T_g'] = self.soil_temp*np.ones((self.ny, self.nx))
@@ -399,7 +410,6 @@ class PySnobal():
                     updater.do_update_pysnobal(self.output_rec, tstep)
                 first_step = 1
 
-
         self._logger.info('running PySnobal for timestep: {}'.format(tstep))
         rt = snobal.do_tstep_grid(self.input1, self.input2, self.output_rec,
                                   self.tstep_info, self.options['constants'],
@@ -419,6 +429,7 @@ class PySnobal():
                 or (self.j == len(self.options['time']['date_time']) - 1):
             io_mod.output_timestep(self.output_rec, tstep, self.options,
                                    self.awsm_output_vars)
-            self.output_rec['time_since_out'] = np.zeros(self.output_rec['elevation'].shape)
+            self.output_rec['time_since_out'] = np.zeros(
+                self.output_rec['elevation'].shape)
 
         self.j += 1

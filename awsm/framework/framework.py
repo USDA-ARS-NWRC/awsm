@@ -13,6 +13,7 @@ from inicheck.tools import get_user_config, check_config, cast_all_variables
 from smrf.utils import utils
 import smrf
 from spatialnc.topo import topo as mytopo
+import smrf.framework.logger as logger
 
 from awsm.convertFiles import convertFiles as cvf
 from awsm.data.init_model import modelInit
@@ -330,31 +331,34 @@ class AWSM():
             # let user know
             print('Logging to file: {}'.format(logfile))
 
-        fmt = '%(levelname)s:%(name)s:%(message)s'
-        if logfile is not None:
-            logging.basicConfig(filename=logfile,
-                                filemode='w',
-                                level=numeric_level,
-                                format=fmt)
+        self.config['awsm system']['log_file'] = logfile
+        logger.SMRFLogger(self.config['awsm system'])
 
-            # section of code needed to make new log file on daily runs
-            fileh = logging.FileHandler(logfile, 'a')
-            #formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-            # fileh.setFormatter(formatter)
+        # fmt = '%(levelname)s:%(name)s:%(message)s'
+        # if logfile is not None:
+        #     logging.basicConfig(filename=logfile,
+        #                         filemode='w',
+        #                         level=numeric_level,
+        #                         format=fmt)
 
-            log = logging.getLogger()  # root logger
-            for hdlr in log.handlers[:]:  # remove all old handlers
-                log.removeHandler(hdlr)
-            log.addHandler(fileh)      #
+        #     # section of code needed to make new log file on daily runs
+        #     fileh = logging.FileHandler(logfile, 'a')
+        #     #formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        #     # fileh.setFormatter(formatter)
 
-        else:
-            logging.basicConfig(level=numeric_level)
-            coloredlogs.install(level=numeric_level,
-                                fmt=fmt,
-                                level_styles=level_styles,
-                                field_styles=field_styles)
+        #     log = logging.getLogger()  # root logger
+        #     for hdlr in log.handlers[:]:  # remove all old handlers
+        #         log.removeHandler(hdlr)
+        #     log.addHandler(fileh)      #
 
-        self._loglevel = numeric_level
+        # else:
+        #     logging.basicConfig(level=numeric_level)
+        #     coloredlogs.install(level=numeric_level,
+        #                         fmt=fmt,
+        #                         level_styles=level_styles,
+        #                         field_styles=field_styles)
+
+        # self._loglevel = numeric_level
 
         self._logger = logging.getLogger(__name__)
 

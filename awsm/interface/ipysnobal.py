@@ -9,12 +9,7 @@ interpretation
 Authors: Scott Havens, Micah Sandusky
 """
 
-try:
-    from pysnobal import snobal
-    # from pysnobal.c_snobal import snobal
-except Exception as e:
-    print(e)
-    print('pysnobal not installed, ignoring')
+from pysnobal import snobal
 
 import pandas as pd
 import sys

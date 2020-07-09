@@ -19,11 +19,7 @@ from awsm.interface import ipysnobal, interface, initialize_model as initmodel, 
     pysnobal_io as io_mod
 from awsm.interface.ingest_data import StateUpdater
 
-try:
-    from pysnobal.c_snobal import snobal
-except Exception as e:
-    print(e)
-    print('pysnobal not installed, ignoring')
+from pysnobal import snobal
 
 
 def run_ipysnobal(myawsm):
@@ -251,22 +247,25 @@ def run_smrf_ipysnobal_single(myawsm, s):
         # 0.2 illumination angle
         illum_ang = None
         if cosz > 0:
-            illum_ang = shade(s.topo.sin_slope,
-                              s.topo.aspect,
-                              azimuth,
-                              cosz)
+            illum_ang = shade(
+                s.topo.sin_slope,
+                s.topo.aspect,
+                azimuth,
+                cosz)
 
         # 1. Air temperature
         s.distribute['air_temp'].distribute(s.data.air_temp.loc[t])
 
         # 2. Vapor pressure
-        s.distribute['vapor_pressure'].distribute(s.data.vapor_pressure.loc[t],
-                                                  s.distribute['air_temp'].air_temp)
+        s.distribute['vapor_pressure'].distribute(
+            s.data.vapor_pressure.loc[t],
+            s.distribute['air_temp'].air_temp)
 
         # 3. Wind_speed and wind_direction
-        s.distribute['wind'].distribute(s.data.wind_speed.loc[t],
-                                        s.data.wind_direction.loc[t],
-                                        t)
+        s.distribute['wind'].distribute(
+            s.data.wind_speed.loc[t],
+            s.data.wind_direction.loc[t],
+            t)
 
         # 4. Precipitation
         s.distribute['precip'].distribute(
@@ -294,26 +293,28 @@ def run_smrf_ipysnobal_single(myawsm, s):
         s.distribute['cloud_factor'].distribute(s.data.cloud_factor.loc[t])
 
         # 7. solar
-        s.distribute['solar'].distribute(t,
-                                         s.distribute["cloud_factor"].cloud_factor,
-                                         illum_ang,
-                                         cosz,
-                                         azimuth,
-                                         s.distribute['precip'].last_storm_day_basin,
-                                         s.distribute['albedo'].albedo_vis,
-                                         s.distribute['albedo'].albedo_ir)
+        s.distribute['solar'].distribute(
+            t,
+            s.distribute["cloud_factor"].cloud_factor,
+            illum_ang,
+            cosz,
+            azimuth,
+            s.distribute['albedo'].albedo_vis,
+            s.distribute['albedo'].albedo_ir)
 
         # 7. thermal radiation
         if s.distribute['thermal'].gridded and \
            s.config['gridded']['data_type'] != 'hrrr_grib':
-            s.distribute['thermal'].distribute_thermal(s.data.thermal.loc[t],
-                                                       s.distribute['air_temp'].air_temp)
+            s.distribute['thermal'].distribute_thermal(
+                s.data.thermal.loc[t],
+                s.distribute['air_temp'].air_temp)
         else:
-            s.distribute['thermal'].distribute(t,
-                                               s.distribute['air_temp'].air_temp,
-                                               s.distribute['vapor_pressure'].vapor_pressure,
-                                               s.distribute['vapor_pressure'].dew_point,
-                                               s.distribute['cloud_factor'].cloud_factor)
+            s.distribute['thermal'].distribute(
+                t,
+                s.distribute['air_temp'].air_temp,
+                s.distribute['vapor_pressure'].vapor_pressure,
+                s.distribute['vapor_pressure'].dew_point,
+                s.distribute['cloud_factor'].cloud_factor)
 
         # 8. Soil temperature
         s.distribute['soil_temp'].distribute()

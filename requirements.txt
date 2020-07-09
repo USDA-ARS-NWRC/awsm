@@ -1,3 +1,4 @@
 cftime==1.1.2
 smrf-dev
 matplotlib
+git+https://github.com/USDA-ARS-NWRC/pysnobal.git@v0.2.0

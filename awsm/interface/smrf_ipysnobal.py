@@ -349,14 +349,18 @@ def run_smrf_ipysnobal_threaded(myawsm, s):
         ipysnobal.init_from_smrf(myawsm, s)
 
     # s.initializeOutput()
-    if 'output' in s.thread_variables:
-        s.thread_variables.remove('output')
-    if 'isnobal' not in s.thread_variables:
-        s.thread_variables.append('isnobal')
+    s.create_data_queue()
+
+    # if 'output' in s.thread_variables:
+    #     s.thread_variables.remove('output')
+    # if 'isnobal' not in s.thread_variables:
+    # s.thread_variables.append('isnobal')
 
     # 7. Distribute the data
     # -------------------------------------
-    t, q = s.create_distributed_threads()
+    other_queues = ['isnobal']
+    s.create_distributed_threads(other_queues)
+    del s.smrf_queue['output']
 
     # initialize updater if required
     if myawsm.update_depth:
@@ -365,27 +369,29 @@ def run_smrf_ipysnobal_threaded(myawsm, s):
         updater = None
 
     # isnobal thread
-    t.append(ipysnobal.QueueIsnobal(q, s.date_time,
-                                    s.thread_variables,
-                                    myawsm.pysnobal_output_vars,
-                                    options,
-                                    params,
-                                    tstep_info,
-                                    init,
-                                    output_rec,
-                                    s.topo.nx,
-                                    s.topo.ny,
-                                    myawsm.soil_temp,
-                                    myawsm._logger,
-                                    myawsm.tzinfo,
-                                    updater))
+    s.threads.append(ipysnobal.QueueIsnobal(
+        s.smrf_queue,
+        s.date_time,
+        s.thread_variables,
+        myawsm.pysnobal_output_vars,
+        options,
+        params,
+        tstep_info,
+        init,
+        output_rec,
+        s.topo.nx,
+        s.topo.ny,
+        myawsm.soil_temp,
+        myawsm._logger,
+        myawsm.tzinfo,
+        updater))
 
     # the cleaner
-    t.append(queue.QueueCleaner(s.date_time, q))
+    s.threads.append(queue.QueueCleaner(s.date_time, s.smrf_queue))
 
     # start all the threads
-    for i in range(len(t)):
-        t[i].start()
+    for i in range(len(s.threads)):
+        s.threads[i].start()
 
-    for i in range(len(t)):
-        t[i].join()
+    for i in range(len(s.threads)):
+        s.threads[i].join()

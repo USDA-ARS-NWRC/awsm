@@ -334,32 +334,6 @@ class AWSM():
         self.config['awsm system']['log_file'] = logfile
         logger.SMRFLogger(self.config['awsm system'])
 
-        # fmt = '%(levelname)s:%(name)s:%(message)s'
-        # if logfile is not None:
-        #     logging.basicConfig(filename=logfile,
-        #                         filemode='w',
-        #                         level=numeric_level,
-        #                         format=fmt)
-
-        #     # section of code needed to make new log file on daily runs
-        #     fileh = logging.FileHandler(logfile, 'a')
-        #     #formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        #     # fileh.setFormatter(formatter)
-
-        #     log = logging.getLogger()  # root logger
-        #     for hdlr in log.handlers[:]:  # remove all old handlers
-        #         log.removeHandler(hdlr)
-        #     log.addHandler(fileh)      #
-
-        # else:
-        #     logging.basicConfig(level=numeric_level)
-        #     coloredlogs.install(level=numeric_level,
-        #                         fmt=fmt,
-        #                         level_styles=level_styles,
-        #                         field_styles=field_styles)
-
-        # self._loglevel = numeric_level
-
         self._logger = logging.getLogger(__name__)
 
         self._logger.info(ascii_art.MOUNTAIN)

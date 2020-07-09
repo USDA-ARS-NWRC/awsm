@@ -16,11 +16,6 @@ import sys
 import numpy as np
 from smrf.utils import utils
 
-try:
-    from Queue import Queue  # , Empty, Full
-except:
-    from queue import Queue  # , Empty, Full
-
 import threading
 from awsm.interface import initialize_model as initmodel
 from awsm.interface import pysnobal_io as io_mod

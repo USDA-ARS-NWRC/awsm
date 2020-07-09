@@ -1,4 +1,6 @@
 # Eclipse files
+.venv
+.vscode
 .project
 .settings
 .pydevproject

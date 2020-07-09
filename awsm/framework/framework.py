@@ -11,6 +11,7 @@ from inicheck.config import MasterConfig, UserConfig
 from inicheck.output import print_config_report, generate_config
 from inicheck.tools import get_user_config, check_config, cast_all_variables
 from smrf.utils import utils
+import smrf
 from spatialnc.topo import topo as mytopo
 
 from awsm.convertFiles import convertFiles as cvf
@@ -117,7 +118,7 @@ class AWSM():
         self.prompt_dirs = self.config['awsm master']['prompt_dirs']
 
         # store smrf version if running smrf
-        self.smrf_version = utils.getgitinfo()
+        self.smrf_version = smrf.__version__
 
         # ################ Time information ##################
         self.start_date = pd.to_datetime(self.config['time']['start_date'])

@@ -37,6 +37,6 @@ def get_config_header():
            "http://awsm.readthedocs.io/en/latest/\n"
            "\nFor SMRF related help see:\n"
            "http://smrf.readthedocs.io/en/latest/\n").format(getgitinfo(),
-                                                           smrf.utils.utils.getgitinfo())
+                                                           smrf.__version__)
 
     return hdr

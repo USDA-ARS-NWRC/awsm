@@ -10,8 +10,9 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 import pytz
-import smrf
-from smrf.envphys import radiation
+import smrf.framework
+from topocalc.shade import shade
+from smrf.envphys import sunang
 from smrf.utils import queue
 
 from awsm.interface import ipysnobal, interface, initialize_model as initmodel, \
@@ -47,13 +48,16 @@ def run_ipysnobal(myawsm):
     start_step = 0  # if restart then it would be higher if this were iSnobal
     step_time = start_step * data_tstep
 
-    output_rec['current_time'] = step_time * np.ones(output_rec['elevation'].shape)
-    output_rec['time_since_out'] = timeSinceOut * np.ones(output_rec['elevation'].shape)
+    output_rec['current_time'] = step_time * \
+        np.ones(output_rec['elevation'].shape)
+    output_rec['time_since_out'] = timeSinceOut * \
+        np.ones(output_rec['elevation'].shape)
 
     myawsm._logger.info('getting inputs for first timestep')
     if myawsm.forcing_data_type == 'netcdf':
         force = io_mod.open_files_nc(myawsm)
-        input1 = initmodel.get_timestep_netcdf(force, options['time']['date_time'][0])
+        input1 = initmodel.get_timestep_netcdf(
+            force, options['time']['date_time'][0])
     else:
         input_list, ppt_list = io_mod.open_files_ipw(myawsm)
         input1 = initmodel.get_timestep_ipw(options['time']['date_time'][0],
@@ -74,7 +78,8 @@ def run_ipysnobal(myawsm):
         if myawsm.forcing_data_type == 'netcdf':
             input2 = initmodel.get_timestep_netcdf(force, tstep)
         else:
-            input2 = initmodel.get_timestep_ipw(tstep, input_list, ppt_list, myawsm)
+            input2 = initmodel.get_timestep_ipw(
+                tstep, input_list, ppt_list, myawsm)
 
         first_step = j
         # update depth if necessary
@@ -90,7 +95,8 @@ def run_ipysnobal(myawsm):
                                   nthreads=myawsm.ipy_threads)
 
         if rt != -1:
-            raise ValueError('ipysnobal error on time step %s, pixel %i' % (tstep, rt))
+            raise ValueError(
+                'ipysnobal error on time step %s, pixel %i' % (tstep, rt))
             # break
 
         input1 = input2.copy()
@@ -101,7 +107,8 @@ def run_ipysnobal(myawsm):
             myawsm._logger.info('Outputting {}'.format(tstep))
             io_mod.output_timestep(output_rec, tstep, options,
                                    myawsm.pysnobal_output_vars)
-            output_rec['time_since_out'] = np.zeros(output_rec['elevation'].shape)
+            output_rec['time_since_out'] = np.zeros(
+                output_rec['elevation'].shape)
 
         myawsm._logger.info('Finished timestep: {}'.format(tstep))
 
@@ -235,7 +242,7 @@ def run_smrf_ipysnobal_single(myawsm, s):
 
         s._logger.info('Distributing time step %s' % t)
         # 0.1 sun angle for time step
-        cosz, azimuth, rad_vec = radiation.sunang.sunang(
+        cosz, azimuth, rad_vec = sunang.sunang(
             t.astimezone(pytz.utc),
             s.topo.basin_lat,
             s.topo.basin_long,
@@ -244,17 +251,17 @@ def run_smrf_ipysnobal_single(myawsm, s):
         # 0.2 illumination angle
         illum_ang = None
         if cosz > 0:
-            illum_ang = radiation.shade(s.topo.sin_slope,
-                                        s.topo.aspect,
-                                        azimuth,
-                                        cosz)
+            illum_ang = shade(s.topo.sin_slope,
+                              s.topo.aspect,
+                              azimuth,
+                              cosz)
 
         # 1. Air temperature
         s.distribute['air_temp'].distribute(s.data.air_temp.loc[t])
 
         # 2. Vapor pressure
         s.distribute['vapor_pressure'].distribute(s.data.vapor_pressure.loc[t],
-                                                    s.distribute['air_temp'].air_temp)
+                                                  s.distribute['air_temp'].air_temp)
 
         # 3. Wind_speed and wind_direction
         s.distribute['wind'].distribute(s.data.wind_speed.loc[t],
@@ -300,7 +307,7 @@ def run_smrf_ipysnobal_single(myawsm, s):
         if s.distribute['thermal'].gridded and \
            s.config['gridded']['data_type'] != 'hrrr_grib':
             s.distribute['thermal'].distribute_thermal(s.data.thermal.loc[t],
-                                                          s.distribute['air_temp'].air_temp)
+                                                       s.distribute['air_temp'].air_temp)
         else:
             s.distribute['thermal'].distribute(t,
                                                s.distribute['air_temp'].air_temp,

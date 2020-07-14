@@ -9,7 +9,7 @@ from spatialnc.proj import add_proj
 
 C_TO_K = 273.16
 FREEZE = C_TO_K
-# Kelvin to Celcius
+# Kelvin to Celsius
 K_TO_C = lambda x: x - FREEZE
 
 

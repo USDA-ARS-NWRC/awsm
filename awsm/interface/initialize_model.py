@@ -25,7 +25,7 @@ DEFAULT_MEDIUM_TSTEP = 15.0
 DEFAULT_SMALL_TSTEP = 1.0
 
 WHOLE_TSTEP = 0x1  # output when tstep is not divided
-DIVIDED_TSTEP = 0x2  # output when timestep is divided
+DIVIDED_TSTEP = 0x2  # output when time step is divided
 
 hrs2min = lambda x: x * 60
 min2sec = lambda x: x * 60
@@ -33,7 +33,7 @@ SEC_TO_HR = lambda x: x / 3600.0
 
 C_TO_K = 273.16
 FREEZE = C_TO_K
-# Kelvin to Celcius
+# Kelvin to Celsius
 K_TO_C = lambda x: x - FREEZE
 
 
@@ -75,7 +75,7 @@ def get_timestep_netcdf(force, tstep, point=None):
 
     Args:
         force:   input array of forcing variables
-        tstep:   datetime timestep
+        tstep:   datetime time step
 
     Returns:
         inpt:    dictionary of forcing variable images
@@ -83,7 +83,7 @@ def get_timestep_netcdf(force, tstep, point=None):
 
     inpt = {}
 
-    # map function from these values to the ones requried by snobal
+    # map function from these values to the ones required by snobal
     map_val = {'air_temp': 'T_a', 'net_solar': 'S_n', 'thermal': 'I_lw',
                'vapor_pressure': 'e_a', 'wind_speed': 'u',
                'soil_temp': 'T_g', 'precip_mass': 'm_pp',
@@ -139,9 +139,9 @@ def get_timestep_ipw(tstep, input_list, ppt_list, myawsm):
     place that time step into a dict
 
     Args:
-        tstep:      datetime of timestep
-        input_list: numpy array (1D) of integer timesteps given
-        ppt_list:   numpy array(1D) of integer timesteps for ppt_list
+        tstep:      datetime of time step
+        input_list: numpy array (1D) of integer time steps given
+        ppt_list:   numpy array(1D) of integer time steps for ppt_list
         myawsm:     AWSM instance for current run
 
     Returns:
@@ -151,7 +151,7 @@ def get_timestep_ipw(tstep, input_list, ppt_list, myawsm):
 
     inpt = {}
 
-    # map function from these values to the ones requried by snobal
+    # map function from these values to the ones required by snobal
     map_val = {1: 'T_a', 5: 'S_n', 0: 'I_lw',
                2: 'e_a', 3: 'u'}
     map_val_prec = {0: 'm_pp', 1: 'percent_snow',
@@ -176,7 +176,7 @@ def get_timestep_ipw(tstep, input_list, ppt_list, myawsm):
                 inpt[v] = i_in.bands[f].data
     # assign ppt data if there
     else:
-        raise ValueError('No input timesteps for {}'.format(tstep))
+        raise ValueError('No input time steps for {}'.format(tstep))
 
     if np.any(ppt_list == wyhr):
         i_ppt = ipw.IPW(os.path.join(myawsm.path_ppt, 'ppt.4b_%04i' % (wyhr)))
@@ -207,13 +207,13 @@ def get_tstep_info(options, config, thresh):
 
     Returns:
         params:     Snobal parameters
-        tstep_info: setting for Snobal timesteps
+        tstep_info: setting for Snobal time steps
 
     """
 
-    # intialize the time step info
-    # 0 : data timestep
-    # 1 : normal run timestep
+    # initialize the time step info
+    # 0 : data time step
+    # 1 : normal run time step
     # 2 : medium  "     "
     # 3 : small   "     "
 
@@ -254,7 +254,7 @@ def get_tstep_info(options, config, thresh):
         tstep_info[DATA_TSTEP]['output'] = DIVIDED_TSTEP
 #     tstep_info[DATA_TSTEP]['output'] = DIVIDED_TSTEP
 
-    # mass thresholds for run timesteps
+    # mass thresholds for run time steps
     tstep_info[NORMAL_TSTEP]['threshold'] = thresh[0]
     tstep_info[MEDIUM_TSTEP]['threshold'] = thresh[1]
     tstep_info[SMALL_TSTEP]['threshold'] = thresh[2]
@@ -298,10 +298,10 @@ def get_args(myawsm):
     * O - how often output records written (data, normal, all),
     * c - continue run even when no snowcover,
     * K - accept temperatures in degrees K,
-    * T - run timesteps' thresholds for a layer's mass (kg/m^2)
+    * T - run time steps' thresholds for a layer's mass (kg/m^2)
 
-    To-do: take all the rest of the defualt and check ranges for the
-    input arguements, i.e. rewrite the rest of getargs.c
+    To-do: take all the rest of the default and check ranges for the
+    input arguments, i.e. rewrite the rest of getargs.c
 
     Args:
         myawsm: AWSM instance
@@ -347,7 +347,7 @@ def get_args(myawsm):
     c = {}
     for v in myawsm.config['ipysnobal constants']:
         c[v] = float(myawsm.config['ipysnobal constants'][v])
-    options.update(c)  # update the defult with any user values
+    options.update(c)  # update the default with any user values
 
     config['constants'] = options
 
@@ -355,9 +355,9 @@ def get_args(myawsm):
     # read in the time and ensure a few things
     # nsteps will only be used if end_date is not specified
     data_tstep_min = int(config['time']['time_step'])
-    check_range(data_tstep_min, 1.0, hrs2min(60), "input data's timestep")
+    check_range(data_tstep_min, 1.0, hrs2min(60), "input data's time step")
     if ((data_tstep_min > 60) and (data_tstep_min % 60 != 0)):
-        raise ValueError("Data timestep > 60 min must be multiple of 60 min (whole hrs)")
+        raise ValueError("Data time step > 60 min must be multiple of 60 min (whole hrs)")
     config['time']['time_step'] = data_tstep_min
 
     # add to constant sections for tstep_info calculation
@@ -425,7 +425,7 @@ def initialize(params, tstep_info, init):
 
     Args:
         params:      Snobal parameters
-        tstep_info:  setting for Snobal timesteps
+        tstep_info:  setting for Snobal time steps
         init:        initialization dictionary
 
     Returns:

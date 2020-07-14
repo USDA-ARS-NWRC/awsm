@@ -41,7 +41,7 @@ class StateUpdater():
                                                           myawsm.gitVersion,
                                                           myawsm.smrf_version)
 
-        # callculate offset for each section of the run and filter updates
+        # calculate offset for each section of the run and filter updates
         # update_info, runsteps, offsets, firststeps = self.calc_offsets_nsteps(myawsm, update_info)
         #
         # self.runsteps = runsteps
@@ -256,7 +256,7 @@ class StateUpdater():
             #     update_number = [update_number]
 
         myawsm._logger.debug('Will update with flights {}'.format(filter_number))
-        # filter to correct hourse
+        # filter to correct hours
         for un in update_number:
             if un not in filter_number:
                 # delete update if not in desired update inputs

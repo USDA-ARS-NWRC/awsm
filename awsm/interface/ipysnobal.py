@@ -32,7 +32,7 @@ from awsm.interface import pysnobal_io as io_mod
 C_TO_K = 273.16
 FREEZE = C_TO_K
 
-# Kelvin to Celcius
+# Kelvin to Celsius
 K_TO_C = lambda x: x - FREEZE
 
 # ###############################################################
@@ -53,7 +53,7 @@ def init_from_smrf(myawsm, mysmrf=None, dem=None):
     # parse the input arguments
     options, point_run = initmodel.get_args(myawsm)
 
-    # get the timestep info
+    # get the time step info
     params, tstep_info = initmodel.get_tstep_info(options['constants'],
                                                   options,
                                                   myawsm.mass_thresh)
@@ -89,9 +89,9 @@ class QueueIsnobal(threading.Thread):
             awsm_output_vars: list of variables to output
             options:    dictionary of Snobal options
             params:     dictionary of Snobal params
-            tstep_info: dictionary of info for Snobal timesteps
+            tstep_info: dictionary of info for Snobal time steps
             init:       dictionary of init info for Snobal
-            output_rec: dictionary to store Snobal variables between timesteps
+            output_rec: dictionary to store Snobal variables between time steps
             nx:         number of points in X direction
             ny:         number of points in y direction
             soil_temp:  uniform soil temperature (float)
@@ -147,14 +147,14 @@ class QueueIsnobal(threading.Thread):
         self.output_rec['current_time'] = step_time * np.ones(self.output_rec['elevation'].shape)
         self.output_rec['time_since_out'] = timeSinceOut * np.ones(self.output_rec['elevation'].shape)
 
-        # map function from these values to the ones requried by snobal
+        # map function from these values to the ones required by snobal
         map_val = {'air_temp': 'T_a', 'net_solar': 'S_n', 'thermal': 'I_lw',
                    'vapor_pressure': 'e_a', 'wind_speed': 'u',
                    'soil_temp': 'T_g', 'precip': 'm_pp',
                    'percent_snow': 'percent_snow', 'snow_density': 'rho_snow',
                    'precip_temp': 'T_pp'}
 
-        # get first timestep
+        # get first time step
         input1 = {}
         for v in force_variables:
             if v in self.queue.keys():
@@ -179,13 +179,13 @@ class QueueIsnobal(threading.Thread):
 
         # tell queue we assigned all the variables
         self.queue['isnobal'].put([self.date_time[0], True])
-        self._logger.info('Finished initializing first timestep for iPySnobal')
+        self._logger.info('Finished initializing first time step for iPySnobal')
 
         j = 1
         # for tstep in options['time']['date_time'][953:958]:
         for tstep in self.date_time[1:]:
             # get the output variables then pass to the function
-            # this avoids zeroing of the energetics every timestep
+            # this avoids zeroing of the energetics every time step
             first_step = j
             input2 = {}
             for v in force_variables:
@@ -218,7 +218,7 @@ class QueueIsnobal(threading.Thread):
                                                         tstep)
                     first_step = 1
 
-            self._logger.info('running PySnobal for timestep: {}'.format(tstep))
+            self._logger.info('running PySnobal for time step: {}'.format(tstep))
             rt = snobal.do_tstep_grid(input1, input2,
                                       self.output_rec,
                                       self.tstep_info,
@@ -232,7 +232,7 @@ class QueueIsnobal(threading.Thread):
                                   .format(tstep, rt))
                 break
 
-            self._logger.info('Finished timestep: {}'.format(tstep))
+            self._logger.info('Finished time step: {}'.format(tstep))
             input1 = input2.copy()
 
             # output at the frequency and the last time step
@@ -267,9 +267,9 @@ class PySnobal():
             output_vars:    list of variables to output
             options:    dictionary of Snobal options
             params:     dictionary of Snobal params
-            tstep_info: dictionary of info for Snobal timesteps
+            tstep_info: dictionary of info for Snobal time steps
             init:       dictionary of init info for Snobal
-            output_rec: dictionary to store Snobal variables between timesteps
+            output_rec: dictionary to store Snobal variables between time steps
             nx:         number of points in X direction
             ny:         number of points in y direction
             soil_temp:  uniform soil temperature (float)
@@ -291,7 +291,7 @@ class PySnobal():
         self.nthreads = self.options['output']['nthreads']
         self.tzinfo = tzi
 
-        # map function from these values to the ones requried by snobal
+        # map function from these values to the ones required by snobal
         self.map_val = {'air_temp': 'T_a', 'net_solar': 'S_n', 'thermal': 'I_lw',
                         'vapor_pressure': 'e_a', 'wind_speed': 'u',
                         'soil_temp': 'T_g', 'precip': 'm_pp',
@@ -329,7 +329,7 @@ class PySnobal():
         self.output_rec['current_time'] = step_time * np.ones(self.output_rec['elevation'].shape)
         self.output_rec['time_since_out'] = self.timeSinceOut * np.ones(self.output_rec['elevation'].shape)
 
-        # get first timestep
+        # get first time step
         self.input1 = {}
         for var, v in self.variable_list.items():
                 # get the data desired
@@ -352,15 +352,15 @@ class PySnobal():
         # for counting how many steps since the start of the run
         self.j = 1
 
-        self._logger.info('Finished initializing first timestep for iPySnobal')
+        self._logger.info('Finished initializing first time step for iPySnobal')
 
     def run_single(self, tstep, s, updater=None):
         """
-        Runs each timestep of Pysnobal when running with SMRF in non-threaded
+        Runs each time step of Pysnobal when running with SMRF in non-threaded
         application.
 
         Args:
-            tstep: datetime timestep
+            tstep: datetime time step
             s:     smrf class instance
             updater: depth updater class
 
@@ -400,7 +400,7 @@ class PySnobal():
                 first_step = 1
 
 
-        self._logger.info('running PySnobal for timestep: {}'.format(tstep))
+        self._logger.info('running PySnobal for time step: {}'.format(tstep))
         rt = snobal.do_tstep_grid(self.input1, self.input2, self.output_rec,
                                   self.tstep_info, self.options['constants'],
                                   self.params, first_step=first_step,
@@ -411,7 +411,7 @@ class PySnobal():
                               .format(tstep, rt))
             sys.exit()
 
-        self._logger.info('Finished timestep: {}'.format(tstep))
+        self._logger.info('Finished time step: {}'.format(tstep))
         self.input1 = self.input2.copy()
 
         # output at the frequency and the last time step

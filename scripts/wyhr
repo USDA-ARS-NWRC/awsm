@@ -98,7 +98,7 @@ def main():
                         help="Flag for calculating the end of the day wyhr")
     args = parser.parse_args()
 
-    # Snag todays date
+    # Snag today's date
     today = datetime.datetime.now()
 
     # Print a header

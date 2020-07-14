@@ -594,11 +594,11 @@ class AWSM():
                 f.write(self.desc)
                 f.close()
             else:
-                self.tmp_log.append('Description file aleardy exists\n')
+                self.tmp_log.append('Description file already exists\n')
 
         else:
             self.tmp_err.append('Base directory did not exist, '
-                                'not safe to conitnue. Make sure base '
+                                'not safe to continue. Make sure base '
                                 'directory exists before running.')
             print(self.tmp_err)
             sys.exit()
@@ -747,7 +747,7 @@ def run_awsm_daily_ops(config_file):
             if os.path.isfile(prev_storm):
                 new_config.raw_cfg['precip']['storm_days_restart'] = prev_storm
 
-        # apply recipes with new setttings
+        # apply recipes with new settings
         new_config.apply_recipes()
         new_config = cast_all_variables(new_config, new_config.mcfg)
 

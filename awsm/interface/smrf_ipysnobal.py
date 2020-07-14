@@ -172,7 +172,7 @@ def run_smrf_ipysnobal_single(myawsm, s):
     """
 
     # -------------------------------------
-    # Initialize the distibution
+    # Initialize the distribution
     for v in s.distribute:
         s.distribute[v].initialize(s.topo, s.data)
 

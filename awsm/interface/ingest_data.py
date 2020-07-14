@@ -1,15 +1,14 @@
-from spatialnc import ipw
-import numpy as np
-import os
 import copy
-import pandas as pd
-from netCDF4 import Dataset
-import netCDF4 as nc
-from collections import OrderedDict
 import glob
+import os
+from collections import OrderedDict
 from datetime import datetime
 
+import netCDF4 as nc
+import numpy as np
+from netCDF4 import Dataset
 from smrf.utils import utils
+from spatialnc import ipw
 
 C_TO_K = 273.16
 FREEZE = C_TO_K

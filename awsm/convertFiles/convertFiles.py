@@ -1,11 +1,12 @@
-import smrf
-from spatialnc import ipw
+import glob
 import os
 import sys
-import numpy as np
-import netCDF4 as nc
-import glob
 from datetime import datetime
+
+import netCDF4 as nc
+import numpy as np
+from spatialnc import ipw
+
 
 def nc2ipw_mea(myawsm, runtype):
     '''

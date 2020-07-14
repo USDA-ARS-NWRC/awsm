@@ -31,7 +31,3 @@ from . import utils
 
 __config_header__ = utils.utilities.get_config_header()
 
-from . import convertFiles
-from . import interface
-from . import knn
-from . import framework

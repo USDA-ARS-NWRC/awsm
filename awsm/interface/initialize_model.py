@@ -6,13 +6,13 @@ Authors: Scott Havens, Micah Sandusky
 """
 
 import os
-import numpy as np
 from datetime import timedelta
-import netCDF4 as nc
-import pytz
 
-from spatialnc import ipw
+import netCDF4 as nc
+import numpy as np
+import pytz
 from smrf.utils import utils
+from spatialnc import ipw
 
 DEFAULT_MAX_H2O_VOL = 0.01
 

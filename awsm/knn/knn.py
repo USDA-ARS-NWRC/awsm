@@ -6,11 +6,12 @@ be integrated into AWSM or SMRF
 Scott Havens 20171016
 """
 
-import pandas as pd
-import numpy as np
-from scipy import linalg
-import mysql.connector
 import os
+
+import mysql.connector
+import numpy as np
+import pandas as pd
+from scipy import linalg
 
 
 def wind_dir_resampler(array):

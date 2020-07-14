@@ -1,13 +1,11 @@
+import os
+
+import netCDF4 as nc
 import numpy as np
 import pandas as pd
-import os
-import logging
-import netCDF4 as nc
-from datetime import timedelta
 import pytz
-
-from spatialnc import ipw
 from smrf.utils import utils
+from spatialnc import ipw
 
 C_TO_K = 273.16
 FREEZE = C_TO_K

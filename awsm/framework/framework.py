@@ -15,10 +15,10 @@ from spatialnc.topo import topo as mytopo
 
 from awsm.convertFiles import convertFiles as cvf
 from awsm.data.init_model import modelInit
+from awsm.framework import ascii_art
 from awsm.interface import interface as smin, smrf_ipysnobal as smrf_ipy, \
     ingest_data
 from awsm.utils import utilities as awsm_utils
-from awsm.framework import ascii_art
 
 
 class AWSM():

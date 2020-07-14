@@ -15,8 +15,8 @@ except Exception as e:
     print(e)
     print('pysnobal not installed, ignoring')
 
-import pandas as pd
 import sys
+
 import numpy as np
 from smrf.utils import utils
 

@@ -10,7 +10,7 @@ def run():
     '''
     awsm is a command line program meant to take a single
     argument for the config file.  This program will run each day
-    as a seperate run
+    as a separate run
     '''
     # Path for Docker use only
     configFile = '/code/awsm/test_data/RME_run/docker_pysnobal.ini'

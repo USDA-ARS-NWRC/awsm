@@ -1,15 +1,14 @@
-from spatialnc import ipw
-import numpy as np
-import os
 import copy
-import pandas as pd
-from netCDF4 import Dataset
-import netCDF4 as nc
-from collections import OrderedDict
 import glob
+import os
+from collections import OrderedDict
 from datetime import datetime
 
+import netCDF4 as nc
+import numpy as np
+from netCDF4 import Dataset
 from smrf.utils import utils
+from spatialnc import ipw
 
 C_TO_K = 273.16
 FREEZE = C_TO_K
@@ -41,7 +40,7 @@ class StateUpdater():
                                                           myawsm.gitVersion,
                                                           myawsm.smrf_version)
 
-        # callculate offset for each section of the run and filter updates
+        # calculate offset for each section of the run and filter updates
         # update_info, runsteps, offsets, firststeps = self.calc_offsets_nsteps(myawsm, update_info)
         #
         # self.runsteps = runsteps
@@ -256,7 +255,7 @@ class StateUpdater():
             #     update_number = [update_number]
 
         myawsm._logger.debug('Will update with flights {}'.format(filter_number))
-        # filter to correct hourse
+        # filter to correct hours
         for un in update_number:
             if un not in filter_number:
                 # delete update if not in desired update inputs

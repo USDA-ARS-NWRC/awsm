@@ -37,7 +37,7 @@ def create_smrf_config(myawsm):
     if myawsm.restart_run and myawsm.run_smrf_ipysnobal:
         smrf_cfg.cfg['time']['start_date'] = myawsm.restart_date
 
-    # set ouput location in smrf config
+    # set output location in smrf config
     smrf_cfg.cfg['output']['out_location'] = os.path.join(myawsm.paths)
     #smrf_cfg.cfg['system']['temp_dir'] = os.path.join(myawsm.paths, 'tmp')
     if myawsm.do_forecast:

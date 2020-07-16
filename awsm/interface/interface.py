@@ -76,7 +76,7 @@ def smrfMEAS(myawsm):
             s.loadTopo()
 
             # 3. initialize the distribution
-            s.initializeDistribution()
+            s.create_distribution()
 
             # initialize the outputs if desired
             s.initializeOutput()

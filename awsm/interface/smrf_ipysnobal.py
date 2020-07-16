@@ -150,7 +150,7 @@ def run_smrf_ipysnobal(myawsm):
         s.loadTopo()
 
         # 3. initialize the distribution
-        s.initializeDistribution()
+        s.create_distribution()
 
         # load weather data  and station metadata
         s.loadData()
@@ -176,8 +176,7 @@ def run_smrf_ipysnobal_single(myawsm, s):
 
     # -------------------------------------
     # Initialize the distibution
-    for v in s.distribute:
-        s.distribute[v].initialize(s.topo, s.data)
+    s.initialize_distribution()
 
     # -------------------------------------
     # initialize ipysnobal state
@@ -189,24 +188,32 @@ def run_smrf_ipysnobal_single(myawsm, s):
     force_variables = ['thermal', 'air_temp', 'vapor_pressure', 'wind_speed',
                        'net_solar', 'soil_temp', 'precip', 'percent_snow',
                        'snow_density', 'precip_temp']
+
+    # Collect the potential output variables
+    possible_output_variables = {}
+    for variable, module in s.distribute.items():
+        possible_output_variables.update(module.output_variables)
+
     variable_list = {}
-    for v in force_variables:
-        for m in s.modules:
+    for force_variable in force_variables:
 
-            if m in s.distribute.keys():
+        if force_variable in possible_output_variables.keys():
+            module = possible_output_variables[force_variable]['module']
 
-                if v in s.distribute[m].output_variables.keys():
+            # # TODO this is a hack to not have to redo the gold files
+            # if module == 'precipitation':
+            #     nc_module = 'precip'
+            # else:
+            #     nc_module = module
 
-                    d = {'variable': v,
-                         'module': m
-                         }
-                    variable_list[v] = d
+            variable_list[force_variable] = {
+                'variable': force_variable,
+                'module': module
+            }
 
-            elif v == 'soil_temp':
-                pass
-            else:
-                raise ValueError('Not distributing necessary '
-                                 'variables to run PySnobal!')
+        else:
+            raise ValueError('Not distributing necessary '
+                             'variables to run PySnobal!')
 
     # -------------------------------------
     # initialize updater if required
@@ -268,7 +275,7 @@ def run_smrf_ipysnobal_single(myawsm, s):
             t)
 
         # 4. Precipitation
-        s.distribute['precip'].distribute(
+        s.distribute['precipitation'].distribute(
             s.data.precip.loc[t],
             s.distribute['vapor_pressure'].dew_point,
             s.distribute['vapor_pressure'].precip_temp,
@@ -286,7 +293,7 @@ def run_smrf_ipysnobal_single(myawsm, s):
         s.distribute['albedo'].distribute(
             t,
             illum_ang,
-            s.distribute['precip'].storm_days
+            s.distribute['precipitation'].storm_days
         )
 
         # 6. cloud factor
@@ -348,18 +355,14 @@ def run_smrf_ipysnobal_threaded(myawsm, s):
     options, params, tstep_info, init, output_rec = \
         ipysnobal.init_from_smrf(myawsm, s)
 
-    # s.initializeOutput()
     s.create_data_queue()
+    s.set_queue_variables()
+    s.create_distributed_threads(['isnobal'])
+    s.smrf_queue['isnobal'] = queue.DateQueueThreading(
+        s.queue_max_values,
+        s.time_out,
+        name='isnobal')
 
-    # if 'output' in s.thread_variables:
-    #     s.thread_variables.remove('output')
-    # if 'isnobal' not in s.thread_variables:
-    # s.thread_variables.append('isnobal')
-
-    # 7. Distribute the data
-    # -------------------------------------
-    other_queues = ['isnobal']
-    s.create_distributed_threads(other_queues)
     del s.smrf_queue['output']
 
     # initialize updater if required
@@ -372,7 +375,7 @@ def run_smrf_ipysnobal_threaded(myawsm, s):
     s.threads.append(ipysnobal.QueueIsnobal(
         s.smrf_queue,
         s.date_time,
-        s.thread_variables,
+        s.thread_queue_variables,
         myawsm.pysnobal_output_vars,
         options,
         params,

@@ -332,7 +332,7 @@ class PySnobal():
         # get first timestep
         self.input1 = {}
         for var, v in self.variable_list.items():
-                # get the data desired
+            # get the data desired
             data = getattr(s.distribute[v['module']], v['variable'])
 
             if data is None:

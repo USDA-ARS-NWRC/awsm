@@ -19,7 +19,7 @@ from awsm.interface import ipysnobal, interface, initialize_model as initmodel, 
     pysnobal_io as io_mod
 from awsm.interface.ingest_data import StateUpdater
 
-from pysnobal import snobal
+from pysnobal.c_snobal import snobal
 
 
 def run_ipysnobal(myawsm):

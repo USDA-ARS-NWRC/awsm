@@ -9,9 +9,8 @@ interpretation
 Authors: Scott Havens, Micah Sandusky
 """
 
-from pysnobal import snobal
+from pysnobal.c_snobal import snobal
 
-import pandas as pd
 import sys
 import numpy as np
 from smrf.utils import utils

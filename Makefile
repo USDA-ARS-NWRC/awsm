@@ -60,8 +60,8 @@ test-all: ## run tests on every Python version with tox
 	tox
 
 coverage: ## run coverage and submit
-	coverage run --source smrf setup.py test
-	coverage report --fail-under=60
+	coverage run --source awsm setup.py test
+	coverage report --fail-under=40
 
 coveralls: coverage ## run coveralls
 	coveralls

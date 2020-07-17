@@ -47,19 +47,26 @@ clean-test: ## remove test and coverage artifacts
 	rm -f .coverage
 	rm -fr htmlcov/
 
+isort: ## using isort to sort imports
+	isort -rc -v .
+
 lint: ## check style with flake8
 	flake8 awsm tests
 
 test: ## run tests quickly with the default Python
-
-		python setup.py test
+	python setup.py test
 
 test-all: ## run tests on every Python version with tox
 	tox
 
-coverage: ## check code coverage quickly with the default Python
-	coverage run --source awsm setup.py test
-	coverage report -m
+coverage: ## run coverage and submit
+	coverage run --source smrf setup.py test
+	coverage report --fail-under=60
+
+coveralls: coverage ## run coveralls
+	coveralls
+
+coverage-html: coverage ## check code coverage quickly with the default Python
 	coverage html
 	$(BROWSER) htmlcov/index.html
 

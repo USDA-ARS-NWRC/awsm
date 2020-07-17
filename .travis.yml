@@ -69,6 +69,7 @@ jobs:
       language: shell
       env:
         - TOXENV=py37
+        - CC=gcc-7
         - NOT_ON_GOLD_HOST=yup
 
   allow_failures:

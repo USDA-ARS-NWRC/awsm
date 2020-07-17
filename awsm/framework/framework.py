@@ -17,10 +17,10 @@ import smrf.framework.logger as logger
 
 from awsm.convertFiles import convertFiles as cvf
 from awsm.data.init_model import modelInit
+from awsm.framework import ascii_art
 from awsm.interface import interface as smin, smrf_ipysnobal as smrf_ipy, \
     ingest_data
 from awsm.utils import utilities as awsm_utils
-from awsm.framework import ascii_art
 
 
 class AWSM():
@@ -575,11 +575,11 @@ class AWSM():
                 f.write(self.desc)
                 f.close()
             else:
-                self.tmp_log.append('Description file aleardy exists\n')
+                self.tmp_log.append('Description file already exists\n')
 
         else:
             self.tmp_err.append('Base directory did not exist, '
-                                'not safe to conitnue. Make sure base '
+                                'not safe to continue. Make sure base '
                                 'directory exists before running.')
             print(self.tmp_err)
             sys.exit()
@@ -729,7 +729,7 @@ def run_awsm_daily_ops(config_file):
             if os.path.isfile(prev_storm):
                 new_config.raw_cfg['precip']['storm_days_restart'] = prev_storm
 
-        # apply recipes with new setttings
+        # apply recipes with new settings
         new_config.apply_recipes()
         new_config = cast_all_variables(new_config, new_config.mcfg)
 

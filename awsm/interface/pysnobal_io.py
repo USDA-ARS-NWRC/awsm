@@ -1,15 +1,16 @@
+import glob
 import os
+from copy import copy
+from datetime import datetime
+
+import netCDF4 as nc
 import numpy as np
 import pandas as pd
-from datetime import datetime
-import netCDF4 as nc
-import glob
-from copy import copy
 from spatialnc.proj import add_proj
 
 C_TO_K = 273.16
 FREEZE = C_TO_K
-# Kelvin to Celcius
+# Kelvin to Celsius
 K_TO_C = lambda x: x - FREEZE
 
 

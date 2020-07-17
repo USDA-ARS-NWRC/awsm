@@ -1,11 +1,8 @@
-from .gitinfo import __gitVersion__, __gitPath__
-import os
-import numpy as np
-import awsm
-from awsm import __version__
 import smrf
-from spatialnc import ipw
-from netCDF4 import Dataset
+
+from awsm import __version__
+from .gitinfo import __gitVersion__
+
 
 def getgitinfo():
     """gitignored file that contains specific AWSM version and path

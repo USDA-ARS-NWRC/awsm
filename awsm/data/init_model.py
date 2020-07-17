@@ -1,13 +1,11 @@
+import os
+
+import netCDF4 as nc
 import numpy as np
 import pandas as pd
-import os
-import logging
-import netCDF4 as nc
-from datetime import timedelta
 import pytz
-
-from spatialnc import ipw
 from smrf.utils import utils
+from spatialnc import ipw
 
 C_TO_K = 273.16
 FREEZE = C_TO_K
@@ -75,7 +73,7 @@ class modelInit():
         # paths
         self.pathro = pathro
         self.pathrr = pathrr
-        # restart paramters
+        # restart parameters
         self.restart_crash = cfg['isnobal restart']['restart_crash']
         self.restart_hr = cfg['isnobal restart']['wyh_restart_output']
         self.depth_thresh = cfg['isnobal restart']['depth_thresh']
@@ -130,7 +128,7 @@ class modelInit():
         # if we have no init info, make zero init
         elif self.init_file is None:
             self.get_zero_init()
-        # get init depending on filetype
+        # get init depending on file type
         elif self.init_type == 'ipw_out':
             self.get_ipw_out()
         elif self.init_type == 'netcdf':
@@ -161,9 +159,9 @@ class modelInit():
         if self.start_wyhr > 0 or self.restart_crash:
             i_out.new_band(self.init['T_s_l']*mask)  # lower layer temp
 
-        i_out.new_band(self.init['T_s']*mask)  # avgerage snow temp
+        i_out.new_band(self.init['T_s']*mask)  # average snow temp
 
-        i_out.new_band(self.init['h2o_sat']*mask)  # percent saturatio
+        i_out.new_band(self.init['h2o_sat']*mask)  # percent saturation
         i_out.add_geo_hdr([self.topo.u, self.topo.v],
                           [self.topo.du, self.topo.dv],
                           self.topo.units, self.csys)
@@ -226,9 +224,9 @@ class modelInit():
 
         self.init['T_s_0'] = -75.0*self.topo.mask  # active layer temp
         self.init['T_s_l'] = -75.0*self.topo.mask  # lower layer temp
-        self.init['T_s'] = -75.0*self.topo.mask  # avgerage snow temp
+        self.init['T_s'] = -75.0*self.topo.mask  # average snow temp
 
-        self.init['h2o_sat'] = 0.0*self.topo.mask  # percent saturatio
+        self.init['h2o_sat'] = 0.0*self.topo.mask  # percent saturation
 
     def get_ipw_out(self):
         """
@@ -240,7 +238,7 @@ class modelInit():
 
         self.init['T_s_0'] = i_in.bands[4].data*self.topo.mask  # active layer temp
         self.init['T_s_l'] = i_in.bands[5].data*self.topo.mask  # lower layer temp
-        self.init['T_s'] = i_in.bands[6].data*self.topo.mask  # avgerage snow temp
+        self.init['T_s'] = i_in.bands[6].data*self.topo.mask  # average snow temp
 
         self.init['h2o_sat'] = i_in.bands[8].data*self.topo.mask  # percent saturation
 
@@ -261,11 +259,11 @@ class modelInit():
         # get bands depending on if there is a lower layer or not
         if len(i_in.bands) == 8:
             self.init['T_s_l'] = i_in.bands[5].data*self.topo.mask  # lower layer temp
-            self.init['T_s'] = i_in.bands[6].data*self.topo.mask  # avgerage snow temp
+            self.init['T_s'] = i_in.bands[6].data*self.topo.mask  # average snow temp
             self.init['h2o_sat'] = i_in.bands[7].data*self.topo.mask  # percent saturation
 
         elif len(i_in.bands) == 7:
-            self.init['T_s'] = i_in.bands[5].data*self.topo.mask  # avgerage snow temp
+            self.init['T_s'] = i_in.bands[5].data*self.topo.mask  # average snow temp
             self.init['h2o_sat'] = i_in.bands[6].data*self.topo.mask  # percent saturation
 
 
@@ -294,7 +292,7 @@ class modelInit():
         """
         i = nc.Dataset(self.init_file)
 
-        # find timestep indices to grab
+        # find time step indices to grab
         time = i.variables['time'][:]
         t_units = i.variables['time'].units
         nc_calendar = i.variables['time'].calendar
@@ -326,7 +324,6 @@ class modelInit():
         idt = np.argmin(np.absolute(nc_wyhr - tmpwyhr))  # returns index
 
         if np.min(np.absolute(nc_wyhr - tmpwyhr)) > 24.0:
-            # raise ValueError('No time in resatrt file that is within a day of restart time')
             self.logger.error('No time in restart file that is within a day of restart time')
 
         self.logger.warning('Initializing PySnobal with state from water year hour {}'.format(nc_wyhr[idt]))

@@ -6,7 +6,7 @@ import os
 import sys
 from subprocess import check_output
 
-from setuptools import setup
+from setuptools import find_packages, setup
 
 if sys.argv[-1] != 'test':
     # Grab and write the gitVersion from 'git describe'.
@@ -68,17 +68,10 @@ setup(
     version='0.10.0',
     description="Automated Water Supply Model",
     # long_description=readme + '\n\n' + history,
-    author="Micah Sandusky",
-    author_email='micah.sandusky@ars.usda.gov',
-    url='https://github.com/USDA-ARS-NWRC/AWSM',
-    packages=['awsm',
-              'awsm.convertFiles',
-              'awsm.interface',
-              'awsm.framework',
-              'awsm.knn',
-              'awsm.utils',
-              'awsm.data'
-              ],
+    author="USDA ARS Northwest Watershed Research Center",
+    author_email='snow@ars.usda.gov',
+    url='https://github.com/USDA-ARS-NWRC/awsm',
+    packages=find_packages(include=['awsm', 'awsm.*']),
     include_package_data=True,
     package_data={
         'awsm': [

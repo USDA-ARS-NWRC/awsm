@@ -206,28 +206,26 @@ class QueueIsnobal(threading.Thread):
 
             first_step = j
             if self.updater is not None:
-                # if tstep.tz_localize(None) in self.updater.update_dates:
+
                 if tstep in self.updater.update_dates:
-                    # self.output_rec = \
-                    #     self.updater.do_update_pysnobal(self.output_rec,
-                    #                                     tstep.tz_localize(None))
                     self.output_rec = \
                         self.updater.do_update_pysnobal(self.output_rec,
                                                         tstep)
                     first_step = 1
 
-            self._logger.info('running PySnobal for time step: {}'.format(tstep))
+            self._logger.info(
+                'running PySnobal for time step: {}'.format(tstep))
             rt = snobal.do_tstep_grid(input1, input2,
-                                    self.output_rec,
-                                    self.tstep_info,
-                                    self.options['constants'],
-                                    self.params,
-                                    first_step=first_step,
-                                    nthreads=self.nthreads)
+                                      self.output_rec,
+                                      self.tstep_info,
+                                      self.options['constants'],
+                                      self.params,
+                                      first_step=first_step,
+                                      nthreads=self.nthreads)
 
             if rt != -1:
                 self.logger.error('ipysnobal error on time step {}, pixel {}'
-                                .format(tstep, rt))
+                                  .format(tstep, rt))
                 break
 
             self._logger.info('Finished time step: {}'.format(tstep))
@@ -237,7 +235,7 @@ class QueueIsnobal(threading.Thread):
             if ((j)*(data_tstep/3600.0) % self.options['output']['frequency'] == 0)\
                     or (j == len(self.options['time']['date_time']) - 1):
                 io_mod.output_timestep(self.output_rec, tstep, self.options,
-                                    self.awsm_output_vars)
+                                       self.awsm_output_vars)
                 self.output_rec['time_since_out'] = \
                     np.zeros(self.output_rec['elevation'].shape)
 

@@ -6,8 +6,6 @@ from . import interface
 from . import convertFiles
 from . import utils
 import os
-import matplotlib
-matplotlib.use('Agg')
 
 __core_config__ = os.path.abspath(
     os.path.dirname(__file__) + '/framework/CoreConfig.ini')

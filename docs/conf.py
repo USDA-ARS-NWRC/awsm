@@ -13,6 +13,7 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
+from mock import Mock as MagicMock
 import sys
 import os
 from inicheck.tools import config_documentation
@@ -26,7 +27,7 @@ from inicheck.tools import config_documentation
 # Call auto documentation for our config files
 
 config_documentation('./auto_config.rst',
-                     paths=['../awsm/framework/CoreConfig.ini','../awsm/framework/recipes.ini'])
+                     paths=['../awsm/framework/CoreConfig.ini', '../awsm/framework/recipes.ini'])
 
 
 # Get the project root dir, which is the parent dir of this
@@ -35,17 +36,19 @@ if os.environ.get('READTHEDOCS') == 'True':
 else:
     sys.path.insert(0, os.path.abspath('../'))
 # -- Have to do a mock install of some modules that RTD doesn't have --------
-from mock import Mock as MagicMock
+
 
 class Mock(MagicMock):
     @classmethod
     def __getattr__(cls, name):
-            return Mock()
-MOCK_MODULES = ['netCDF4', 'matplotlib', 'matplotlib.pyplot',
-                'pandas', 'smrf', 'ipw', 'smrf.utils','smrf.envphys']
+        return Mock()
+
+
+MOCK_MODULES = ['netCDF4', 'pandas', 'smrf',
+                'ipw', 'smrf.utils', 'smrf.envphys']
 
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
-os.environ['IPW'] = '.' # set a temporary IPW environment variable
+os.environ['IPW'] = '.'  # set a temporary IPW environment variable
 
 #import awsm
 
@@ -61,9 +64,9 @@ extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.autodoc',
               'sphinx.ext.todo',
               'sphinx.ext.napoleon',
-              'sphinx.ext.imgmath'#,
-              #'sphinxcontrib.bibtex'
-]
+              'sphinx.ext.imgmath'  # ,
+              # 'sphinxcontrib.bibtex'
+              ]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -202,7 +205,8 @@ html_static_path = ['_static']
 
 # Custom sidebar templates, maps document names to template names.
 #html_sidebars = {}
-html_sidebars = { '**': ['globaltoc.html', 'relations.html', 'sourcelink.html', 'searchbox.html'] }
+html_sidebars = {'**': ['globaltoc.html',
+                        'relations.html', 'sourcelink.html', 'searchbox.html']}
 
 # Additional templates that should be rendered to pages, maps page names
 # to template names.
@@ -244,13 +248,13 @@ htmlhelp_basename = 'awsmdoc'
 
 latex_elements = {
     # The paper size ('letterpaper' or 'a4paper').
-    #'papersize': 'letterpaper',
+    # 'papersize': 'letterpaper',
 
     # The font size ('10pt', '11pt' or '12pt').
-    #'pointsize': '10pt',
+    # 'pointsize': '10pt',
 
     # Additional stuff for the LaTeX preamble.
-    #'preamble': '',
+    # 'preamble': '',
 }
 
 # Grouping the document tree into LaTeX files. List of tuples

@@ -200,12 +200,6 @@ def run_smrf_ipysnobal_single(myawsm, s):
         if force_variable in possible_output_variables.keys():
             module = possible_output_variables[force_variable]['module']
 
-            # # TODO this is a hack to not have to redo the gold files
-            # if module == 'precipitation':
-            #     nc_module = 'precip'
-            # else:
-            #     nc_module = module
-
             variable_list[force_variable] = {
                 'variable': force_variable,
                 'module': module

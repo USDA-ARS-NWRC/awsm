@@ -1,51 +1,45 @@
-# AWSM is built on SMRF
-FROM usdaarsnwrc/smrf:latest
+# Multi-stage AWSM docker build
+FROM python:3.6-slim-buster as builder
 
-MAINTAINER Scott Havens <scott.havens@ars.usda.gov>
-
-ARG REQUIREMENTS=''
-
-####################################################
-# Software version
-####################################################
-ENV VPYSNOBAL "0.2.0"
-
-####################################################
-# Install dependencies
-####################################################
-
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends curl \
-    && apt-get install -y gcc \
-    && cd /code \
-    && git clone --depth 1 https://github.com/USDA-ARS-NWRC/pysnobal.git \
+RUN mkdir /install \
+    && mkdir /build \
+    && apt-get update -y \
+    && apt-get install -y --no-install-recommends \
+    gcc \
+    git \
+    libssl-dev \
+    libyaml-dev \
+    libhdf5-serial-dev \
+    curl \
+    libeccodes-tools \
     && rm -rf /var/lib/apt/lists/* \
-    && apt remove -y curl \
-    && apt autoremove -y
+    && apt-get autoremove -y curl
 
-####################################################
-# AWSM
-####################################################
+COPY . /build
+WORKDIR /build
 
-COPY . / /code/awsm/
+RUN python3 -m pip install --no-cache-dir --upgrade pip \
+    && python3 -m pip install --no-cache-dir setuptools wheel \
+    && python3 -m pip install --no-cache-dir --user 'numpy<1.19.0' cython \
+    && python3 -m pip install --no-cache-dir --user -r requirements.txt \
+    && python3 setup.py install --user
 
-#ENV PYTHONPATH=/code/awsm/
+##############################################
+# main image
+##############################################
+FROM python:3.6-slim-buster
 
-RUN cd /code/pysnobal \
-    && python3 -m pip install --upgrade pip \
-    && python3 setup.py install
+COPY --from=builder /root/.local /usr/local
 
-RUN cd /code/awsm \
-    && python3 -m pip install --no-cache-dir -r /code/awsm/requirements${REQUIREMENTS}.txt \
-    && python3 setup.py install \
-    && rm -r /root/.cache/pip
+RUN apt-get update -y \
+    && apt-get install -y --no-install-recommends libeccodes-tools \
+    && python3 -m pip install --no-cache-dir nose \
+    && nosetests -vv --exe awsm \
+    && python3 -m pip uninstall -y nose \
+    && rm -rf /var/lib/apt/lists/*
 
+# Create a shared data volume
+VOLUME /data
 WORKDIR /data
 
-COPY ./docker-entrypoint.sh /
-RUN chmod +x /docker-entrypoint.sh
-RUN echo "umask 0002" >> /etc/bash.bashrc
-ENTRYPOINT ["/docker-entrypoint.sh"]
-#CMD ["python3", "/code/awsm/scripts/awsm"]
-
-#ENTRYPOINT ["python3", "/code/awsm/scripts/awsm"]
+CMD ["/bin/bash"]

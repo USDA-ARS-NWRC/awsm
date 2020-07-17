@@ -216,43 +216,37 @@ class QueueIsnobal(threading.Thread):
                                                         tstep)
                     first_step = 1
 
+            self._logger.info('running PySnobal for time step: {}'.format(tstep))
+            rt = snobal.do_tstep_grid(input1, input2,
+                                    self.output_rec,
+                                    self.tstep_info,
+                                    self.options['constants'],
+                                    self.params,
+                                    first_step=first_step,
+                                    nthreads=self.nthreads)
 
-<< << << < HEAD
-  self._logger.info(
-       'running PySnobal for timestep: {}'.format(tstep))
-== == == =
-  self._logger.info('running PySnobal for time step: {}'.format(tstep))
->>>>>> > master
-  rt = snobal.do_tstep_grid(input1, input2,
-                             self.output_rec,
-                             self.tstep_info,
-                             self.options['constants'],
-                             self.params,
-                             first_step=first_step,
-                             nthreads=self.nthreads)
+            if rt != -1:
+                self.logger.error('ipysnobal error on time step {}, pixel {}'
+                                .format(tstep, rt))
+                break
 
-   if rt != -1:
-        self.logger.error('ipysnobal error on time step {}, pixel {}'
-                          .format(tstep, rt))
-        break
+            self._logger.info('Finished time step: {}'.format(tstep))
+            input1 = input2.copy()
 
-    self._logger.info('Finished time step: {}'.format(tstep))
-    input1 = input2.copy()
+            # output at the frequency and the last time step
+            if ((j)*(data_tstep/3600.0) % self.options['output']['frequency'] == 0)\
+                    or (j == len(self.options['time']['date_time']) - 1):
+                io_mod.output_timestep(self.output_rec, tstep, self.options,
+                                    self.awsm_output_vars)
+                self.output_rec['time_since_out'] = \
+                    np.zeros(self.output_rec['elevation'].shape)
 
-    # output at the frequency and the last time step
-    if ((j)*(data_tstep/3600.0) % self.options['output']['frequency'] == 0)\
-            or (j == len(self.options['time']['date_time']) - 1):
-        io_mod.output_timestep(self.output_rec, tstep, self.options,
-                               self.awsm_output_vars)
-        self.output_rec['time_since_out'] = \
-            np.zeros(self.output_rec['elevation'].shape)
+            j += 1
 
-    j += 1
+            # put the value into the output queue so clean knows it's done
+            self.queue['isnobal'].put([tstep, True])
 
-    # put the value into the output queue so clean knows it's done
-    self.queue['isnobal'].put([tstep, True])
-
-    # self._logger.debug('%s iSnobal run from queues' % tstep)
+            # self._logger.debug('%s iSnobal run from queues' % tstep)
 
 
 class PySnobal():
@@ -407,32 +401,26 @@ class PySnobal():
                     updater.do_update_pysnobal(self.output_rec, tstep)
                 first_step = 1
 
+        self._logger.info('running PySnobal for time step: {}'.format(tstep))
+        rt = snobal.do_tstep_grid(self.input1, self.input2, self.output_rec,
+                                  self.tstep_info, self.options['constants'],
+                                  self.params, first_step=first_step,
+                                  nthreads=self.nthreads)
 
-<<<<<< < HEAD
-  self._logger.info('running PySnobal for timestep: {}'.format(tstep))
-== == ===
+        if rt != -1:
+            self.logger.error('ipysnobal error on time step {}, pixel {}'
+                              .format(tstep, rt))
+            sys.exit()
 
-  self._logger.info('running PySnobal for time step: {}'.format(tstep))
->>>>>> > master
-  rt = snobal.do_tstep_grid(self.input1, self.input2, self.output_rec,
-                             self.tstep_info, self.options['constants'],
-                             self.params, first_step=first_step,
-                             nthreads=self.nthreads)
+        self._logger.info('Finished time step: {}'.format(tstep))
+        self.input1 = self.input2.copy()
 
-   if rt != -1:
-        self.logger.error('ipysnobal error on time step {}, pixel {}'
-                          .format(tstep, rt))
-        sys.exit()
+        # output at the frequency and the last time step
+        if ((self.j)*(self.data_tstep/3600.0) % self.options['output']['frequency'] == 0)\
+                or (self.j == len(self.options['time']['date_time']) - 1):
+            io_mod.output_timestep(self.output_rec, tstep, self.options,
+                                   self.awsm_output_vars)
+            self.output_rec['time_since_out'] = np.zeros(
+                self.output_rec['elevation'].shape)
 
-    self._logger.info('Finished time step: {}'.format(tstep))
-    self.input1 = self.input2.copy()
-
-    # output at the frequency and the last time step
-    if ((self.j)*(self.data_tstep/3600.0) % self.options['output']['frequency'] == 0)\
-            or (self.j == len(self.options['time']['date_time']) - 1):
-        io_mod.output_timestep(self.output_rec, tstep, self.options,
-                               self.awsm_output_vars)
-        self.output_rec['time_since_out'] = np.zeros(
-            self.output_rec['elevation'].shape)
-
-    self.j += 1
+        self.j += 1

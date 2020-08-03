@@ -8,52 +8,6 @@ from tests.test_configurations import TestConfigurations
 
 
 class TestModel(TestConfigurations):
-    def test_isnobal(self):
-        """ Test standard iSnobal """
-
-        config = deepcopy(self.base_config)
-
-        config.raw_cfg['awsm master']['make_nc'] = True
-        config.raw_cfg['awsm master']['mask_isnobal'] = True
-        config.raw_cfg['awsm master']['model_type'] = 'isnobal'
-
-        config.apply_recipes()
-
-        config = cast_all_variables(config, config.mcfg)
-
-        # ensure that the recipes are used
-        self.assertTrue(config.cfg['awsm master']['model_type'] == 'isnobal')
-
-        self.assertIsNone(run_awsm(config))
-
-    def test_isnobal_restart(self):
-        """ Test standard iSnobal with crash restart """
-
-        config = deepcopy(self.base_config)
-
-        config.raw_cfg['awsm master']['model_type'] = 'isnobal'
-        config.raw_cfg['awsm master']['make_nc'] = False
-
-        config.apply_recipes()
-
-        config = cast_all_variables(config, config.mcfg)
-
-        result = run_awsm(config)
-
-        # TODO - Not currently tested
-        # run again with restart
-        config = deepcopy(self.base_config)
-
-        config.raw_cfg['awsm master']['model_type'] = 'isnobal'
-        config.raw_cfg['awsm master']['make_nc'] = False
-        config.raw_cfg['isnobal restart']['restart_crash'] = True
-        config.raw_cfg['isnobal restart']['wyh_restart_output'] = 1464
-
-        config.apply_recipes()
-
-        config = cast_all_variables(config, config.mcfg)
-
-        # self.assertTrue(run_awsm(config))
 
     def test_pysnobal(self):
         """ Test standard Pysnobal """

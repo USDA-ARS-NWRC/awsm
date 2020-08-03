@@ -1,15 +1,79 @@
-# Config file for automatic testing at travis-ci.org
-
-sudo: required
-
-language: python
+# test stage will test all branches against:
+#   - linux python 3.5, 3.6, 3.7, 3.8
+#   - osx python 3.7
+#
+# deploy stage builds and test the wheels when jobs is
+#   - pull request
+#   - master branch
+#   - tagged commit, only this will be uploaded to pypi
 
 services:
   - docker
 
-before_install:
-  - docker pull usdaarsnwrc/smrf:latest
-  - docker build --build-arg REQUIREMENTS=_dev -t usdaarsnwrc/awsm .
+stages:
+  - test
+  - name: deploy
+    if:  type = pull_request OR branch = master OR tag IS present AND repo = USDA-ARS-NWRC/awsm
 
-script:
-  docker run -it usdaarsnwrc/awsm test
+env:
+  global:
+    - TWINE_USERNAME=__token__
+    # Note: TWINE_PASSWORD is set to a PyPI API token in Travis settings
+
+# defining the unittest jobs
+unittest: &unittest
+  stage: test
+  os: linux
+  dist: bionic
+  language: python
+  cache: pip
+  addons:
+    apt:
+      packages:
+        - libeccodes-tools
+    homebrew:
+      packages:
+        - eccodes
+        - gcc@7
+  install: 
+    - python3 --version
+    - python3 -m pip install tox-travis cython
+  script: tox
+
+jobs:
+  include:
+    # test stage
+    - <<: *unittest
+      python: 3.6
+      env: TOXENV=py36
+
+    - <<: *unittest
+      python: 3.6
+      env: TOXENV=coverage
+
+    - <<: *unittest
+      python: 3.6
+      env: TOXENV=flake8
+
+    - <<: *unittest
+      python: 3.7
+      env: TOXENV=py37
+
+    - <<: *unittest
+      python: 3.8
+      env: TOXENV=py38
+
+    - <<: *unittest
+      os: osx
+      osx_image: xcode11.2  # Python 3.7.X running on macOS 10.14
+      language: shell
+      env:
+        - TOXENV=py37
+        - CC=gcc-7
+        - NOT_ON_GOLD_HOST=yup
+
+  allow_failures:
+    - python: 3.6
+      env: TOXENV=coverage
+    - python: 3.6
+      env: TOXENV=flake8

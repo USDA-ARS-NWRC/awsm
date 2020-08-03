@@ -10,19 +10,16 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 import pytz
-import smrf
-from smrf.envphys import radiation
+import smrf.framework
+from topocalc.shade import shade
+from smrf.envphys import sunang
 from smrf.utils import queue
 
 from awsm.interface import ipysnobal, interface, initialize_model as initmodel, \
     pysnobal_io as io_mod
 from awsm.interface.ingest_data import StateUpdater
 
-try:
-    from pysnobal.c_snobal import snobal
-except Exception as e:
-    print(e)
-    print('pysnobal not installed, ignoring')
+from pysnobal.c_snobal import snobal
 
 
 def run_ipysnobal(myawsm):
@@ -47,13 +44,16 @@ def run_ipysnobal(myawsm):
     start_step = 0  # if restart then it would be higher if this were iSnobal
     step_time = start_step * data_tstep
 
-    output_rec['current_time'] = step_time * np.ones(output_rec['elevation'].shape)
-    output_rec['time_since_out'] = timeSinceOut * np.ones(output_rec['elevation'].shape)
+    output_rec['current_time'] = step_time * \
+        np.ones(output_rec['elevation'].shape)
+    output_rec['time_since_out'] = timeSinceOut * \
+        np.ones(output_rec['elevation'].shape)
 
     myawsm._logger.info('getting inputs for first timestep')
     if myawsm.forcing_data_type == 'netcdf':
         force = io_mod.open_files_nc(myawsm)
-        input1 = initmodel.get_timestep_netcdf(force, options['time']['date_time'][0])
+        input1 = initmodel.get_timestep_netcdf(
+            force, options['time']['date_time'][0])
     else:
         input_list, ppt_list = io_mod.open_files_ipw(myawsm)
         input1 = initmodel.get_timestep_ipw(options['time']['date_time'][0],
@@ -74,7 +74,8 @@ def run_ipysnobal(myawsm):
         if myawsm.forcing_data_type == 'netcdf':
             input2 = initmodel.get_timestep_netcdf(force, tstep)
         else:
-            input2 = initmodel.get_timestep_ipw(tstep, input_list, ppt_list, myawsm)
+            input2 = initmodel.get_timestep_ipw(
+                tstep, input_list, ppt_list, myawsm)
 
         first_step = j
         # update depth if necessary
@@ -90,7 +91,8 @@ def run_ipysnobal(myawsm):
                                   nthreads=myawsm.ipy_threads)
 
         if rt != -1:
-            raise ValueError('ipysnobal error on time step %s, pixel %i' % (tstep, rt))
+            raise ValueError(
+                'ipysnobal error on time step %s, pixel %i' % (tstep, rt))
             # break
 
         input1 = input2.copy()
@@ -101,7 +103,8 @@ def run_ipysnobal(myawsm):
             myawsm._logger.info('Outputting {}'.format(tstep))
             io_mod.output_timestep(output_rec, tstep, options,
                                    myawsm.pysnobal_output_vars)
-            output_rec['time_since_out'] = np.zeros(output_rec['elevation'].shape)
+            output_rec['time_since_out'] = np.zeros(
+                output_rec['elevation'].shape)
 
         myawsm._logger.info('Finished timestep: {}'.format(tstep))
 
@@ -147,7 +150,7 @@ def run_smrf_ipysnobal(myawsm):
         s.loadTopo()
 
         # 3. initialize the distribution
-        s.initializeDistribution()
+        s.create_distribution()
 
         # load weather data  and station metadata
         s.loadData()
@@ -172,9 +175,8 @@ def run_smrf_ipysnobal_single(myawsm, s):
     """
 
     # -------------------------------------
-    # Initialize the distribution
-    for v in s.distribute:
-        s.distribute[v].initialize(s.topo, s.data)
+    # Initialize the distibution
+    s.initialize_distribution()
 
     # -------------------------------------
     # initialize ipysnobal state
@@ -186,24 +188,26 @@ def run_smrf_ipysnobal_single(myawsm, s):
     force_variables = ['thermal', 'air_temp', 'vapor_pressure', 'wind_speed',
                        'net_solar', 'soil_temp', 'precip', 'percent_snow',
                        'snow_density', 'precip_temp']
+
+    # Collect the potential output variables
+    possible_output_variables = {}
+    for variable, module in s.distribute.items():
+        possible_output_variables.update(module.output_variables)
+
     variable_list = {}
-    for v in force_variables:
-        for m in s.modules:
+    for force_variable in force_variables:
 
-            if m in s.distribute.keys():
+        if force_variable in possible_output_variables.keys():
+            module = possible_output_variables[force_variable]['module']
 
-                if v in s.distribute[m].output_variables.keys():
+            variable_list[force_variable] = {
+                'variable': force_variable,
+                'module': module
+            }
 
-                    d = {'variable': v,
-                         'module': m
-                         }
-                    variable_list[v] = d
-
-            elif v == 'soil_temp':
-                pass
-            else:
-                raise ValueError('Not distributing necessary '
-                                 'variables to run PySnobal!')
+        else:
+            raise ValueError('Not distributing necessary '
+                             'variables to run PySnobal!')
 
     # -------------------------------------
     # initialize updater if required
@@ -235,7 +239,7 @@ def run_smrf_ipysnobal_single(myawsm, s):
 
         s._logger.info('Distributing time step %s' % t)
         # 0.1 sun angle for time step
-        cosz, azimuth, rad_vec = radiation.sunang.sunang(
+        cosz, azimuth, rad_vec = sunang.sunang(
             t.astimezone(pytz.utc),
             s.topo.basin_lat,
             s.topo.basin_long,
@@ -244,25 +248,28 @@ def run_smrf_ipysnobal_single(myawsm, s):
         # 0.2 illumination angle
         illum_ang = None
         if cosz > 0:
-            illum_ang = radiation.shade(s.topo.sin_slope,
-                                        s.topo.aspect,
-                                        azimuth,
-                                        cosz)
+            illum_ang = shade(
+                s.topo.sin_slope,
+                s.topo.aspect,
+                azimuth,
+                cosz)
 
         # 1. Air temperature
         s.distribute['air_temp'].distribute(s.data.air_temp.loc[t])
 
         # 2. Vapor pressure
-        s.distribute['vapor_pressure'].distribute(s.data.vapor_pressure.loc[t],
-                                                    s.distribute['air_temp'].air_temp)
+        s.distribute['vapor_pressure'].distribute(
+            s.data.vapor_pressure.loc[t],
+            s.distribute['air_temp'].air_temp)
 
         # 3. Wind_speed and wind_direction
-        s.distribute['wind'].distribute(s.data.wind_speed.loc[t],
-                                        s.data.wind_direction.loc[t],
-                                        t)
+        s.distribute['wind'].distribute(
+            s.data.wind_speed.loc[t],
+            s.data.wind_direction.loc[t],
+            t)
 
         # 4. Precipitation
-        s.distribute['precip'].distribute(
+        s.distribute['precipitation'].distribute(
             s.data.precip.loc[t],
             s.distribute['vapor_pressure'].dew_point,
             s.distribute['vapor_pressure'].precip_temp,
@@ -280,33 +287,35 @@ def run_smrf_ipysnobal_single(myawsm, s):
         s.distribute['albedo'].distribute(
             t,
             illum_ang,
-            s.distribute['precip'].storm_days
+            s.distribute['precipitation'].storm_days
         )
 
         # 6. cloud factor
         s.distribute['cloud_factor'].distribute(s.data.cloud_factor.loc[t])
 
         # 7. solar
-        s.distribute['solar'].distribute(t,
-                                         s.distribute["cloud_factor"].cloud_factor,
-                                         illum_ang,
-                                         cosz,
-                                         azimuth,
-                                         s.distribute['precip'].last_storm_day_basin,
-                                         s.distribute['albedo'].albedo_vis,
-                                         s.distribute['albedo'].albedo_ir)
+        s.distribute['solar'].distribute(
+            t,
+            s.distribute["cloud_factor"].cloud_factor,
+            illum_ang,
+            cosz,
+            azimuth,
+            s.distribute['albedo'].albedo_vis,
+            s.distribute['albedo'].albedo_ir)
 
         # 7. thermal radiation
         if s.distribute['thermal'].gridded and \
            s.config['gridded']['data_type'] != 'hrrr_grib':
-            s.distribute['thermal'].distribute_thermal(s.data.thermal.loc[t],
-                                                          s.distribute['air_temp'].air_temp)
+            s.distribute['thermal'].distribute_thermal(
+                s.data.thermal.loc[t],
+                s.distribute['air_temp'].air_temp)
         else:
-            s.distribute['thermal'].distribute(t,
-                                               s.distribute['air_temp'].air_temp,
-                                               s.distribute['vapor_pressure'].vapor_pressure,
-                                               s.distribute['vapor_pressure'].dew_point,
-                                               s.distribute['cloud_factor'].cloud_factor)
+            s.distribute['thermal'].distribute(
+                t,
+                s.distribute['air_temp'].air_temp,
+                s.distribute['vapor_pressure'].vapor_pressure,
+                s.distribute['vapor_pressure'].dew_point,
+                s.distribute['cloud_factor'].cloud_factor)
 
         # 8. Soil temperature
         s.distribute['soil_temp'].distribute()
@@ -340,15 +349,15 @@ def run_smrf_ipysnobal_threaded(myawsm, s):
     options, params, tstep_info, init, output_rec = \
         ipysnobal.init_from_smrf(myawsm, s)
 
-    # s.initializeOutput()
-    if 'output' in s.thread_variables:
-        s.thread_variables.remove('output')
-    if 'isnobal' not in s.thread_variables:
-        s.thread_variables.append('isnobal')
+    s.create_data_queue()
+    s.set_queue_variables()
+    s.create_distributed_threads(['isnobal'])
+    s.smrf_queue['isnobal'] = queue.DateQueueThreading(
+        s.queue_max_values,
+        s.time_out,
+        name='isnobal')
 
-    # 7. Distribute the data
-    # -------------------------------------
-    t, q = s.create_distributed_threads()
+    del s.smrf_queue['output']
 
     # initialize updater if required
     if myawsm.update_depth:
@@ -357,27 +366,29 @@ def run_smrf_ipysnobal_threaded(myawsm, s):
         updater = None
 
     # isnobal thread
-    t.append(ipysnobal.QueueIsnobal(q, s.date_time,
-                                    s.thread_variables,
-                                    myawsm.pysnobal_output_vars,
-                                    options,
-                                    params,
-                                    tstep_info,
-                                    init,
-                                    output_rec,
-                                    s.topo.nx,
-                                    s.topo.ny,
-                                    myawsm.soil_temp,
-                                    myawsm._logger,
-                                    myawsm.tzinfo,
-                                    updater))
+    s.threads.append(ipysnobal.QueueIsnobal(
+        s.smrf_queue,
+        s.date_time,
+        s.thread_queue_variables,
+        myawsm.pysnobal_output_vars,
+        options,
+        params,
+        tstep_info,
+        init,
+        output_rec,
+        s.topo.nx,
+        s.topo.ny,
+        myawsm.soil_temp,
+        myawsm._logger,
+        myawsm.tzinfo,
+        updater))
 
     # the cleaner
-    t.append(queue.QueueCleaner(s.date_time, q))
+    s.threads.append(queue.QueueCleaner(s.date_time, s.smrf_queue))
 
     # start all the threads
-    for i in range(len(t)):
-        t[i].start()
+    for i in range(len(s.threads)):
+        s.threads[i].start()
 
-    for i in range(len(t)):
-        t[i].join()
+    for i in range(len(s.threads)):
+        s.threads[i].join()

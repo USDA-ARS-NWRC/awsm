@@ -76,7 +76,7 @@ def smrfMEAS(myawsm):
             s.loadTopo()
 
             # 3. initialize the distribution
-            s.initializeDistribution()
+            s.create_distribution()
 
             # initialize the outputs if desired
             s.initializeOutput()
@@ -156,10 +156,10 @@ def run_isnobal(myawsm, offset=None):
 
     run_cmd = 'isnobal -v -P %d -b %d -t 60 -T %s -n %d \
     -I %s -d %f -i %s/in' % (nthreads, myawsm.nbits,
-                                          mass_thresh, tmstps,
-                                          init_file,
-                                          myawsm.active_layer,
-                                          myawsm.pathi)
+                             mass_thresh, tmstps,
+                             init_file,
+                             myawsm.active_layer,
+                             myawsm.pathi)
     if offset > 0:
         run_cmd += ' -r %s' % (offset)
     if is_ppt > 0:
@@ -207,9 +207,11 @@ def run_awsm_daily(myawsm):
     forecasts like the 18 hour HRRR forecast.
     """
     # get the array of time steps over which to simulate
-    d = data.mysql_data.date_range(myawsm.start_date, myawsm.end_date,
-                                   pd.to_timedelta(myawsm.time_step,
-                                                   unit='m'))
+    d = utils.date_range(
+        myawsm.start_date,
+        myawsm.end_date,
+        pd.to_timedelta(myawsm.time_step, unit='m'),
+        myawsm.tzinfo)
 
     if myawsm.do_forecast:
         myawsm._logger.warning('Changing PySnobal output to hourly to allow'
@@ -282,10 +284,11 @@ def run_awsm_daily(myawsm):
             myawsm.config['gridded']['hrrr_forecast_flag'] = True
 
             # now loop through the forecast hours for 18hr forecasts
-            d_inner = data.mysql_data.date_range(myawsm.start_date,
-                                                  myawsm.end_date,
-                                                  pd.to_timedelta(myawsm.time_step,
-                                                  unit='m'))
+            d_inner = utils.date_range(
+                myawsm.start_date,
+                myawsm.end_date,
+                pd.to_timedelta(myawsm.time_step, unit='m'),
+                myawsm.tzinfo)
             for t in d_inner:
                 # find hour from start of day
                 day_hour = t - pd.to_datetime(d_inner[0].strftime("%Y%m%d"))

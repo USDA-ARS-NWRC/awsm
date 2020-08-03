@@ -11,7 +11,6 @@ follows:
 * stations
 * csv
 * gridded
-* mysql
 * air_temperature
 * vapor pressure
 * wind

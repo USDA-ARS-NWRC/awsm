@@ -11,7 +11,9 @@ from inicheck.config import MasterConfig, UserConfig
 from inicheck.output import print_config_report, generate_config
 from inicheck.tools import get_user_config, check_config, cast_all_variables
 from smrf.utils import utils
+import smrf
 from spatialnc.topo import topo as mytopo
+import smrf.framework.logger as logger
 
 from awsm.convertFiles import convertFiles as cvf
 from awsm.data.init_model import modelInit
@@ -39,8 +41,8 @@ class AWSM():
             config: string path to the config file or inicheck UserConfig instance
         """
         # read the config file and store
-        awsm_mcfg = MasterConfig(modules = 'awsm')
-        smrf_mcfg = MasterConfig(modules = 'smrf')
+        awsm_mcfg = MasterConfig(modules='awsm')
+        smrf_mcfg = MasterConfig(modules='smrf')
 
         if isinstance(config, str):
             if not os.path.isfile(config):
@@ -49,7 +51,7 @@ class AWSM():
             configFile = config
 
             try:
-                combined_mcfg = MasterConfig(modules = ['smrf','awsm'])
+                combined_mcfg = MasterConfig(modules=['smrf', 'awsm'])
 
                 # Read in the original users config
                 self.ucfg = get_user_config(configFile, mcfg=combined_mcfg)
@@ -65,7 +67,8 @@ class AWSM():
             configFile = ''
 
         else:
-            raise Exception('Config passed to AWSM is neither file name nor UserConfig instance')
+            raise Exception(
+                'Config passed to AWSM is neither file name nor UserConfig instance')
 
         # get the git version
         self.gitVersion = awsm_utils.getgitinfo()
@@ -117,7 +120,7 @@ class AWSM():
         self.prompt_dirs = self.config['awsm master']['prompt_dirs']
 
         # store smrf version if running smrf
-        self.smrf_version = utils.getgitinfo()
+        self.smrf_version = smrf.__version__
 
         # ################ Time information ##################
         self.start_date = pd.to_datetime(self.config['time']['start_date'])
@@ -197,7 +200,8 @@ class AWSM():
         self.run_for_nsteps = self.config['awsm system']['run_for_nsteps']
         # pysnobal output variables
         self.pysnobal_output_vars = self.config['awsm system']['variables']
-        self.pysnobal_output_vars = [wrd.lower() for wrd in self.pysnobal_output_vars]
+        self.pysnobal_output_vars = [wrd.lower()
+                                     for wrd in self.pysnobal_output_vars]
         # snow and emname
         self.snow_name = self.config['awsm system']['snow_name']
         self.em_name = self.config['awsm system']['em_name']
@@ -295,11 +299,11 @@ class AWSM():
                         'debug': {'color': 'green'},
                         'warning': {'color': 'yellow'}}
 
-        field_styles =  {'hostname': {'color': 'magenta'},
-                         'programname': {'color': 'cyan'},
-                         'name': {'color': 'white'},
-                         'levelname': {'color': 'white', 'bold': True},
-                         'asctime': {'color': 'green'}}
+        field_styles = {'hostname': {'color': 'magenta'},
+                        'programname': {'color': 'cyan'},
+                        'name': {'color': 'white'},
+                        'levelname': {'color': 'white', 'bold': True},
+                        'asctime': {'color': 'green'}}
 
         # start logging
         loglevel = self.config['awsm system']['log_level'].upper()
@@ -327,31 +331,8 @@ class AWSM():
             # let user know
             print('Logging to file: {}'.format(logfile))
 
-        fmt = '%(levelname)s:%(name)s:%(message)s'
-        if logfile is not None:
-            logging.basicConfig(filename=logfile,
-                                filemode='w',
-                                level=numeric_level,
-                                format=fmt)
-
-            # section of code needed to make new log file on daily runs
-            fileh = logging.FileHandler(logfile, 'a')
-            #formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-            #fileh.setFormatter(formatter)
-
-            log = logging.getLogger()  # root logger
-            for hdlr in log.handlers[:]:  # remove all old handlers
-                log.removeHandler(hdlr)
-            log.addHandler(fileh)      #
-
-        else:
-            logging.basicConfig(level=numeric_level)
-            coloredlogs.install(level=numeric_level,
-                                fmt=fmt,
-                                level_styles=level_styles,
-                                field_styles=field_styles)
-
-        self._loglevel = numeric_level
+        self.config['awsm system']['log_file'] = logfile
+        logger.SMRFLogger(self.config['awsm system'])
 
         self._logger = logging.getLogger(__name__)
 
@@ -652,7 +633,7 @@ def run_awsm_daily_ops(config_file):
 
     # get config instance
     config = get_user_config(config_file,
-                             modules = ['smrf','awsm'])
+                             modules=['smrf', 'awsm'])
 
     # copy the config and get total start and end
     # config = deepcopy(base_config)
@@ -674,7 +655,6 @@ def run_awsm_daily_ops(config_file):
     else:
         model_start = config.cfg['time']['start_date']
 
-
     model_end = config.cfg['time']['end_date']
     isops = config.cfg['paths']['isops']
     if isops:
@@ -693,11 +673,11 @@ def run_awsm_daily_ops(config_file):
                                  'runs')
 
     prev_data_base = os.path.join(paths['path_dr'],
-                                 paths['basin'],
-                                 devops,
-                                 'wy{}'.format(wy),
-                                 paths['proj'],
-                                 'data')
+                                  paths['basin'],
+                                  devops,
+                                  'wy{}'.format(wy),
+                                  paths['proj'],
+                                  'data')
 
     # find day of start and end
     start_day = pd.to_datetime(model_start.strftime(fmt_day))
@@ -705,7 +685,8 @@ def run_awsm_daily_ops(config_file):
 
     # find total range of run
     ndays = int((end_day-start_day).days) + 1
-    date_list = [start_day + pd.to_timedelta(x, unit='D') for x in range(0, ndays)]
+    date_list = [start_day +
+                 pd.to_timedelta(x, unit='D') for x in range(0, ndays)]
 
     # loop through daily runs and run awsm
     for idd, sd in enumerate(date_list):
@@ -742,7 +723,8 @@ def run_awsm_daily_ops(config_file):
 
             # if we have a previous storm day file, use it
             prev_storm = os.path.join(prev_data_base,
-                                      'data{}'.format(prev_day.strftime(fmt_day)),
+                                      'data{}'.format(
+                                          prev_day.strftime(fmt_day)),
                                       'smrfOutputs', 'storm_days.nc')
             if os.path.isfile(prev_storm):
                 new_config.raw_cfg['precip']['storm_days_restart'] = prev_storm

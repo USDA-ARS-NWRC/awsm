@@ -100,13 +100,6 @@ class AWSM():
             # change here requires a change there
             self.n_forecast_hours = 18
 
-        # Options for converting files
-        self.do_make_in = self.config['awsm master']['make_in']
-        self.do_make_nc = self.config['awsm master']['make_nc']
-        # do report?
-        # self.do_report = self.config['awsm master']['do_report']
-        self.snowav_config = self.config['awsm master']['snowav_config']
-
         # options for masking isnobal
         self.mask_isnobal = self.config['awsm master']['mask_isnobal']
 
@@ -707,34 +700,15 @@ def run_awsm(config):
             runtype = 'smrf'
 
         if not a.config['isnobal restart']['restart_crash']:
-            # distribute data by running smrf
             if a.do_smrf:
                 a.runSmrf()
 
-            if a.model_type == 'isnobal':
-                # run iSnobal
-                # if a.update_depth:
-                #     a.run_isnobal_update()
-                # else:
-                #     a.run_isnobal()
-                pass
-
-            elif a.model_type == 'ipysnobal':
-                # run iPySnobal
+            if a.model_type == 'ipysnobal':
                 a.run_ipysnobal()
 
         # if restart
         else:
-            if a.model_type == 'isnobal':
-                # restart iSnobal from crash
-                # if a.update_depth:
-                #     a.run_isnobal_update()
-                # else:
-                #     a.run_isnobal()
-                pass
-                # convert ipw back to netcdf for processing
-            elif a.model_type == 'ipysnobal':
-                # run iPySnobal
+            if a.model_type == 'ipysnobal':
                 a.run_ipysnobal()
 
             if a.do_make_nc:

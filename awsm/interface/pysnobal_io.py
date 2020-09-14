@@ -11,7 +11,7 @@ from spatialnc.proj import add_proj
 C_TO_K = 273.16
 FREEZE = C_TO_K
 # Kelvin to Celsius
-K_TO_C = lambda x: x - FREEZE
+def K_TO_C(x): return x - FREEZE
 
 
 def open_files_nc(myawsm):
@@ -32,11 +32,16 @@ def open_files_nc(myawsm):
     # -------------------------------------------------------------------------
     # get the forcing data and open the file
     force = {}
-    force['thermal'] = nc.Dataset(os.path.join(myawsm.paths, 'thermal.nc'), 'r')
-    force['air_temp'] = nc.Dataset(os.path.join(myawsm.paths, 'air_temp.nc'), 'r')
-    force['vapor_pressure'] = nc.Dataset(os.path.join(myawsm.paths, 'vapor_pressure.nc'), 'r')
-    force['wind_speed'] = nc.Dataset(os.path.join(myawsm.paths, 'wind_speed.nc'), 'r')
-    force['net_solar'] = nc.Dataset(os.path.join(myawsm.paths, 'net_solar.nc'), 'r')
+    force['thermal'] = nc.Dataset(
+        os.path.join(myawsm.paths, 'thermal.nc'), 'r')
+    force['air_temp'] = nc.Dataset(
+        os.path.join(myawsm.paths, 'air_temp.nc'), 'r')
+    force['vapor_pressure'] = nc.Dataset(
+        os.path.join(myawsm.paths, 'vapor_pressure.nc'), 'r')
+    force['wind_speed'] = nc.Dataset(
+        os.path.join(myawsm.paths, 'wind_speed.nc'), 'r')
+    force['net_solar'] = nc.Dataset(
+        os.path.join(myawsm.paths, 'net_solar.nc'), 'r')
 
     # soil temp can either be distributed for set to a constant
     try:
@@ -45,50 +50,16 @@ def open_files_nc(myawsm):
         force['soil_temp'] = float(myawsm.soil_temp) * np.ones((myawsm.topo.ny,
                                                                 myawsm.topo.nx))
 
-    force['precip_mass'] = nc.Dataset(os.path.join(myawsm.paths, 'precip.nc'), 'r')
-    force['percent_snow'] = nc.Dataset(os.path.join(myawsm.paths, 'percent_snow.nc'), 'r')
-    force['snow_density'] = nc.Dataset(os.path.join(myawsm.paths, 'snow_density.nc'), 'r')
-    force['precip_temp'] = nc.Dataset(os.path.join(myawsm.paths, 'precip_temp.nc'), 'r')
+    force['precip_mass'] = nc.Dataset(
+        os.path.join(myawsm.paths, 'precip.nc'), 'r')
+    force['percent_snow'] = nc.Dataset(
+        os.path.join(myawsm.paths, 'percent_snow.nc'), 'r')
+    force['snow_density'] = nc.Dataset(
+        os.path.join(myawsm.paths, 'snow_density.nc'), 'r')
+    force['precip_temp'] = nc.Dataset(
+        os.path.join(myawsm.paths, 'precip_temp.nc'), 'r')
 
     return force
-
-
-def open_files_ipw(myawsm):
-    """
-    Compile list of input data hours from ipw files stored in standard AWSM
-    file structure. These are only list of integer water year hours, the actual
-    reading of ipw files happens from the standard directory structure.
-
-    Args:
-        myawsm:     awsm class
-
-    Returns:
-        ppt_list:   list of hours for reference from the ppt_desc file
-        input_list: list of input hours to read in from the data directory
-
-    """
-    # ------------------------------------------------------------------------
-    # get the forcing data and open the file
-    # path to snow and em files
-    path_inputs = os.path.join(myawsm.pathi, "in.*")
-    # get precip from ipw
-    header = ['hour', 'path']
-    df_ppt = pd.read_csv(myawsm.ppt_desc, names=header, sep=' ')
-
-    # get list of isnobal outputs and sort by time step
-    input_files = sorted(glob.glob(path_inputs), key=os.path.getmtime)
-    input_files.sort(key=lambda f: os.path.basename(f).split('in.')[1])
-
-    ppt_list = np.zeros(len(df_ppt['path'].values))
-    input_list = np.zeros(len(input_files))
-
-    # store input and ppt hours in numpy arrays
-    for idx, fl in enumerate(input_files):
-        input_list[idx] = int(os.path.basename(fl).split('in.')[1])
-    for idx, ppt_hr in enumerate(df_ppt['hour'].values):
-        ppt_list[idx] = int(ppt_hr)
-
-    return input_list, ppt_list
 
 
 def close_files(force):
@@ -146,7 +117,7 @@ def output_files(options, init, start_date, myawsm):
 
     if os.path.isfile(netcdfFile):
         myawsm._logger.warning(
-                'Opening {}, data may be overwritten!'.format(netcdfFile))
+            'Opening {}, data may be overwritten!'.format(netcdfFile))
         em = nc.Dataset(netcdfFile, 'a')
         h = '[{}] Data added or updated'.format(
             datetime.now().strftime(fmt))
@@ -219,7 +190,7 @@ def output_files(options, init, start_date, myawsm):
 
     if os.path.isfile(netcdfFile):
         myawsm._logger.warning(
-                'Opening {}, data may be overwritten!'.format(netcdfFile))
+            'Opening {}, data may be overwritten!'.format(netcdfFile))
         snow = nc.Dataset(netcdfFile, 'a')
         h = '[{}] Data added or updated'.format(
             datetime.now().strftime(fmt))

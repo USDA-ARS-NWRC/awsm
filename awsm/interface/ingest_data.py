@@ -8,7 +8,6 @@ import netCDF4 as nc
 import numpy as np
 from netCDF4 import Dataset
 from smrf.utils import utils
-from spatialnc import ipw
 
 from awsm import __version__
 
@@ -147,8 +146,6 @@ class StateUpdater():
         Return:
                 update_info: dictionary of updates
         """
-
-        # last_snow_image = ipw.IPW('/home/micahsandusky/Code/awsfTesting/newupdatetest/snow.2879')
 
         # Update the snow depths in the initialization file using ASO lidar:
         fp = update_fp

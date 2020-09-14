@@ -7,21 +7,14 @@ Installation
 Installing Dependencies
 -----------------------
 
-AWSM utilizes many of the utilities within SMRF. The first step is to read and
-follow the install instructions for SMRF, found here_. Make sure to follow all
-instructions, including installing IPW.
+AWSM was designed to run simulations with SMRF_ and PySnobal_. These are
+the two main dependencies for AWSM. To install the dependencies:
 
-.. _here: https://smrf.readthedocs.io/en/develop/install.html
+.. code:: bash
+  python3 -m pip install -r requirements.txt
 
-The source code for SMRF is stored on on GitHub_.
-
-.. _GitHub: https://github.com/USDA-ARS-NWRC/smrf
-
-If you would like to use the PySnobal within AWSM, you can download
-and install the package following the guidelines on the `PySnobal repo`_ .
-**This is optional**.
-
-.. _PySnobal repo: https://github.com/USDA-ARS-NWRC/pysnobal
+.. _SMRF: https://github.com/USDA-ARS-NWRC/smrf
+.. _PySnobal: https://github.com/USDA-ARS-NWRC/pysnobal
 
 Installing AWSM
 ---------------

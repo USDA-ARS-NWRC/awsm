@@ -709,9 +709,6 @@ def run_awsm(config):
             if a.model_type == 'ipysnobal':
                 a.run_ipysnobal()
 
-            if a.do_make_nc:
-                a.ipw2nc(runtype)
-
         # Run iPySnobal from SMRF in memory
         if a.model_type == 'smrf_ipysnobal':
             if a.daily_folders:

@@ -24,7 +24,7 @@ from pysnobal.c_snobal import snobal
 
 def run_ipysnobal(myawsm):
     """
-    Function to run PySnobal from netcdf of ipw forcing data,
+    Function to run PySnobal from netcdf forcing data,
     not from SMRF instance.
 
     Args:

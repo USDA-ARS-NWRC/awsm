@@ -245,12 +245,11 @@ class AWSM():
         self.mk_directories()
 
         # ################ Topo data for iSnobal ##################
-        # get topo stats
-        self.csys = self.config['grid']['csys'].upper()
         self.soil_temp = self.config['soil_temp']['temp']
-        # get topo class
+
+        # TODO can this be a SMRF topo instance?
         self.topo = mytopo(self.config['topo'], self.mask_isnobal,
-                           self.model_type, self.csys, self.pathdd)
+                           self.model_type, 'UTM', self.pathdd)
 
         # ################ Generate config backup ##################
         # if self.config['output']['input_backup']:

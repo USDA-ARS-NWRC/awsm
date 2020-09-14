@@ -56,11 +56,10 @@ class modelInit():
             wy_start:       datetime of water year start date
 
         """
-        # get logger
+        
         self.logger = logger
-        # get topo class
         self.topo = topo
-        self.csys = cfg['grid']['csys']
+        
         # get parameters from awsm
         self.init_file = cfg['files']['init_file']
         self.init_type = cfg['files']['init_type']
@@ -144,31 +143,7 @@ class modelInit():
         elif self.init_type == 'ipw':
             self.get_ipw()
 
-    def write_init(self):
-        """
-        Write the iSnobal init file
-        """
-        # get mask
-        mask = self.topo.mask
-        # make ipw init file
-        i_out = ipw.IPW()
-        i_out.new_band(self.init['elevation'])
-        i_out.new_band(self.init['z_0'])
-        i_out.new_band(self.init['z_s']*mask)  # snow depth
-        i_out.new_band(self.init['rho']*mask)  # snow density
-
-        i_out.new_band(self.init['T_s_0']*mask)  # active layer temp
-        if self.start_wyhr > 0 or self.restart_crash:
-            i_out.new_band(self.init['T_s_l']*mask)  # lower layer temp
-
-        i_out.new_band(self.init['T_s']*mask)  # average snow temp
-
-        i_out.new_band(self.init['h2o_sat']*mask)  # percent saturation
-        i_out.add_geo_hdr([self.topo.u, self.topo.v],
-                          [self.topo.du, self.topo.dv],
-                          self.topo.units, self.csys)
-
-        i_out.write(self.fp_init, 16)
+    
 
     def get_crash_init(self):
         """

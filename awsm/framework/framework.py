@@ -350,22 +350,6 @@ class AWSM():
         # modify config and run smrf
         smin.smrfMEAS(self)
 
-    def run_isnobal(self, offset=None):
-        """
-        Run isnobal. Calls :mod: `awsm.interface.interface.run_isnobal`
-        """
-
-        smin.run_isnobal(self, offset=offset)
-
-    def run_isnobal_update(self):
-        """
-        Run iSnobal with update procedure
-        """
-        # initialize updater
-        updater = ingest_data.StateUpdater(self)
-        # run iSnobal with updates
-        updater.run_update_procedure_isnobal(self)
-
     def run_smrf_ipysnobal(self):
         """
         Run smrf and pass inputs to ipysnobal in memory.
@@ -579,14 +563,6 @@ class AWSM():
             else:
                 self.tmp_log.append('Directory --{}-- exists, not creating.\n')
 
-    def run_report(self):
-        try:
-            import snowav
-            self._logger.info('AWSM finished run, starting report')
-            snowav.framework.framework.snowav(config_file=self.snowav_config)
-        except ModuleNotFoundError:
-            print('Library snowav not installed - skip reporting')
-
     def __enter__(self):
         self.start_time = datetime.now()
         return self
@@ -737,10 +713,11 @@ def run_awsm(config):
 
             if a.model_type == 'isnobal':
                 # run iSnobal
-                if a.update_depth:
-                    a.run_isnobal_update()
-                else:
-                    a.run_isnobal()
+                # if a.update_depth:
+                #     a.run_isnobal_update()
+                # else:
+                #     a.run_isnobal()
+                pass
 
             elif a.model_type == 'ipysnobal':
                 # run iPySnobal
@@ -750,10 +727,11 @@ def run_awsm(config):
         else:
             if a.model_type == 'isnobal':
                 # restart iSnobal from crash
-                if a.update_depth:
-                    a.run_isnobal_update()
-                else:
-                    a.run_isnobal()
+                # if a.update_depth:
+                #     a.run_isnobal_update()
+                # else:
+                #     a.run_isnobal()
+                pass
                 # convert ipw back to netcdf for processing
             elif a.model_type == 'ipysnobal':
                 # run iPySnobal

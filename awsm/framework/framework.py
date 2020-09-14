@@ -14,7 +14,6 @@ import smrf
 from spatialnc.topo import topo as mytopo
 import smrf.framework.logger as logger
 
-from awsm.convertFiles import convertFiles as cvf
 from awsm.data.init_model import modelInit
 from awsm.framework import ascii_art
 from awsm.interface import interface as smin, smrf_ipysnobal as smrf_ipy, \
@@ -256,7 +255,6 @@ class AWSM():
         # ################ Topo data for iSnobal ##################
         # get topo stats
         self.csys = self.config['grid']['csys'].upper()
-        self.nbits = int(self.config['grid']['nbits'])
         self.soil_temp = self.config['soil_temp']['temp']
         # get topo class
         self.topo = mytopo(self.config['topo'], self.mask_isnobal,
@@ -351,19 +349,6 @@ class AWSM():
         """
         # modify config and run smrf
         smin.smrfMEAS(self)
-
-    def nc2ipw(self, runtype):
-        """
-        Convert ipw smrf output to isnobal inputs
-        """
-        cvf.nc2ipw_mea(self, runtype)
-
-    def ipw2nc(self, runtype):
-        """
-        Convert ipw output to netcdf files. Calls
-        :mod: `awsm.convertFiles.convertFiles.ipw2nc_mea`
-        """
-        cvf.ipw2nc_mea(self, runtype)
 
     def run_isnobal(self, offset=None):
         """
@@ -750,10 +735,6 @@ def run_awsm(config):
             if a.do_smrf:
                 a.runSmrf()
 
-            # convert smrf output to ipw for iSnobal
-            if a.do_make_in:
-                a.nc2ipw(runtype)
-
             if a.model_type == 'isnobal':
                 # run iSnobal
                 if a.update_depth:
@@ -765,9 +746,6 @@ def run_awsm(config):
                 # run iPySnobal
                 a.run_ipysnobal()
 
-                # convert ipw back to netcdf for processing
-            if a.do_make_nc:
-                a.ipw2nc(runtype)
         # if restart
         else:
             if a.model_type == 'isnobal':
@@ -790,7 +768,3 @@ def run_awsm(config):
                 a.run_awsm_daily()
             else:
                 a.run_smrf_ipysnobal()
-
-        # create report
-        if a.snowav_config is not None:
-            a.run_report()

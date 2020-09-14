@@ -7,7 +7,6 @@ except DistributionNotFound:
 
 from . import framework
 from . import interface
-from . import convertFiles
 import os
 import smrf
 

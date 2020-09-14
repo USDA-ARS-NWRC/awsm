@@ -87,7 +87,6 @@ class AWSM():
 
         # ################## Decide which modules to run #####################
         self.do_smrf = self.config['awsm master']['run_smrf']
-        #self.do_isnobal = self.config['awsm master']['run_isnobal']
         self.model_type = self.config['awsm master']['model_type']
         # self.do_smrf_ipysnobal = \
         #     self.config['awsm master']['run_smrf_ipysnobal']

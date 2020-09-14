@@ -14,8 +14,6 @@ class TestModel(TestConfigurations):
 
         config = deepcopy(self.base_config)
 
-        # config.raw_cfg['files']['init_type'] = 'ipw_out'
-        # config.raw_cfg['files']['init_file'] = './RME/snow.2538'
         config.apply_recipes()
         config = cast_all_variables(config, config.mcfg)
 

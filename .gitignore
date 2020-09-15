@@ -10,7 +10,6 @@ test_data/stoporad.ip
 
 *.lprof
 *.prof
-*.ipw
 
 output/*.png
 

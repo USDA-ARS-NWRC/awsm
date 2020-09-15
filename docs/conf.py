@@ -45,10 +45,9 @@ class Mock(MagicMock):
 
 
 MOCK_MODULES = ['netCDF4', 'pandas', 'smrf',
-                'ipw', 'smrf.utils', 'smrf.envphys']
+                'smrf.utils', 'smrf.envphys']
 
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
-os.environ['IPW'] = '.'  # set a temporary IPW environment variable
 
 #import awsm
 

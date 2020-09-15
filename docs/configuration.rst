@@ -67,7 +67,7 @@ The output is:
 
   Section      Item    Default    Options                   Description
   ==========================================================================================
-  topo         type    netcdf     ['netcdf', 'ipw']         Specifies the input file type
+  topo         type    netcdf     ['netcdf']                Specifies the input file type
 
 
 Creating Configuration Files

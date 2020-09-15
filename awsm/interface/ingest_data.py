@@ -8,12 +8,12 @@ import netCDF4 as nc
 import numpy as np
 from netCDF4 import Dataset
 from smrf.utils import utils
-from spatialnc import ipw
 
 from awsm import __version__
 
 C_TO_K = 273.16
 FREEZE = C_TO_K
+
 
 class StateUpdater():
     """
@@ -52,7 +52,8 @@ class StateUpdater():
         # save the dates of each update if there are any updates in the time frame
         self.update_dates = []
         if len(self.update_info) > 0:
-            self.update_dates = [self.update_info[k]['date_time'] for k in self.update_info.keys()]
+            self.update_dates = [self.update_info[k]['date_time']
+                                 for k in self.update_info.keys()]
 
         # get necessary variables from awsm class
         self.active_layer = myawsm.active_layer
@@ -78,7 +79,8 @@ class StateUpdater():
         ks = self.update_info.keys()
         update_num = [k for k in ks if self.update_info[k]['date_time'] == dt]
         if len(update_num) > 1:
-            raise ValueError('Something wrong in pysnobal updating date compare')
+            raise ValueError(
+                'Something wrong in pysnobal updating date compare')
 
         un = update_num[0]
 
@@ -105,7 +107,8 @@ class StateUpdater():
         diff_rho = updated_fields['rho'] - output_rec['rho']
         diff_rho[~idsnow] = np.nan
         # difference in SWE
-        diff_swe = updated_fields['D'] * updated_fields['rho'] - output_rec['m_s']
+        diff_swe = updated_fields['D'] * \
+            updated_fields['rho'] - output_rec['m_s']
         diff_swe[~idsnow] = np.nan
 
         # check to see if last update for the time period
@@ -134,45 +137,6 @@ class StateUpdater():
 
         return output_rec
 
-    def run_update_procedure_isnobal(self, myawsm):
-        """
-        Function to run iSnobal with direct insertion of lidar depths. This function
-        incorporates each available lidar image within the time frame and runs
-        each section of isnobal
-        """
-
-        # run iSnobal up to first update if needed
-        if self.firststeps > 0:
-            if myawsm.run_for_nsteps is None:
-                myawsm.run_for_nsteps = self.firststeps
-            # run isnobal Once
-            myawsm.run_isnobal(offset=None)
-
-        # do each update and run again
-        for idu, k in enumerate(self.update_info.keys()):
-            off = self.offsets[idu]
-            # find update output file
-            # if we're starting with an update
-            if self.firststeps == 0 and idu == 0:
-                if myawsm.restart_crash:
-                    name_crash = 'snow.%04d' % myawsm.restart_hr
-                    update_snow = os.path.join(myawsm.pathro, name_crash)
-                else:
-                    update_snow = myawsm.prev_mod_file
-
-            else:
-                update_snow = self.find_update_snow(myawsm, off)
-
-            # perform the update and set the init file for iSnobal
-            myawsm.init_file = self.do_update_isnobal(myawsm, self.update_info[k],
-                                         update_snow, self.x, self.y)
-
-            # set nsteps
-            myawsm.run_for_nsteps = self.runsteps[idu]
-
-            # run isnobal again
-            myawsm.run_isnobal(offset=off)
-
     def initialize_aso_updates(self, myawsm, update_fp):
         """
         Read in the ASO update file and parse images by date
@@ -183,9 +147,7 @@ class StateUpdater():
                 update_info: dictionary of updates
         """
 
-        # last_snow_image = ipw.IPW('/home/micahsandusky/Code/awsfTesting/newupdatetest/snow.2879')
-
-        ##  Update the snow depths in the initialization file using ASO lidar:
+        # Update the snow depths in the initialization file using ASO lidar:
         fp = update_fp
         # read in update files
         ds = Dataset(fp, 'r')
@@ -216,7 +178,7 @@ class StateUpdater():
 
         # make dictionary of updates
         update_info = OrderedDict()
-        keys = range(1,len(t_wyhr)+1)
+        keys = range(1, len(t_wyhr)+1)
         for idk, k in enumerate(keys):
             # make dictionary for each update
             update_info[k] = {}
@@ -225,10 +187,9 @@ class StateUpdater():
             update_info[k]['date_time'] = t[idk].replace(tzinfo=myawsm.tzinfo)
             update_info[k]['wyhr'] = t_wyhr[idk]
             # set depth
-            update_info[k]['depth'] = D_all[idk,:]
+            update_info[k]['depth'] = D_all[idk, :]
 
         return update_info, x, y
-
 
     def calc_offsets_nsteps(self, myawsm, update_info):
         """
@@ -256,7 +217,8 @@ class StateUpdater():
             #     filter_number = [filter_number]
             #     update_number = [update_number]
 
-        myawsm._logger.debug('Will update with flights {}'.format(filter_number))
+        myawsm._logger.debug(
+            'Will update with flights {}'.format(filter_number))
         # filter to correct hours
         for un in update_number:
             if un not in filter_number:
@@ -340,73 +302,10 @@ class StateUpdater():
         # set the file to update
         update_snow = os.path.join(myawsm.pathro, 'snow.%04d' % (offset_hr))
         if not os.path.exists(update_snow):
-            raise ValueError('Update snow file {} does not exist'.format(update_snow))
+            raise ValueError(
+                'Update snow file {} does not exist'.format(update_snow))
 
         return update_snow
-
-
-    def do_update_isnobal(self, myawsm, update_info, update_snow, x, y):
-        """
-        Function to read in an output file and update it with the lidar depth field
-
-        Argument:
-            myawsm: instantiated awsm class
-            update_info: update info pandas at correct index
-            update_snow: file pointer to snow update image
-            x: x vector
-            y: y vector
-        Returns:
-            init_file: file pointer to init image
-        """
-        # get some info
-        update_number = update_info['number']
-        date = update_info['date_time']
-        wyhr = update_info['wyhr']
-
-        last_snow_image = ipw.IPW(update_snow)
-        z_s = last_snow_image.bands[0].data # Get modeled depth image.
-        # z_s(mask==0) = NaN;
-
-        ##  Continue as before:
-        density = last_snow_image.bands[1].data.copy() # Get density image.
-        ## ## ## ## ## ## ## ## ## %
-        # SPECIAL CASE... insert adjusted densities here:
-        # density = arcgridread_v2(['/Volumes/data/blizzard/Tuolumne/lidar/snowon/2017' ...
-        #                 '/adjusted_rho/TB2017' date_mmdd '_operational_rho_ARSgrid_50m.asc']);
-        ## ## ## ## ## ## ## ## ## %
-        m_s = last_snow_image.bands[2].data.copy() # Get SWE image.
-        T_s_0 = last_snow_image.bands[4].data.copy() # Get active snow layer temperature image
-        T_s_l = last_snow_image.bands[5].data.copy() # Get lower snow layer temperature image
-        T_s = last_snow_image.bands[6].data.copy() # Get average snowpack temperature image
-        h2o_sat = last_snow_image.bands[8].data.copy() # Get liquid water saturation image
-
-        updated_fields = self.hedrick_updating_procedure(m_s, T_s_0, T_s_l, T_s,
-                                                    h2o_sat, density, z_s,
-                                                    x, y, update_info)
-
-        # write init file
-        out_file = 'init_update_{}_wyhr{:04d}.ipw'.format(update_number, wyhr)
-        init_file = os.path.join(self.pathinit,out_file)
-        i_out = ipw.IPW()
-        i_out.new_band(updated_fields['dem'])
-        i_out.new_band(updated_fields['z0'])
-        i_out.new_band(updated_fields['D'])
-        i_out.new_band(updated_fields['rho'])
-        i_out.new_band(updated_fields['T_s_0'])
-        i_out.new_band(updated_fields['T_s_l'])
-        i_out.new_band(updated_fields['T_s'])
-        i_out.new_band(updated_fields['h2o_sat'])
-        #i_out.add_geo_hdr([u, v], [du, dv], units, csys)
-        i_out.add_geo_hdr([self.topo.u, self.topo.v],
-                          [self.topo.du, self.topo.dv],
-                          self.topo.units, self.csys)
-        i_out.write(init_file, self.nbits)
-
-        ##  Import newly-created init file and look at images to make sure they line up:
-        self._logger.info('Wrote ipw image for update {}'.format(wyhr))
-
-        return init_file
-
 
     def hedrick_updating_procedure(self, m_s, T_s_0, T_s_l, T_s, h2o_sat, density, z_s,
                                    x, y, update_info):
@@ -442,7 +341,8 @@ class StateUpdater():
         original_fields['z_s'] = z_s.copy()
 
         activeLayer = self.active_layer
-        Buf = self.update_buffer  # Buffer size (in cells) for the interpolation to search over.
+        # Buffer size (in cells) for the interpolation to search over.
+        Buf = self.update_buffer
         # get dem and roughness
         dem = self.topo.dem
         z0 = self.topo.roughness
@@ -455,12 +355,12 @@ class StateUpdater():
         mask = np.ones_like(D)
         mask[np.isnan(D)] = 0.0
 
-        XX,YY = np.meshgrid(x,y)
+        XX, YY = np.meshgrid(x, y)
 
         nrows = len(y)
         ncols = len(x)
 
-        ##  Special case - 20160607
+        # Special case - 20160607
         # I am trying an update with only Tuolumne Basin data where I will mask in
         # Cherry and Eleanor to create a hybrid iSnobal/ASO depth image.
         tempASO = D.copy()
@@ -486,67 +386,75 @@ class StateUpdater():
         T_s_0[id_m_s] = -75.0
         h2o_sat[id_m_s] = 0.0
 
-        z_s[ (density > 0.0) & (z_s == 0.0) ] = u_depth[1]
+        z_s[(density > 0.0) & (z_s == 0.0)] = u_depth[1]
 
         rho = density.copy()
-        D[D < 0.05] = 0.0 # Set shallow snow (less than 5cm) to 0.
-        D[mask == 0.0] = np.nan # Set out of watershed cells to NaN
-        rho[mask == 0.0] = np.nan # Set out of watershed cells to NaN
-        tot_pix = ncols * nrows # Get number of pixels in domain.
+        D[D < 0.05] = 0.0  # Set shallow snow (less than 5cm) to 0.
+        D[mask == 0.0] = np.nan  # Set out of watershed cells to NaN
+        rho[mask == 0.0] = np.nan  # Set out of watershed cells to NaN
+        tot_pix = ncols * nrows  # Get number of pixels in domain.
 
-        I_model = np.where(z_s == 0) # Snow-free pixels in the model.
-        modelDepth = tot_pix - len(I_model[0]) # # of pixels with snow (model).
-        I_lidar = np.where( (D == 0) | (np.isnan(D) ) ) # Snow-free pixels from lidar.
-        lidarDepth = tot_pix - len(I_lidar[0]) # # of pixels with snow (lidar).
-        I_rho = np.where( density == 0 ) # Snow-free pixels upon importing.
-        modelDensity = tot_pix - len(I_rho[0]) # # of pixels with density (model).
-
+        I_model = np.where(z_s == 0)  # Snow-free pixels in the model.
+        modelDepth = tot_pix - len(I_model[0])  # of pixels with snow (model).
+        # Snow-free pixels from lidar.
+        I_lidar = np.where((D == 0) | (np.isnan(D)))
+        lidarDepth = tot_pix - len(I_lidar[0])  # of pixels with snow (lidar).
+        I_rho = np.where(density == 0)  # Snow-free pixels upon importing.
+        # of pixels with density (model).
+        modelDensity = tot_pix - len(I_rho[0])
 
         self._logger.debug('\nJust After Importing.\n \
                               Number of modeled cells with snow depth: {}\n \
                               Number of modeled cells with density: {}\n \
-                              Number of lidar cells measuring snow: {}'.format(modelDepth, modelDensity, lidarDepth ) )
+                              Number of lidar cells measuring snow: {}'.format(modelDepth, modelDensity, lidarDepth))
         id0 = D == 0.0
 
-        rho[id0] = 0.0 # Find cells without lidar snow and set the modeled density to zero.
-        rho[rho == 0.0] = np.nan # Set all cells with no density to NaN.
+        # Find cells without lidar snow and set the modeled density to zero.
+        rho[id0] = 0.0
+        rho[rho == 0.0] = np.nan  # Set all cells with no density to NaN.
 
-        T_s_0[id0] = np.nan # Find cells without lidar snow and set the active layer temp to NaN.
-        T_s_0[T_s_0 <= -75.0] = np.nan # Change isnobal no-values to NaN.
+        # Find cells without lidar snow and set the active layer temp to NaN.
+        T_s_0[id0] = np.nan
+        T_s_0[T_s_0 <= -75.0] = np.nan  # Change isnobal no-values to NaN.
 
-        T_s_l[id0] = np.nan # Find cells without lidar snow and set the lower layer temp to NaN.
-        T_s_l[T_s_l <= -75.0] = np.nan # Change isnobal no-values to NaN.
+        # Find cells without lidar snow and set the lower layer temp to NaN.
+        T_s_l[id0] = np.nan
+        T_s_l[T_s_l <= -75.0] = np.nan  # Change isnobal no-values to NaN.
 
-        T_s[id0] = np.nan # Find cells without lidar snow and set the snow temp to np.nan.
-        T_s[T_s <= -75.0] = np.nan # Change isnobal no-values to NaN.
+        # Find cells without lidar snow and set the snow temp to np.nan.
+        T_s[id0] = np.nan
+        T_s[T_s <= -75.0] = np.nan  # Change isnobal no-values to NaN.
 
-        h2o_sat[id0] = np.nan # Find cells without lidar snow and set the h2o saturation to NaN.
+        # Find cells without lidar snow and set the h2o saturation to NaN.
+        h2o_sat[id0] = np.nan
         h2o_sat[mask == 0.0] = np.nan
         # h2o_sat[h2o_sat == -75.0] = np.nan # Change isnobal no-values to NaN.
 
-        I_rho = np.where( np.isnan(rho) ) # Snow-free pixels before interpolation
+        # Snow-free pixels before interpolation
+        I_rho = np.where(np.isnan(rho))
         #modelDensity = tot_pix - size(I_rho, 1)
         modelDensity = tot_pix - len(I_rho[0])
 
         self._logger.debug('\nBefore Interpolation.\n \
                               Number of modeled cells with snow depth: {0}\n \
                               Number of modeled cells with density: {1}\n \
-                              Number of lidar cells measuring snow: {2}'.format(modelDepth, modelDensity, lidarDepth ) )
+                              Number of lidar cells measuring snow: {2}'.format(modelDepth, modelDensity, lidarDepth))
 
-        ##  Now find cells where lidar measured snow, but Isnobal simulated no snow:
-        I = np.where( (np.isnan(rho)) & (D > 0.0) )
-        I_25 = np.where( (z_s <= (activeLayer * 1.20)) & (D >= activeLayer) ) # find cells with lidar
-            # depth greater than, and iSnobal depths less than, the active layer
-            # depth. Lower layer temperatures of these cells will need to be
-            # interpolated from surrounding cells with lower layer temperatures.
-            # This happens AFTER the interpolation of all the other variables
-            # below.  If cell has snow depth 120% of set active layer depth, then
-            # the lower layer temp will be replaced by an areal interpolated value
-            # from surrounding cells with lower layer temps and depths greater than
-            # 120% of active layer.
+        # Now find cells where lidar measured snow, but Isnobal simulated no snow:
+        I = np.where((np.isnan(rho)) & (D > 0.0))
+        I_25 = np.where((z_s <= (activeLayer * 1.20)) &
+                        (D >= activeLayer))  # find cells with lidar
+        # depth greater than, and iSnobal depths less than, the active layer
+        # depth. Lower layer temperatures of these cells will need to be
+        # interpolated from surrounding cells with lower layer temperatures.
+        # This happens AFTER the interpolation of all the other variables
+        # below.  If cell has snow depth 120% of set active layer depth, then
+        # the lower layer temp will be replaced by an areal interpolated value
+        # from surrounding cells with lower layer temps and depths greater than
+        # 120% of active layer.
 
         # Interpolate over these cells to come up with values for them.
-        X , Y = np.meshgrid(range(ncols),range(nrows))
+        X, Y = np.meshgrid(range(ncols), range(nrows))
 
         # make matrices to use in following commands
         tmp1 = np.ones((nrows+2*Buf, Buf))
@@ -554,46 +462,56 @@ class StateUpdater():
         tmp2 = np.ones((Buf, ncols))
         tmp2[:] = np.nan
         # create buffer
-        rho_buf = np.concatenate( (tmp1,np.concatenate( (tmp2,rho,tmp2) ,axis=0),tmp1 ),axis=1)
-        T_s_0_buf = np.concatenate( (tmp1,np.concatenate( (tmp2,T_s_0,tmp2) ,axis=0),tmp1 ),axis=1)
-        T_s_l_buf = np.concatenate( (tmp1,np.concatenate( (tmp2,T_s_l,tmp2) ,axis=0),tmp1 ),axis=1)
-        T_s_buf = np.concatenate( (tmp1,np.concatenate( (tmp2,T_s,tmp2) ,axis=0),tmp1 ),axis=1)
-        h2o_buf = np.concatenate( (tmp1,np.concatenate( (tmp2,h2o_sat,tmp2) ,axis=0),tmp1 ),axis=1)
+        rho_buf = np.concatenate((tmp1, np.concatenate(
+            (tmp2, rho, tmp2), axis=0), tmp1), axis=1)
+        T_s_0_buf = np.concatenate((tmp1, np.concatenate(
+            (tmp2, T_s_0, tmp2), axis=0), tmp1), axis=1)
+        T_s_l_buf = np.concatenate((tmp1, np.concatenate(
+            (tmp2, T_s_l, tmp2), axis=0), tmp1), axis=1)
+        T_s_buf = np.concatenate((tmp1, np.concatenate(
+            (tmp2, T_s, tmp2), axis=0), tmp1), axis=1)
+        h2o_buf = np.concatenate((tmp1, np.concatenate(
+            (tmp2, h2o_sat, tmp2), axis=0), tmp1), axis=1)
 
-        ###################### hopefully fixed for loop logic below
+        # hopefully fixed for loop logic below
 
-        for idx, (ix, iy) in enumerate(zip(I[0], I[1])): # Loop through cells with D > 0 and no iSnobal density,
-                          # active layer temp, snow temp, and h2o saturation.
-            xt = X[ix,iy]+Buf # Add the buffer to the x coords.
-            yt = Y[ix,iy]+Buf # Add the buffer to the y coords.
-            n = range(11,Buf+2,10) # Number of cells in averaging window
-            for n1 in n: # Loop through changing buffer windows until enough
-                              # cells are found to calculate an average.
+        # Loop through cells with D > 0 and no iSnobal density,
+        for idx, (ix, iy) in enumerate(zip(I[0], I[1])):
+            # active layer temp, snow temp, and h2o saturation.
+            xt = X[ix, iy]+Buf  # Add the buffer to the x coords.
+            yt = Y[ix, iy]+Buf  # Add the buffer to the y coords.
+            n = range(11, Buf+2, 10)  # Number of cells in averaging window
+            for n1 in n:  # Loop through changing buffer windows until enough
+                # cells are found to calculate an average.
                 xl = xt - int((n1 - 1) / 2)
                 xh = xt + int((n1 - 1) / 2)
                 yl = yt - int((n1 - 1) / 2)
                 yh = yt + int((n1 - 1) / 2)
-                window = rho_buf[yl:yh,xl:xh]
-                qq = np.where(np.isfinite(window)) # find number of pixels with a value.
+                window = rho_buf[yl:yh, xl:xh]
+                # find number of pixels with a value.
+                qq = np.where(np.isfinite(window))
                 if (len(qq[0]) > 10):
                     val = np.nanmean(window[:])
-                    rho[ix,iy] = val  # Interpolate for density (just a windowed mean)
-                    window = T_s_0_buf[yl:yh,xl:xh]
+                    # Interpolate for density (just a windowed mean)
+                    rho[ix, iy] = val
+                    window = T_s_0_buf[yl:yh, xl:xh]
                     val = np.nanmean(window[:])
-                    T_s_0[ix,iy] = val # Interpolate for active snow layer temp
+                    # Interpolate for active snow layer temp
+                    T_s_0[ix, iy] = val
                     # Handle the lower layer temp in the following for-loop.
-                    window = T_s_buf[yl:yh,xl:xh]
+                    window = T_s_buf[yl:yh, xl:xh]
                     val = np.nanmean(window[:])
-                    T_s[ix,iy] = val # Interpolate for avg snow temp
-                    window = h2o_buf[yl:yh,xl:xh]
+                    T_s[ix, iy] = val  # Interpolate for avg snow temp
+                    window = h2o_buf[yl:yh, xl:xh]
                     val = np.nanmean(window[:])
-                    h2o_sat[ix,iy] = val # Interpolate for liquid water saturation
+                    # Interpolate for liquid water saturation
+                    h2o_sat[ix, iy] = val
 
                 # check to see if you found a value
-                if n1 == n[-1] and np.isnan(rho[ix,iy]):
+                if n1 == n[-1] and np.isnan(rho[ix, iy]):
                     self._logger.error('Failed to find desnity wihtin buffer')
                 # if we found a value, move on
-                if np.isfinite( rho[ix,iy] ):
+                if np.isfinite(rho[ix, iy]):
                     break
 
         # ##################### hopefully fixed for loop logic below
@@ -603,27 +521,28 @@ class StateUpdater():
         # have a real temperature.  Solution is to interpolate from nearby cells
         # using an expanding moving window search.
         for ix, iy in zip(I_25[0], I_25[1]):
-            xt = X[ix,iy] + Buf # Add the buffer to the x coords.
-            yt = Y[ix,iy] + Buf # Add the buffer to the y coords.
-            n = range(11,Buf+2,10)
-            for jj in n: # Loop through changing buffer windows until enough
-                              # cells are found to calculate an average.
+            xt = X[ix, iy] + Buf  # Add the buffer to the x coords.
+            yt = Y[ix, iy] + Buf  # Add the buffer to the y coords.
+            n = range(11, Buf+2, 10)
+            for jj in n:  # Loop through changing buffer windows until enough
+                # cells are found to calculate an average.
                 xl = xt - int((jj-1)/2)
                 xh = xt + int((jj-1)/2)
                 yl = yt - int((jj-1)/2)
                 yh = yt + int((jj-1)/2)
-                window = T_s_l_buf[yl:yh,xl:xh]
+                window = T_s_l_buf[yl:yh, xl:xh]
                 val = np.nanmean(window[:])
-                T_s_l[ix,iy] = val # Interpolate for lower layer temp
-                ################ fix this to be pyton logic
-                #if np.isnan(T_s_l[ii]) == False:
-                if not np.any(np.isnan(T_s_l[ix,iy])):
+                T_s_l[ix, iy] = val  # Interpolate for lower layer temp
+                # fix this to be pyton logic
+                # if np.isnan(T_s_l[ii]) == False:
+                if not np.any(np.isnan(T_s_l[ix, iy])):
                     break
 
         self._logger.debug('Done with loop 2')
 
         iq = (np.isnan(D)) & (np.isfinite(rho))
-        rho[iq] = np.nan # Once more, change cells with no lidar snow to have np.nan density.
+        # Once more, change cells with no lidar snow to have np.nan density.
+        rho[iq] = np.nan
 
         # Find occurance where cell has depth and density but no temperature.
         # Delete snowpack from this cell.
@@ -631,33 +550,40 @@ class StateUpdater():
         D[iq2] = 0.0
         rho[iq2] = np.nan
 
-        I_lidar = np.where( (D == 0.0) | (np.isnan(D) ) ) # Snow-free pixels from lidar.
-        lidarDepth = tot_pix - len(I_lidar[0]) # # of pixels with snow (lidar).
-        I_rho = np.where( np.isnan(rho) ) # Snow-free pixels upon importing.
-        modelDensity = tot_pix - len(I_rho[0]) # # of pixels with density (model).
+        # Snow-free pixels from lidar.
+        I_lidar = np.where((D == 0.0) | (np.isnan(D)))
+        lidarDepth = tot_pix - len(I_lidar[0])  # of pixels with snow (lidar).
+        I_rho = np.where(np.isnan(rho))  # Snow-free pixels upon importing.
+        # of pixels with density (model).
+        modelDensity = tot_pix - len(I_rho[0])
 
-        I_lidaridx = (D == 0.0) | (np.isnan(D) )  # Snow-free pixels from lidar.
+        I_lidaridx = (D == 0.0) | (np.isnan(D))  # Snow-free pixels from lidar.
         I_rhoidx = np.isnan(rho)  # Snow-free pixels upon importing.
 
         self._logger.debug('\nAfter Interpolation.\n \
                               Number of modeled cells with snow depth: {}\n \
                               Number of modeled cells with density: {}\n \
-                              Number of lidar cells measuring snow: {}'.format(modelDepth,modelDensity,lidarDepth ) )
+                              Number of lidar cells measuring snow: {}'.format(modelDepth, modelDensity, lidarDepth))
 
-        ##  Reset NaN's to the proper values for Isnobal:
-        #if size(I_lidar, 1) ~= size(I_rho, 1)
+        # Reset NaN's to the proper values for Isnobal:
+        # if size(I_lidar, 1) ~= size(I_rho, 1)
         if len(I_lidar[0]) != len(I_rho[0]):
-            raise ValueError('Lidar depths do not match interpolated model densities.  Try changing buffer parameters.')
+            raise ValueError(
+                'Lidar depths do not match interpolated model densities.  Try changing buffer parameters.')
 
-        rho[I_rhoidx] = 0.0 # rho is the updated density map.
-        D[rho == 0.0] = 0.0 # D is lidar snow depths, I_rho is where no snow exists.
-        I_25_new = D <= activeLayer # find cells with lidar depth less than 25 cm
-            # These cells will have the corresponding lower layer temp changed to
-            # -75 (no value) and the upper layer temp will be set to equal the
-            # average snowpack temp in that cell.
-        T_s[rho == 0.0] = -75.0 # T_s is the average snow temperature in a cell. Is NaN (-75) for all rho = 0.
-        T_s_0[rho == 0.0] = -75.0 # T_s_0 is the updated active (upper) layer.  Is >0 for everywhere rho is >0.
-        T_s_0[I_25_new] = T_s[I_25_new] # If lidar depth <= 25cm, set active layer temp to average temp of cell
+        rho[I_rhoidx] = 0.0  # rho is the updated density map.
+        # D is lidar snow depths, I_rho is where no snow exists.
+        D[rho == 0.0] = 0.0
+        I_25_new = D <= activeLayer  # find cells with lidar depth less than 25 cm
+        # These cells will have the corresponding lower layer temp changed to
+        # -75 (no value) and the upper layer temp will be set to equal the
+        # average snowpack temp in that cell.
+        # T_s is the average snow temperature in a cell. Is NaN (-75) for all rho = 0.
+        T_s[rho == 0.0] = -75.0
+        # T_s_0 is the updated active (upper) layer.  Is >0 for everywhere rho is >0.
+        T_s_0[rho == 0.0] = -75.0
+        # If lidar depth <= 25cm, set active layer temp to average temp of cell
+        T_s_0[I_25_new] = T_s[I_25_new]
         T_s_l[I_25_new] = -75.0
         T_s_l[np.isnan(T_s_l)] = -75.0
         h2o_sat[rho == 0.0] = 0.0
@@ -665,11 +591,15 @@ class StateUpdater():
         # grab unmasked cells again
         nmask = mask == 0
         # Make sure non-updated cells stay the same as original
-        m_s[nmask] = original_fields['m_s'][nmask] # Get SWE image.
-        T_s_0[nmask] = original_fields['T_s_0'][nmask] # Get active snow layer temperature image
-        T_s_l[nmask] = original_fields['T_s_l'][nmask] # Get lower snow layer temperature image
-        T_s[nmask] = original_fields['T_s'][nmask] # Get average snowpack temperature image
-        h2o_sat[nmask] = original_fields['h2o_sat'][nmask] # Get liquid water saturation image
+        m_s[nmask] = original_fields['m_s'][nmask]  # Get SWE image.
+        # Get active snow layer temperature image
+        T_s_0[nmask] = original_fields['T_s_0'][nmask]
+        # Get lower snow layer temperature image
+        T_s_l[nmask] = original_fields['T_s_l'][nmask]
+        # Get average snowpack temperature image
+        T_s[nmask] = original_fields['T_s'][nmask]
+        # Get liquid water saturation image
+        h2o_sat[nmask] = original_fields['h2o_sat'][nmask]
         D[nmask] = original_fields['z_s'][nmask]
         rho[nmask] = original_fields['density'][nmask]
 
@@ -744,19 +674,19 @@ class StateUpdater():
         cs = (6, 10, 10)
 
         variable_dict = {
-                        'depth_change' : {
-                                          'units': 'meters',
-                                          'description': 'change in depth from update'
-                                         },
-                        'rho_change' : {
-                                        'units': 'kg*m^-2',
-                                        'description': 'change in density from update'
-                                       },
-                        'swe_change' : {
-                                        'units': 'mm',
-                                        'description': 'change in SWE from update'
-                                       }
-                        }
+            'depth_change': {
+                'units': 'meters',
+                'description': 'change in depth from update'
+            },
+            'rho_change': {
+                'units': 'kg*m^-2',
+                'description': 'change in density from update'
+            },
+            'swe_change': {
+                'units': 'mm',
+                'description': 'change in SWE from update'
+            }
+        }
         # determine the x,y vectors for the netCDF file
         x = self.x
         y = self.y
@@ -767,7 +697,7 @@ class StateUpdater():
 
         if os.path.isfile(self.update_change_file):
             self._logger.warning(
-                    'Opening {}, data may be overwritten!'.format(self.update_change_file))
+                'Opening {}, data may be overwritten!'.format(self.update_change_file))
             ds = nc.Dataset(self.update_change_file, 'a')
             h = '[{}] Data added or updated'.format(
                 datetime.now().strftime(fmt))
@@ -789,7 +719,8 @@ class StateUpdater():
             ds.createVariable('x', 'f', dimensions[2])
 
             # setattr(em.variables['time'], 'units', 'hours since %s' % options['time']['start_date'])
-            setattr(ds.variables['time'], 'units', 'hours since %s' % start_date)
+            setattr(ds.variables['time'], 'units',
+                    'hours since %s' % start_date)
             setattr(ds.variables['time'], 'calendar', 'standard')
             #     setattr(em.variables['time'], 'time_zone', time_zone)
             ds.variables['y'][:] = y
@@ -801,15 +732,15 @@ class StateUpdater():
                 setattr(ds.variables[v], 'units', f['units'])
                 setattr(ds.variables[v], 'description', f['description'])
 
-
-
             # define some global attributes
             ds.setncattr_string('Conventions', 'CF-1.6')
             ds.setncattr_string('dateCreated', datetime.now().strftime(fmt))
-            ds.setncattr_string('created_with', 'Created with awsm {} and smrf {}'.format(awsm_version, smrf_version))
-            ds.setncattr_string('history', '[{}] Create netCDF4 file'.format(datetime.now().strftime(fmt)))
+            ds.setncattr_string('created_with', 'Created with awsm {} and smrf {}'.format(
+                awsm_version, smrf_version))
+            ds.setncattr_string('history', '[{}] Create netCDF4 file'.format(
+                datetime.now().strftime(fmt)))
             ds.setncattr_string('institution',
-                    'USDA Agricultural Research Service, Northwest Watershed Research Center')
+                                'USDA Agricultural Research Service, Northwest Watershed Research Center')
 
         # save the open dataset so we can write to it
         ds.sync()

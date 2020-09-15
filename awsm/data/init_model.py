@@ -5,7 +5,6 @@ import numpy as np
 import pandas as pd
 import pytz
 from smrf.utils import utils
-from spatialnc import ipw
 
 C_TO_K = 273.16
 FREEZE = C_TO_K
@@ -16,7 +15,6 @@ Outline
 -get_init_file:
     --reads in the specific init file and stores init fields in dictionary
     --checks if restarting from a crash, in which casse init file is not used
-    --if running isnobal and init file is ipw then just passes fp to init
     --if no file then make the necessary 0 start file
 
 -write_init:
@@ -56,11 +54,10 @@ class modelInit():
             wy_start:       datetime of water year start date
 
         """
-        # get logger
+
         self.logger = logger
-        # get topo class
         self.topo = topo
-        self.csys = cfg['grid']['csys']
+
         # get parameters from awsm
         self.init_file = cfg['files']['init_file']
         self.init_type = cfg['files']['init_type']
@@ -107,18 +104,6 @@ class modelInit():
             if 'T_s_l' in self.init:
                 self.init['T_s_l'] += FREEZE
 
-        # write input file if running iSnobal and
-        # not passed an iSnobal init file
-        if (self.model_type == 'isnobal'):
-            if self.init_type != 'ipw' or self.restart_crash is True:
-                if self.restart_crash:
-                    self.fp_init = os.path.join(pathinit,
-                                                'init%04d.ipw' % (self.restart_hr))
-                else:
-                    self.fp_init = os.path.join(pathinit,
-                                                'init%04d.ipw' % (self.start_wyhr))
-                self.write_init()
-
     def get_init_file(self):
         """
         Get the necessary data from the init.
@@ -131,44 +116,10 @@ class modelInit():
         elif self.init_file is None:
             self.get_zero_init()
         # get init depending on file type
-        elif self.init_type == 'ipw_out':
-            self.get_ipw_out()
         elif self.init_type == 'netcdf':
             self.get_netcdf()
         elif self.init_type == 'netcdf_out':
             self.get_netcdf_out()
-        # if none of these are true just leave the file type
-        elif self.model_type == 'isnobal' and self.init_type == 'ipw':
-            self.fp_init = self.init_file
-        # if we're running some PySnobal and ipw init, get that
-        elif self.init_type == 'ipw':
-            self.get_ipw()
-
-    def write_init(self):
-        """
-        Write the iSnobal init file
-        """
-        # get mask
-        mask = self.topo.mask
-        # make ipw init file
-        i_out = ipw.IPW()
-        i_out.new_band(self.init['elevation'])
-        i_out.new_band(self.init['z_0'])
-        i_out.new_band(self.init['z_s']*mask)  # snow depth
-        i_out.new_band(self.init['rho']*mask)  # snow density
-
-        i_out.new_band(self.init['T_s_0']*mask)  # active layer temp
-        if self.start_wyhr > 0 or self.restart_crash:
-            i_out.new_band(self.init['T_s_l']*mask)  # lower layer temp
-
-        i_out.new_band(self.init['T_s']*mask)  # average snow temp
-
-        i_out.new_band(self.init['h2o_sat']*mask)  # percent saturation
-        i_out.add_geo_hdr([self.topo.u, self.topo.v],
-                          [self.topo.du, self.topo.dv],
-                          self.topo.units, self.csys)
-
-        i_out.write(self.fp_init, 16)
 
     def get_crash_init(self):
         """
@@ -180,31 +131,24 @@ class modelInit():
             init:    dictionary of initialized variables
         """
 
-        # restart procedure from failed run
-        if self.model_type == 'isnobal':
-            self.init_type = 'ipw_out'
-            self.init_file = os.path.join(
-                self.pathro, 'snow.%04d' % self.restart_hr)
-            self.get_ipw_out()
-        else:
-            self.init_type = 'netcdf_out'
-            # find the correct output folder from which to restart
-            if self.restart_folder == 'standard':
-                self.init_file = os.path.join(self.pathrr, 'snow.nc')
+        self.init_type = 'netcdf_out'
+        # find the correct output folder from which to restart
+        if self.restart_folder == 'standard':
+            self.init_file = os.path.join(self.pathrr, 'snow.nc')
 
-            elif self.restart_folder == 'daily':
-                fmt = '%Y%m%d'
-                # get the date string
-                day_str = self.pathrr[-8:]
-                day_dt = pd.to_datetime(day_str) - \
-                    pd.to_timedelta(1, unit='days')
-                day_dt_str = day_dt.strftime(fmt)
-                # get the previous day
-                path_prev_day = os.path.abspath(os.path.join(self.pathrr,
-                                                             '..', 'run'+day_dt_str))
-                self.init_file = os.path.join(path_prev_day, 'snow.nc')
+        elif self.restart_folder == 'daily':
+            fmt = '%Y%m%d'
+            # get the date string
+            day_str = self.pathrr[-8:]
+            day_dt = pd.to_datetime(day_str) - \
+                pd.to_timedelta(1, unit='days')
+            day_dt_str = day_dt.strftime(fmt)
+            # get the previous day
+            path_prev_day = os.path.abspath(os.path.join(self.pathrr,
+                                                         '..', 'run'+day_dt_str))
+            self.init_file = os.path.join(path_prev_day, 'snow.nc')
 
-            self.get_netcdf_out()
+        self.get_netcdf_out()
 
         # zero depths under specified threshold
         restart_var = self.zero_crash_depths(self.depth_thresh,
@@ -231,55 +175,6 @@ class modelInit():
         self.init['T_s'] = -75.0*self.topo.mask  # average snow temp
 
         self.init['h2o_sat'] = 0.0*self.topo.mask  # percent saturation
-
-    def get_ipw_out(self):
-        """
-        Set init fields for iSnobal out as init file
-        """
-        i_in = ipw.IPW(self.init_file)
-        self.init['z_s'] = i_in.bands[0].data*self.topo.mask  # snow depth
-        self.init['rho'] = i_in.bands[1].data*self.topo.mask  # snow density
-
-        self.init['T_s_0'] = i_in.bands[4].data * \
-            self.topo.mask  # active layer temp
-        self.init['T_s_l'] = i_in.bands[5].data * \
-            self.topo.mask  # lower layer temp
-        self.init['T_s'] = i_in.bands[6].data * \
-            self.topo.mask  # average snow temp
-
-        self.init['h2o_sat'] = i_in.bands[8].data * \
-            self.topo.mask  # percent saturation
-
-    def get_ipw(self):
-        """
-        Set init fields for iSnobal out as init file
-        """
-        i_in = ipw.IPW(self.init_file)
-        self.init['z_0'] = i_in.bands[1].data*self.topo.mask  # snow depth
-
-        self.logger.warning(
-            'Using roughness from iSnobal ipw init file for initializing of model!')
-
-        self.init['z_s'] = i_in.bands[2].data*self.topo.mask  # snow depth
-        self.init['rho'] = i_in.bands[3].data*self.topo.mask  # snow density
-
-        self.init['T_s_0'] = i_in.bands[4].data * \
-            self.topo.mask  # active layer temp
-
-        # get bands depending on if there is a lower layer or not
-        if len(i_in.bands) == 8:
-            self.init['T_s_l'] = i_in.bands[5].data * \
-                self.topo.mask  # lower layer temp
-            self.init['T_s'] = i_in.bands[6].data * \
-                self.topo.mask  # average snow temp
-            self.init['h2o_sat'] = i_in.bands[7].data * \
-                self.topo.mask  # percent saturation
-
-        elif len(i_in.bands) == 7:
-            self.init['T_s'] = i_in.bands[5].data * \
-                self.topo.mask  # average snow temp
-            self.init['h2o_sat'] = i_in.bands[6].data * \
-                self.topo.mask  # percent saturation
 
     def get_netcdf(self):
         """

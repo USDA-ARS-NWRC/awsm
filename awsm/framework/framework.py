@@ -14,7 +14,6 @@ import smrf
 from spatialnc.topo import topo as mytopo
 import smrf.framework.logger as logger
 
-from awsm.convertFiles import convertFiles as cvf
 from awsm.data.init_model import modelInit
 from awsm.framework import ascii_art
 from awsm.interface import interface as smin, smrf_ipysnobal as smrf_ipy, \
@@ -88,7 +87,6 @@ class AWSM():
 
         # ################## Decide which modules to run #####################
         self.do_smrf = self.config['awsm master']['run_smrf']
-        #self.do_isnobal = self.config['awsm master']['run_isnobal']
         self.model_type = self.config['awsm master']['model_type']
         # self.do_smrf_ipysnobal = \
         #     self.config['awsm master']['run_smrf_ipysnobal']
@@ -100,13 +98,6 @@ class AWSM():
             # WARNING: The value here is inferred in SMRF.data.loadGrid. A
             # change here requires a change there
             self.n_forecast_hours = 18
-
-        # Options for converting files
-        self.do_make_in = self.config['awsm master']['make_in']
-        self.do_make_nc = self.config['awsm master']['make_nc']
-        # do report?
-        # self.do_report = self.config['awsm master']['do_report']
-        self.snowav_config = self.config['awsm master']['snowav_config']
 
         # options for masking isnobal
         self.mask_isnobal = self.config['awsm master']['mask_isnobal']
@@ -254,13 +245,11 @@ class AWSM():
         self.mk_directories()
 
         # ################ Topo data for iSnobal ##################
-        # get topo stats
-        self.csys = self.config['grid']['csys'].upper()
-        self.nbits = int(self.config['grid']['nbits'])
         self.soil_temp = self.config['soil_temp']['temp']
-        # get topo class
+
+        # TODO can this be a SMRF topo instance?
         self.topo = mytopo(self.config['topo'], self.mask_isnobal,
-                           self.model_type, self.csys, self.pathdd)
+                           self.model_type, 'UTM', self.pathdd)
 
         # ################ Generate config backup ##################
         # if self.config['output']['input_backup']:
@@ -351,35 +340,6 @@ class AWSM():
         """
         # modify config and run smrf
         smin.smrfMEAS(self)
-
-    def nc2ipw(self, runtype):
-        """
-        Convert ipw smrf output to isnobal inputs
-        """
-        cvf.nc2ipw_mea(self, runtype)
-
-    def ipw2nc(self, runtype):
-        """
-        Convert ipw output to netcdf files. Calls
-        :mod: `awsm.convertFiles.convertFiles.ipw2nc_mea`
-        """
-        cvf.ipw2nc_mea(self, runtype)
-
-    def run_isnobal(self, offset=None):
-        """
-        Run isnobal. Calls :mod: `awsm.interface.interface.run_isnobal`
-        """
-
-        smin.run_isnobal(self, offset=offset)
-
-    def run_isnobal_update(self):
-        """
-        Run iSnobal with update procedure
-        """
-        # initialize updater
-        updater = ingest_data.StateUpdater(self)
-        # run iSnobal with updates
-        updater.run_update_procedure_isnobal(self)
 
     def run_smrf_ipysnobal(self):
         """
@@ -594,14 +554,6 @@ class AWSM():
             else:
                 self.tmp_log.append('Directory --{}-- exists, not creating.\n')
 
-    def run_report(self):
-        try:
-            import snowav
-            self._logger.info('AWSM finished run, starting report')
-            snowav.framework.framework.snowav(config_file=self.snowav_config)
-        except ModuleNotFoundError:
-            print('Library snowav not installed - skip reporting')
-
     def __enter__(self):
         self.start_time = datetime.now()
         return self
@@ -746,43 +698,16 @@ def run_awsm(config):
             runtype = 'smrf'
 
         if not a.config['isnobal restart']['restart_crash']:
-            # distribute data by running smrf
             if a.do_smrf:
                 a.runSmrf()
 
-            # convert smrf output to ipw for iSnobal
-            if a.do_make_in:
-                a.nc2ipw(runtype)
-
-            if a.model_type == 'isnobal':
-                # run iSnobal
-                if a.update_depth:
-                    a.run_isnobal_update()
-                else:
-                    a.run_isnobal()
-
-            elif a.model_type == 'ipysnobal':
-                # run iPySnobal
+            if a.model_type == 'ipysnobal':
                 a.run_ipysnobal()
 
-                # convert ipw back to netcdf for processing
-            if a.do_make_nc:
-                a.ipw2nc(runtype)
         # if restart
         else:
-            if a.model_type == 'isnobal':
-                # restart iSnobal from crash
-                if a.update_depth:
-                    a.run_isnobal_update()
-                else:
-                    a.run_isnobal()
-                # convert ipw back to netcdf for processing
-            elif a.model_type == 'ipysnobal':
-                # run iPySnobal
+            if a.model_type == 'ipysnobal':
                 a.run_ipysnobal()
-
-            if a.do_make_nc:
-                a.ipw2nc(runtype)
 
         # Run iPySnobal from SMRF in memory
         if a.model_type == 'smrf_ipysnobal':
@@ -790,7 +715,3 @@ def run_awsm(config):
                 a.run_awsm_daily()
             else:
                 a.run_smrf_ipysnobal()
-
-        # create report
-        if a.snowav_config is not None:
-            a.run_report()

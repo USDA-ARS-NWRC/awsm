@@ -36,7 +36,6 @@ setup(
         './scripts/awsm',
         './scripts/wyhr',
         './scripts/plot_csv',
-        './scripts/plot_ipw',
         './scripts/clean_awsm',
         './scripts/awsm_daily',
         './scripts/awsm_daily_airflow'

@@ -24,7 +24,7 @@ from pysnobal.c_snobal import snobal
 
 def run_ipysnobal(myawsm):
     """
-    Function to run PySnobal from netcdf of ipw forcing data,
+    Function to run PySnobal from netcdf forcing data,
     not from SMRF instance.
 
     Args:
@@ -54,10 +54,6 @@ def run_ipysnobal(myawsm):
         force = io_mod.open_files_nc(myawsm)
         input1 = initmodel.get_timestep_netcdf(
             force, options['time']['date_time'][0])
-    else:
-        input_list, ppt_list = io_mod.open_files_ipw(myawsm)
-        input1 = initmodel.get_timestep_ipw(options['time']['date_time'][0],
-                                            input_list, ppt_list, myawsm)
 
     # initialize updater if required
     if myawsm.update_depth:
@@ -73,9 +69,6 @@ def run_ipysnobal(myawsm):
         myawsm._logger.info('running PySnobal for timestep: {}'.format(tstep))
         if myawsm.forcing_data_type == 'netcdf':
             input2 = initmodel.get_timestep_netcdf(force, tstep)
-        else:
-            input2 = initmodel.get_timestep_ipw(
-                tstep, input_list, ppt_list, myawsm)
 
         first_step = j
         # update depth if necessary

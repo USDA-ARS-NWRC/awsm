@@ -7,6 +7,8 @@ import netCDF4 as nc
 import numpy as np
 from spatialnc import ipw
 
+from awsm import __version__
+
 
 def nc2ipw_mea(myawsm, runtype):
     '''
@@ -230,7 +232,7 @@ def ipw2nc_mea(myawsm, runtype):
         setattr(em.variables[v], 'description', m['description'][i])
 
     em.setncattr_string('source',
-                    'AWSM {}'.format(myawsm.gitVersion))
+                        'AWSM {}'.format(__version__))
     # ========================================================================
     # NetCDF SNOW image
     # ========================================================================
@@ -285,9 +287,9 @@ def ipw2nc_mea(myawsm, runtype):
         setattr(snow.variables[v], 'description', s['description'][i])
 
     h = '[{}] Data added or updated'.format(
-                    datetime.now().strftime("%Y%m%d"))
+        datetime.now().strftime("%Y%m%d"))
     snow.setncattr_string('last modified', h)
-    snow.setncattr_string('AWSM version', myawsm.gitVersion)
+    snow.setncattr_string('AWSM version', __version__)
     if myawsm.do_smrf:
         snow.setncattr_string('SMRF version', myawsm.smrf_version)
 
@@ -341,7 +343,7 @@ def ipw2nc_mea(myawsm, runtype):
             em.variables[var][j, :] = i_em.bands[b].data
 
         snow.setncattr_string('last modified', h)
-        snow.setncattr_string('AWSM version', myawsm.gitVersion)
+        snow.setncattr_string('AWSM version', __version__)
         if myawsm.do_smrf:
             snow.setncattr_string('SMRF version', myawsm.smrf_version)
 

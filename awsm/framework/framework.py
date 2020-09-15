@@ -4,7 +4,6 @@ import os
 import sys
 from datetime import datetime
 
-import coloredlogs
 import pandas as pd
 import pytz
 from inicheck.config import MasterConfig, UserConfig
@@ -20,7 +19,6 @@ from awsm.data.init_model import modelInit
 from awsm.framework import ascii_art
 from awsm.interface import interface as smin, smrf_ipysnobal as smrf_ipy, \
     ingest_data
-from awsm.utils import utilities as awsm_utils
 
 
 class AWSM():
@@ -69,9 +67,6 @@ class AWSM():
         else:
             raise Exception(
                 'Config passed to AWSM is neither file name nor UserConfig instance')
-
-        # get the git version
-        self.gitVersion = awsm_utils.getgitinfo()
 
         # create blank log and error log because logger is not initialized yet
         self.tmp_log = []

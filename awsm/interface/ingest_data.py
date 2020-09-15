@@ -10,6 +10,8 @@ from netCDF4 import Dataset
 from smrf.utils import utils
 from spatialnc import ipw
 
+from awsm import __version__
+
 C_TO_K = 273.16
 FREEZE = C_TO_K
 
@@ -37,7 +39,7 @@ class StateUpdater():
             start_date = myawsm.config['time']['start_date']
             time_zone = myawsm.config['time']['time_zone']
             self.delta_ds = self.initialize_update_output(start_date, time_zone,
-                                                          myawsm.gitVersion,
+                                                          __version__,
                                                           myawsm.smrf_version)
 
         # calculate offset for each section of the run and filter updates

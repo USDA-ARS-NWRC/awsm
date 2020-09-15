@@ -29,6 +29,7 @@ Outline
 
 """
 
+
 class modelInit():
     """
     Class for initializing snow model. Only runs if a model is specified
@@ -65,7 +66,8 @@ class modelInit():
         self.init_type = cfg['files']['init_type']
 
         if self.init_file is not None:
-            self.logger.info('Using {} to build model init state.'.format(self.init_file))
+            self.logger.info(
+                'Using {} to build model init state.'.format(self.init_file))
         # iSnobal init directory
         self.pathinit = pathinit
         # type of model run
@@ -181,7 +183,8 @@ class modelInit():
         # restart procedure from failed run
         if self.model_type == 'isnobal':
             self.init_type = 'ipw_out'
-            self.init_file = os.path.join(self.pathro, 'snow.%04d' % self.restart_hr)
+            self.init_file = os.path.join(
+                self.pathro, 'snow.%04d' % self.restart_hr)
             self.get_ipw_out()
         else:
             self.init_type = 'netcdf_out'
@@ -193,23 +196,24 @@ class modelInit():
                 fmt = '%Y%m%d'
                 # get the date string
                 day_str = self.pathrr[-8:]
-                day_dt = pd.to_datetime(day_str) - pd.to_timedelta(1, unit='days')
+                day_dt = pd.to_datetime(day_str) - \
+                    pd.to_timedelta(1, unit='days')
                 day_dt_str = day_dt.strftime(fmt)
                 # get the previous day
                 path_prev_day = os.path.abspath(os.path.join(self.pathrr,
-                                            '..' , 'run'+day_dt_str))
+                                                             '..', 'run'+day_dt_str))
                 self.init_file = os.path.join(path_prev_day, 'snow.nc')
 
             self.get_netcdf_out()
 
         # zero depths under specified threshold
         restart_var = self.zero_crash_depths(self.depth_thresh,
-                                        self.init['z_s'],
-                                        self.init['rho'],
-                                        self.init['T_s_0'],
-                                        self.init['T_s_l'],
-                                        self.init['T_s'],
-                                        self.init['h2o_sat'])
+                                             self.init['z_s'],
+                                             self.init['rho'],
+                                             self.init['T_s_0'],
+                                             self.init['T_s_l'],
+                                             self.init['T_s'],
+                                             self.init['h2o_sat'])
         # put variables back in init dictionary
         for k, v in restart_var.items():
             self.init[k] = v
@@ -236,11 +240,15 @@ class modelInit():
         self.init['z_s'] = i_in.bands[0].data*self.topo.mask  # snow depth
         self.init['rho'] = i_in.bands[1].data*self.topo.mask  # snow density
 
-        self.init['T_s_0'] = i_in.bands[4].data*self.topo.mask  # active layer temp
-        self.init['T_s_l'] = i_in.bands[5].data*self.topo.mask  # lower layer temp
-        self.init['T_s'] = i_in.bands[6].data*self.topo.mask  # average snow temp
+        self.init['T_s_0'] = i_in.bands[4].data * \
+            self.topo.mask  # active layer temp
+        self.init['T_s_l'] = i_in.bands[5].data * \
+            self.topo.mask  # lower layer temp
+        self.init['T_s'] = i_in.bands[6].data * \
+            self.topo.mask  # average snow temp
 
-        self.init['h2o_sat'] = i_in.bands[8].data*self.topo.mask  # percent saturation
+        self.init['h2o_sat'] = i_in.bands[8].data * \
+            self.topo.mask  # percent saturation
 
     def get_ipw(self):
         """
@@ -249,23 +257,29 @@ class modelInit():
         i_in = ipw.IPW(self.init_file)
         self.init['z_0'] = i_in.bands[1].data*self.topo.mask  # snow depth
 
-        self.logger.warning('Using roughness from iSnobal ipw init file for initializing of model!')
+        self.logger.warning(
+            'Using roughness from iSnobal ipw init file for initializing of model!')
 
         self.init['z_s'] = i_in.bands[2].data*self.topo.mask  # snow depth
         self.init['rho'] = i_in.bands[3].data*self.topo.mask  # snow density
 
-        self.init['T_s_0'] = i_in.bands[4].data*self.topo.mask  # active layer temp
+        self.init['T_s_0'] = i_in.bands[4].data * \
+            self.topo.mask  # active layer temp
 
         # get bands depending on if there is a lower layer or not
         if len(i_in.bands) == 8:
-            self.init['T_s_l'] = i_in.bands[5].data*self.topo.mask  # lower layer temp
-            self.init['T_s'] = i_in.bands[6].data*self.topo.mask  # average snow temp
-            self.init['h2o_sat'] = i_in.bands[7].data*self.topo.mask  # percent saturation
+            self.init['T_s_l'] = i_in.bands[5].data * \
+                self.topo.mask  # lower layer temp
+            self.init['T_s'] = i_in.bands[6].data * \
+                self.topo.mask  # average snow temp
+            self.init['h2o_sat'] = i_in.bands[7].data * \
+                self.topo.mask  # percent saturation
 
         elif len(i_in.bands) == 7:
-            self.init['T_s'] = i_in.bands[5].data*self.topo.mask  # average snow temp
-            self.init['h2o_sat'] = i_in.bands[6].data*self.topo.mask  # percent saturation
-
+            self.init['T_s'] = i_in.bands[5].data * \
+                self.topo.mask  # average snow temp
+            self.init['h2o_sat'] = i_in.bands[6].data * \
+                self.topo.mask  # percent saturation
 
     def get_netcdf(self):
         """
@@ -280,9 +294,11 @@ class modelInit():
         for f in flds:
             # if i.variables.has_key(f):
             if f in i.variables:
-                self.init[f] = i.variables[f][:]         # read in the variables
+                # read in the variables
+                self.init[f] = i.variables[f][:]
             else:
-                self.init[f] = all_zeros                 # default is set to zeros
+                # default is set to zeros
+                self.init[f] = all_zeros
 
         i.close()
 
@@ -324,9 +340,11 @@ class modelInit():
         idt = np.argmin(np.absolute(nc_wyhr - tmpwyhr))  # returns index
 
         if np.min(np.absolute(nc_wyhr - tmpwyhr)) > 24.0:
-            self.logger.error('No time in restart file that is within a day of restart time')
+            self.logger.error(
+                'No time in restart file that is within a day of restart time')
 
-        self.logger.warning('Initializing PySnobal with state from water year hour {}'.format(nc_wyhr[idt]))
+        self.logger.warning(
+            'Initializing PySnobal with state from water year hour {}'.format(nc_wyhr[idt]))
 
         self.init['z_s'] = i.variables['thickness'][idt, :]
         self.init['rho'] = i.variables['snow_density'][idt, :]
@@ -361,8 +379,10 @@ class modelInit():
         num_pix = len(np.where(idz)[0])
         num_pix_tot = z_s.size
 
-        self.logger.warning('Zeroing depth in pixels lower than {} [m]'.format(depth_thresh))
-        self.logger.warning('Zeroing depth in {} out of {} total pixels'.format(num_pix, num_pix_tot))
+        self.logger.warning(
+            'Zeroing depth in pixels lower than {} [m]'.format(depth_thresh))
+        self.logger.warning(
+            'Zeroing depth in {} out of {} total pixels'.format(num_pix, num_pix_tot))
 
         z_s[idz] = 0.0
         rho[idz] = 0.0

@@ -8,69 +8,22 @@ from subprocess import check_output
 
 from setuptools import find_packages, setup
 
-if sys.argv[-1] != 'test':
-    # Grab and write the gitVersion from 'git describe'.
-    gitVersion = ''
-    gitPath = ''
-
-    # get git describe if in git repository
-    print('Fetching most recent git tags')
-    if os.path.exists('./.git'):
-        try:
-            # if we are in a git repo, fetch most recent tags
-            check_output(["git fetch --tags"], shell=True)
-        except Exception as e:
-            print(e)
-            print('Unable to fetch most recent tags')
-
-        try:
-            ls_proc = check_output(
-                ["git describe --tags"], shell=True, universal_newlines=True
-            )
-            gitVersion = ls_proc
-            print('Checking most recent version')
-        except Exception as e:
-            print('Unable to get git tag and hash')
-    # if not in git repo
-    else:
-        print('Not in git repository')
-        gitVersion = ''
-
-    # get current working directory to define git path
-    gitPath = os.getcwd()
-
-    # git untracked file to store version and path
-    fname = os.path.abspath(os.path.expanduser('./awsm/utils/gitinfo.py'))
-
-    with open(fname, 'w') as f:
-        nchars = len(gitVersion) - 1
-        f.write("__gitPath__='{0}'\n".format(gitPath))
-        f.write("__gitVersion__='{0}'\n".format(gitVersion[:nchars]))
-        f.close()
-
 with open('README.md', encoding='utf-8') as readme_file:
     readme = readme_file.read()
 
 with open('HISTORY.rst', encoding='utf-8') as history_file:
     history = history_file.read()
 
-setup_requirements = [
-    # TODO(micahsandusky5):
-    #  put setup requirements (distutils extensions, etc.) here
-]
-
-test_requirements = [
-    # TODO: put package test requirements here
-]
 
 setup(
     name='awsm',
-    version='0.10.0',
     description="Automated Water Supply Model",
-    # long_description=readme + '\n\n' + history,
     author="USDA ARS Northwest Watershed Research Center",
     author_email='snow@ars.usda.gov',
     url='https://github.com/USDA-ARS-NWRC/awsm',
+    long_description=readme,
+    long_description_content_type="text/markdown",
+    python_requires='>3.5',
     packages=find_packages(include=['awsm', 'awsm.*']),
     include_package_data=True,
     package_data={
@@ -101,6 +54,10 @@ setup(
         'Programming Language :: Python :: 3.6',
     ],
     test_suite='tests',
-    # tests_require=test_requirements,
-    # setup_requires=setup_requirements,
+    use_scm_version={
+        'local_scheme': 'node-and-date',
+    },
+    setup_requires=[
+        'setuptools_scm'
+    ],
 )

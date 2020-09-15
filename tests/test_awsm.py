@@ -22,10 +22,7 @@ class TestStandardRME(AWSMTestCase):
             'output/rme/devel/wy1986/rme_test/runs/run3337_3344'
         )
 
-        config = os.path.join(cls.basin_dir, 'config.ini')
-
-        cls.cache_run = True
-        run_awsm(config)
+        run_awsm(cls.config_file)
 
     def test_thickness(self):
         self.compare_netcdf_files('snow.nc', 'thickness')

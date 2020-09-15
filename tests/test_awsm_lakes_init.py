@@ -1,4 +1,5 @@
 import os
+from inicheck.tools import cast_all_variables
 
 from awsm.framework.framework import run_awsm
 from tests.awsm_test_case_lakes import AWSMTestCaseLakes
@@ -21,6 +22,13 @@ class TestStandardLakes(AWSMTestCaseLakes):
         cls.output_path = cls.basin_dir.joinpath(
             'output/lakes/devel/wy2020/lakes_gold/runs/run0015_0017'
         )
+
+        config = cls.base_config_copy()
+
+        config.raw_cfg['files']['init_type'] = 'netcdf'
+
+        config.apply_recipes()
+        config = cast_all_variables(config, config.mcfg)
 
         run_awsm(cls.config_file)
 

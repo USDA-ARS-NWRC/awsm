@@ -11,6 +11,7 @@ from inicheck.tools import cast_all_variables, get_user_config
 
 import awsm
 
+
 class AWSMTestCase(unittest.TestCase):
     """
     The base test case for AWSM that will load in the configuration file
@@ -94,19 +95,6 @@ class AWSMTestCase(unittest.TestCase):
         config = cast_all_variables(config, config.mcfg)
 
         return config
-
-    @staticmethod
-    def can_i_run_smrf(config):
-        """
-        Test whether a config is possible to run
-        """
-        try:
-            run_smrf(config)
-            return True
-
-        except Exception as e:
-            print(e)
-            return False
 
     @staticmethod
     def assert_gold_equal(gold, not_gold, error_msg):

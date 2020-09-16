@@ -1,5 +1,5 @@
 # test stage will test all branches against:
-#   - linux python 3.5, 3.6, 3.7, 3.8
+#   - linux python 3.6, 3.7, 3.8
 #   - osx python 3.7
 #
 # deploy stage builds and test the wheels when jobs is

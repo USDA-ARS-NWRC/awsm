@@ -1,4 +1,4 @@
 cftime==1.1.2
 smrf-dev>=0.11.0,!=0.11.1,<0.12.0
 setuptools_scm<4.2
-#git+https://github.com/USDA-ARS-NWRC/pysnobal.git@master
+git+https://github.com/USDA-ARS-NWRC/pysnobal.git@master

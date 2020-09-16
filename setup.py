@@ -57,6 +57,10 @@ setup(
         'local_scheme': 'node-and-date',
     },
     setup_requires=[
-        'setuptools_scm'
+        'setuptools_scm',
+        'numpy<1.19'
     ],
+    extras_require={
+        'pysnobal': ['pysnobal @ git+https://github.com/USDA-ARS-NWRC/pysnobal@master#egg=pysnobal']
+    }
 )

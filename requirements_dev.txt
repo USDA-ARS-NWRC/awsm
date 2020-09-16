@@ -1,4 +1,5 @@
 -r requirements.txt
+pysnobal @ git+https://github.com/USDA-ARS-NWRC/pysnobal@master#egg=pysnobal
 coveralls>=1.3.0
 flake8
 autopep8

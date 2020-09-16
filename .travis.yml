@@ -11,7 +11,7 @@ services:
   - docker
 
 stages:
-  - test
+  # - test
   - name: deploy
     if:  type = pull_request OR branch = main OR tag IS present AND repo = USDA-ARS-NWRC/awsm
 

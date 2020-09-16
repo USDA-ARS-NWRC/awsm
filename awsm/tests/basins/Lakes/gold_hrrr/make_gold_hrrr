@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+
+# A script to create the gold files needed for AWSM
+# Run this script in the main smrf directory, the config
+# file will put the outputs in the correct place
+#
+# Run as:
+#     $ ./tests/basins/Lakes/gold_hrrr/make_gold_hrrr
+
+read -r -p "Recreating Lakes HRRR gold standard, are you sure? [y/N] " response
+if [[ "$response" = "yes" || "$response" = "y" ]]
+then
+    echo "Updating Lakes HRRR gold files"
+    echo "Removing old gold files"
+    rm tests/basins/Lakes/gold_hrrr/*.nc
+    
+    echo "Running AWSM"
+    awsm tests/basins/Lakes/gold_hrrr/gold_config.ini
+
+    echo "Cleaning up"
+    mv tests/basins/Lakes/gold_hrrr/lakes/devel/wy2020/lakes_gold/runs/run0015_0017/*.nc \
+        tests/basins/Lakes/gold_hrrr
+    rm -rf tests/basins/Lakes/gold_hrrr/lakes
+else
+    echo "Lakes HRRR gold files not updated"
+fi
+

@@ -1,10 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""The setup script."""
-import os
-import sys
-from subprocess import check_output
 
 from setuptools import find_packages, setup
 
@@ -13,6 +9,9 @@ with open('README.md', encoding='utf-8') as readme_file:
 
 with open('HISTORY.rst', encoding='utf-8') as history_file:
     history = history_file.read()
+
+with open('requirements.txt') as requirements_file:
+    requirements = requirements_file.read()
 
 
 setup(
@@ -40,23 +39,28 @@ setup(
         './scripts/awsm_daily',
         './scripts/awsm_daily_airflow'
     ],
-    # install_requires=requirements,
+    install_requires=requirements,
     license="CC0 1.0",
     zip_safe=False,
     keywords='awsm',
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
         'Intended Audience :: Developers',
-        'License :: OSI Approved :: CC0 1.-',
+        'License :: CC0 1.0 Universal (CC0 1.0) Public Domain Dedication',
         'Natural Language :: English',
-        'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
     ],
-    test_suite='tests',
+    test_suite='awsm.tests',
     use_scm_version={
         'local_scheme': 'node-and-date',
     },
     setup_requires=[
-        'setuptools_scm'
+        'setuptools_scm',
+        'numpy<1.19'
     ],
+    extras_require={
+        'pysnobal': ['pysnobal @ git+https://github.com/USDA-ARS-NWRC/pysnobal@master#egg=pysnobal']
+    }
 )

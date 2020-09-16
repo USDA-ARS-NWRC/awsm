@@ -64,6 +64,8 @@ def run_ipysnobal(myawsm):
     myawsm._logger.info('starting PySnobal time series loop')
     j = 1
     # run PySnobal
+    # TODO this will need to change, it should be the other way around
+    # where it goes one less
     for tstep in options['time']['date_time'][1:]:
         # for tstep in options['time']['date_time'][953:958]:
         myawsm._logger.info('running PySnobal for timestep: {}'.format(tstep))

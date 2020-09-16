@@ -181,16 +181,22 @@ class modelInit():
         Get init fields from netcdf init file
         """
         i = nc.Dataset(self.init_file, 'r')
+        i.set_always_mask(False)
 
         # All other variables will be assumed zero if not present
-        all_zeros = np.zeros_like(init['elevation'])
+        all_zeros = np.zeros_like(self.init['elevation'])
         flds = ['z_s', 'rho', 'T_s_0', 'T_s', 'h2o_sat', 'T_s_l']
+
+        if len(i.variables['time'][:]) > 1:
+            self.logger.warning(
+                """More than one time step found in the init """
+                """file, using first index""")
 
         for f in flds:
             # if i.variables.has_key(f):
             if f in i.variables:
                 # read in the variables
-                self.init[f] = i.variables[f][:]
+                self.init[f] = i.variables[f][0, :]
             else:
                 # default is set to zeros
                 self.init[f] = all_zeros
@@ -202,6 +208,11 @@ class modelInit():
         Get init fields from output netcdf at correct time index
         """
         i = nc.Dataset(self.init_file)
+
+        # netCDF>1.4.0 returns as masked arrays even if no missing values
+        # are present. This will ensure that if the array has no missing
+        # values, a normal numpy array is returned
+        i.set_always_mask(False)
 
         # find time step indices to grab
         time = i.variables['time'][:]

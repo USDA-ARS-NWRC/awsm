@@ -5,7 +5,7 @@ from awsm.framework.framework import run_awsm
 from tests.awsm_test_case_lakes import AWSMTestCaseLakes
 
 
-class TestStandardLakes(AWSMTestCaseLakes):
+class TestLakesInit(AWSMTestCaseLakes):
     """
     Integration test for AWSM using Lakes
     """
@@ -25,6 +25,7 @@ class TestStandardLakes(AWSMTestCaseLakes):
 
         config = cls.base_config_copy()
 
+        config.raw_cfg['files']['init_file'] = './topo/init.nc'
         config.raw_cfg['files']['init_type'] = 'netcdf'
 
         config.apply_recipes()

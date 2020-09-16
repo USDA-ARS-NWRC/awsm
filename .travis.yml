@@ -72,6 +72,19 @@ jobs:
         - CC=gcc-7
         - NOT_ON_GOLD_HOST=yup
 
+    - stage: deploy
+      script: skip
+      deploy:
+        cleanup: true
+        provider: pypi
+        distributions: sdist bdist_wheel
+        skip_existing: true
+        user: __token__
+        password:
+        on:
+          tags: true
+          repo: USDA-ARS-NWRC/awsm
+
   allow_failures:
     - python: 3.6
       env: TOXENV=coverage

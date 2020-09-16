@@ -1,10 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""The setup script."""
-import os
-import sys
-from subprocess import check_output
 
 from setuptools import find_packages, setup
 
@@ -13,6 +9,9 @@ with open('README.md', encoding='utf-8') as readme_file:
 
 with open('HISTORY.rst', encoding='utf-8') as history_file:
     history = history_file.read()
+
+with open('requirements.txt') as requirements_file:
+    requirements = requirements_file.read()
 
 
 setup(
@@ -40,7 +39,7 @@ setup(
         './scripts/awsm_daily',
         './scripts/awsm_daily_airflow'
     ],
-    # install_requires=requirements,
+    install_requires=requirements,
     license="CC0 1.0",
     zip_safe=False,
     keywords='awsm',

@@ -5,7 +5,7 @@ from awsm.framework.framework import run_awsm
 from tests.awsm_test_case_lakes import AWSMTestCaseLakes
 
 
-class TestStandardLakes(AWSMTestCaseLakes):
+class TestLakesLidarUpdate(AWSMTestCaseLakes):
     """
     Integration test for AWSM using Lakes
     """
@@ -14,7 +14,7 @@ class TestStandardLakes(AWSMTestCaseLakes):
     def setUpClass(cls):
         super().setUpClass()
 
-        cls.gold_dir = cls.basin_dir.joinpath('gold_hrrr')
+        cls.gold_dir = cls.basin_dir.joinpath('gold_hrrr_update')
 
         cls.gold_em = os.path.join(cls.gold_dir, 'em.nc')
         cls.gold_snow = os.path.join(cls.gold_dir, 'snow.nc')
@@ -25,7 +25,15 @@ class TestStandardLakes(AWSMTestCaseLakes):
 
         config = cls.base_config_copy()
 
-        config.raw_cfg['files']['init_type'] = 'netcdf'
+        adj_config = {
+            'update depth': {
+                'update': True,
+                'update_file': './topo/lidar_depths.nc',
+                'buffer': 400,
+                'flight_numbers': 1
+            }
+        }
+        config.raw_cfg.update(adj_config)
 
         config.apply_recipes()
         config = cast_all_variables(config, config.mcfg)

@@ -164,9 +164,10 @@ class StateUpdater():
         times = ds.variables['time']
         ts = times[:]
         # convert time index to dates
-        t = nc.num2date(ts, times.units, times.calendar)
-        # find wyhr of dates
+        t = nc.num2date(ts, times.units, times.calendar,
+                        only_use_cftime_datetimes=False)
 
+        # find wyhr of dates
         t_wyhr = []
         for t1 in t:
             tmp_date = t1.replace(tzinfo=myawsm.tzinfo)

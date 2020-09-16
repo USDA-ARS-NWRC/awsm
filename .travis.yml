@@ -13,7 +13,7 @@ services:
 stages:
   - test
   - name: deploy
-    if:  type = pull_request OR branch = master OR tag IS present AND repo = USDA-ARS-NWRC/awsm
+    if:  type = pull_request OR branch = main OR tag IS present AND repo = USDA-ARS-NWRC/awsm
 
 env:
   global:

@@ -52,7 +52,7 @@ setup(
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
     ],
-    test_suite='tests',
+    test_suite='awsm.tests',
     use_scm_version={
         'local_scheme': 'node-and-date',
     },

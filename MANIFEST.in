@@ -6,9 +6,9 @@ include README.md
 
 include awsm/framework/CoreConfig.ini
 include awsm/framework/recipes.ini
+include awsm/framework/changelog.ini
 
-recursive-include tests *
-recursive-include scripts *
+recursive-include awsm/tests *
 recursive-exclude * __pycache__
 recursive-exclude * *.py[co]
 

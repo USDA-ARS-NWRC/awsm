@@ -2,7 +2,7 @@ import os
 from inicheck.tools import cast_all_variables
 
 from awsm.framework.framework import run_awsm
-from tests.awsm_test_case_lakes import AWSMTestCaseLakes
+from awsm.tests.awsm_test_case_lakes import AWSMTestCaseLakes
 
 
 class TestLakesInit(AWSMTestCaseLakes):

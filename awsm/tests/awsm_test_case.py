@@ -36,7 +36,7 @@ class AWSMTestCase(unittest.TestCase):
 
     BASE_INI_FILE_NAME = 'config.ini'
 
-    test_dir = Path(awsm.__file__).parent.parent.joinpath('tests')
+    test_dir = Path(awsm.__file__).parent.joinpath('tests')
     basin_dir = test_dir.joinpath('basins', 'RME')
     config_file = os.path.join(basin_dir, BASE_INI_FILE_NAME)
 

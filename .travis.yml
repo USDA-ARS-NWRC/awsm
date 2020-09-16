@@ -81,6 +81,7 @@ jobs:
         skip_existing: true
         user: __token__
         password:
+          secure: "kUOwEakjORK+ULawFhpAqWlD6dnAhiitgk/66yhM628A+Ndpiuj6Zzf5K3ZCGRTN7Wz02NFazHDt1TxZgVzwH0HUz1shTJPyZRvJyoqRXHvaww5GOI7mCD+JfL8Ec4czfgAYa47d/m4EvsCUgF3B6htbZkjxrLYJ6WI9Z8b2+PQHNtv51O5n70dEgCc5SdOFpuoZmB27IUROuSX83bt0YMuxDcjgFL0RtX0mtUS0Oh8qJr34jGFnO4Qwzz4ziIbh33lX8dHm+d3bqoXNmXqu6fYWPr/tQmP4j2TAMffjoLxjBfVz4Gjvcy/n2kHfwVmS0F8P7N2hT1NjPJx9uV19t2pNbshM56CLKvH+nHyaLCy8c1pfLAt8KVbN9digt7qx/HZ5x/M6M+ahDilLYlrA98vqEz8RmHssLSs+8gYoYo93GIfgDnO2DDA/ekGAauxzEVOkYv/lGmTrmBnlSNXtXE7PNMHB9caDgE+SABUq1dv9QE/+Txqv7AcHGTjl30azjpZg5irAhuivu/t7XRUjJRBV7/Y7RSin906jG8KS8SeZFFGMnkCmHoaAVR+F5+OAnD6tiOmPqCW64DO0NwJJVhS74E9Ma0Rxug7VjE9+T56kRPvynsHdxh7E243Ns6cVPHUJXQuKEAnKGgXhylE7fKAwcFZvq4LtTkRsgEhHzZM="
         on:
           tags: true
           repo: USDA-ARS-NWRC/awsm

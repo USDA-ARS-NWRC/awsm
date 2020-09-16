@@ -1,7 +1,7 @@
 
 import os
 
-from tests.awsm_test_case import AWSMTestCase
+from awsm.tests.awsm_test_case import AWSMTestCase
 
 
 class AWSMTestCaseLakes(AWSMTestCase):

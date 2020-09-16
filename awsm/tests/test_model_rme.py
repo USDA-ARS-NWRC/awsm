@@ -1,7 +1,7 @@
 from inicheck.tools import cast_all_variables
 
 from awsm.framework.framework import run_awsm
-from tests.awsm_test_case import AWSMTestCase
+from awsm.tests.awsm_test_case import AWSMTestCase
 
 
 class TestModel(AWSMTestCase):

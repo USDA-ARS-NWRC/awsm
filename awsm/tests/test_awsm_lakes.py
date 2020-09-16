@@ -1,25 +1,25 @@
 import os
 
 from awsm.framework.framework import run_awsm
-from tests.awsm_test_case import AWSMTestCase
+from awsm.tests.awsm_test_case_lakes import AWSMTestCaseLakes
 
 
-class TestStandardRME(AWSMTestCase):
+class TestStandardLakes(AWSMTestCaseLakes):
     """
-    Integration test for AWSM using reynolds mountain east
+    Integration test for AWSM using Lakes
     """
 
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
 
-        cls.gold_dir = cls.basin_dir.joinpath('gold')
+        cls.gold_dir = cls.basin_dir.joinpath('gold_hrrr')
 
         cls.gold_em = os.path.join(cls.gold_dir, 'em.nc')
         cls.gold_snow = os.path.join(cls.gold_dir, 'snow.nc')
 
         cls.output_path = cls.basin_dir.joinpath(
-            'output/rme/devel/wy1986/rme_test/runs/run3337_3344'
+            'output/lakes/devel/wy2020/lakes_gold/runs/run0015_0017'
         )
 
         run_awsm(cls.config_file)

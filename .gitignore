@@ -1,4 +1,4 @@
-# Eclipse files
+.devcontainer
 .venv
 .vscode
 .project
@@ -82,10 +82,3 @@ target/
 #misc
 *.py~
 *.swp
-
-test_data/AWSM_test_config_tuol.ini
-test_data/RME_run/output/rme/*
-
-#Integration tests
-tests/RME/output/rme/*
-awsm/utils/gitinfo.py

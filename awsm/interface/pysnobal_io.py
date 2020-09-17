@@ -33,15 +33,15 @@ def open_files_nc(myawsm):
     # get the forcing data and open the file
     force = {}
     force['thermal'] = nc.Dataset(
-        os.path.join(myawsm.paths, 'thermal.nc'), 'r')
+        os.path.join(myawsm.smrf_output_path, 'thermal.nc'), 'r')
     force['air_temp'] = nc.Dataset(
-        os.path.join(myawsm.paths, 'air_temp.nc'), 'r')
+        os.path.join(myawsm.smrf_output_path, 'air_temp.nc'), 'r')
     force['vapor_pressure'] = nc.Dataset(
-        os.path.join(myawsm.paths, 'vapor_pressure.nc'), 'r')
+        os.path.join(myawsm.smrf_output_path, 'vapor_pressure.nc'), 'r')
     force['wind_speed'] = nc.Dataset(
-        os.path.join(myawsm.paths, 'wind_speed.nc'), 'r')
+        os.path.join(myawsm.smrf_output_path, 'wind_speed.nc'), 'r')
     force['net_solar'] = nc.Dataset(
-        os.path.join(myawsm.paths, 'net_solar.nc'), 'r')
+        os.path.join(myawsm.smrf_output_path, 'net_solar.nc'), 'r')
 
     # soil temp can either be distributed for set to a constant
     try:
@@ -51,13 +51,13 @@ def open_files_nc(myawsm):
                                                                 myawsm.topo.nx))
 
     force['precip_mass'] = nc.Dataset(
-        os.path.join(myawsm.paths, 'precip.nc'), 'r')
+        os.path.join(myawsm.smrf_output_path, 'precip.nc'), 'r')
     force['percent_snow'] = nc.Dataset(
-        os.path.join(myawsm.paths, 'percent_snow.nc'), 'r')
+        os.path.join(myawsm.smrf_output_path, 'percent_snow.nc'), 'r')
     force['snow_density'] = nc.Dataset(
-        os.path.join(myawsm.paths, 'snow_density.nc'), 'r')
+        os.path.join(myawsm.smrf_output_path, 'snow_density.nc'), 'r')
     force['precip_temp'] = nc.Dataset(
-        os.path.join(myawsm.paths, 'precip_temp.nc'), 'r')
+        os.path.join(myawsm.smrf_output_path, 'precip_temp.nc'), 'r')
 
     return force
 

@@ -28,7 +28,7 @@ Outline
 """
 
 
-class modelInit():
+class ModelInit():
     """
     Class for initializing snow model. Only runs if a model is specified
     in the AWSM config.
@@ -40,17 +40,14 @@ class modelInit():
 
     """
 
-    def __init__(self, logger, cfg, topo, start_wyhr, pathro, pathrr,
-                 pathinit, wy_start):
+    def __init__(self, logger, cfg, topo, start_wyhr, pathrr, wy_start):
         """
         Args:
             logger:         AWSM logger
             cfg:            AWSM config dictionary
             topo:           AWSM topo class
             start_wyhr:     WYHR of run start date
-            pathro:         output directory
             pathrr:         run<date> directory
-            pathinit:       iSnobal init directory
             wy_start:       datetime of water year start date
 
         """
@@ -65,12 +62,10 @@ class modelInit():
         if self.init_file is not None:
             self.logger.info(
                 'Using {} to build model init state.'.format(self.init_file))
-        # iSnobal init directory
-        self.pathinit = pathinit
+
         # type of model run
         self.model_type = cfg['awsm master']['model_type']
         # paths
-        self.pathro = pathro
         self.pathrr = pathrr
         # restart parameters
         self.restart_crash = cfg['isnobal restart']['restart_crash']

@@ -14,7 +14,7 @@ import smrf
 from spatialnc.topo import topo as mytopo
 import smrf.framework.logger as logger
 
-from awsm.data.init_model import modelInit
+from awsm.data.init_model import ModelInit
 from awsm.framework import ascii_art
 from awsm.interface import interface as smin, smrf_ipysnobal as smrf_ipy, \
     ingest_data
@@ -263,9 +263,13 @@ class AWSM():
 
         # if we have a model, initialize it
         if self.model_type is not None:
-            self.myinit = modelInit(self._logger, self.config, self.topo,
-                                    self.start_wyhr, self.pathro, self.pathrr,
-                                    self.pathinit, self.wy_start)
+            self.myinit = ModelInit(
+                self._logger,
+                self.config,
+                self.topo,
+                self.start_wyhr,
+                self.pathrr,
+                self.wy_start)
 
     def createLog(self):
         '''
@@ -387,17 +391,12 @@ class AWSM():
                                self.end_date.strftime("%Y%m%d"))
 
         # make basin path
-        self.path_ba = os.path.join(self.path_dr, self.basin)
-
-        # check if ops or dev
-        if self.isops:
-            opsdev = 'ops'
-        else:
-            opsdev = 'devel'
-        # assign paths accordinly
-        self.path_od = os.path.join(self.path_ba, opsdev)
-        self.path_wy = os.path.join(self.path_od, 'wy{}'.format(self.wy))
-        self.path_wy = os.path.join(self.path_wy, self.proj)
+        self.path_wy = os.path.join(
+            self.path_dr,
+            self.basin,
+            'wy{}'.format(self.wy),
+            self.proj
+        )
 
         # specific data folder conatining
         self.pathd = os.path.join(self.path_wy, 'data')
@@ -415,25 +414,26 @@ class AWSM():
         # if not self.do_forecast:
         # assign path names for isnobal, path_names_att will be used
         # to create necessary directories
-        path_names_att = ['pathdd', 'pathrr', 'pathi',
-                          'pathinit', 'pathro', 'paths', 'path_ppt']
+        path_names_att = ['pathdd', 'pathrr']
         self.pathdd = \
             os.path.join(self.pathd,
                          'data{}'.format(self.folder_date_stamp))
         self.pathrr = \
             os.path.join(self.pathr,
                          'run{}'.format(self.folder_date_stamp))
-        self.pathi = os.path.join(self.pathdd, 'input/')
-        self.pathinit = os.path.join(self.pathdd, 'init/')
-        self.pathro = os.path.join(self.pathrr, 'output/')
-        self.paths = os.path.join(self.pathdd, 'smrfOutputs')
-        self.ppt_desc = \
-            os.path.join(self.pathdd,
-                         'ppt_desc{}.txt'.format(self.folder_date_stamp))
-        self.path_ppt = os.path.join(self.pathdd, 'ppt_4b')
+        self.smrf_output_path = self.pathdd
+
+        # self.pathi = os.path.join(self.pathdd, 'input/')
+        # self.pathinit = os.path.join(self.pathdd, 'init/')
+        # self.pathro = os.path.join(self.pathrr, 'output/')
+        # self.paths = os.path.join(self.pathdd, 'smrfOutputs')
+        # self.ppt_desc = \
+        #     os.path.join(self.pathdd,
+        #                  'ppt_desc{}.txt'.format(self.folder_date_stamp))
+        # self.path_ppt = os.path.join(self.pathdd, 'ppt_4b')
 
         # used to check if data direcotry exists
-        check_if_data = not os.path.exists(self.pathdd)
+        # check_if_data = not os.path.exists(self.pathdd)
         # else:
         #     path_names_att = ['pathdd', 'pathrr', 'pathi',
         #                       'pathinit', 'pathro', 'paths', 'path_ppt']
@@ -458,79 +458,64 @@ class AWSM():
         # add log path to create directory
         path_names_att.append('pathll')
         # always check paths
-        check_if_data = True
+        # check_if_data = True
 
         # Only start if your drive exists
         if os.path.exists(self.path_dr):
+            self.make_rigid_directories(path_names_att)
+            self.create_project_description()
             # If the specific path to your WY does not exist,
             # create it and following directories/
             # If the working path specified in the config file does not exist
-            if not os.path.exists(self.path_wy):
-                y_n = 'a'  # set a funny value to y_n
-                # while it is not y or n (for yes or no)
-                while y_n not in ['y', 'n']:
-                    if self.prompt_dirs:
-                        y_n = input('Directory %s does not exist. Create base '
-                                    'directory and all subdirectories? '
-                                    '(y n): ' % self.path_wy)
-                    else:
-                        y_n = 'y'
+            # if not os.path.exists(self.path_wy):
+            # y_n = 'a'  # set a funny value to y_n
+            # # while it is not y or n (for yes or no)
+            # while y_n not in ['y', 'n']:
+            #     if self.prompt_dirs:
+            #         y_n = input('Directory %s does not exist. Create base '
+            #                     'directory and all subdirectories? '
+            #                     '(y n): ' % self.path_wy)
+            #     else:
+            #         y_n = 'y'
 
-                if y_n == 'n':
-                    self.tmp_err.append('Please fix the base directory'
-                                        ' (path_wy) in your config file.')
-                    print(self.tmp_err)
-                    sys.exit()
-                elif y_n == 'y':
-                    self.make_rigid_directories(path_names_att)
+            # if y_n == 'n':
+            #     self.tmp_err.append('Please fix the base directory'
+            #                         ' (path_wy) in your config file.')
+            #     print(self.tmp_err)
+            #     sys.exit()
+            # elif y_n == 'y':
+            # self.make_rigid_directories(path_names_att)
 
             # If WY exists, but not this exact run for the dates, create it
-            elif check_if_data:
-                y_n = 'a'
-                while y_n not in ['y', 'n']:
-                    if self.prompt_dirs:
-                        y_n = input('Directory %s does not exist. Create base '
-                                    'directory and all subdirectories? '
-                                    '(y n): ' % self.pathdd)
-                    else:
-                        y_n = 'y'
+            # elif check_if_data:
+            # y_n = 'a'
+            # while y_n not in ['y', 'n']:
+            #     if self.prompt_dirs:
+            #         y_n = input('Directory %s does not exist. Create base '
+            #                     'directory and all subdirectories? '
+            #                     '(y n): ' % self.pathdd)
+            #     else:
+            #         y_n = 'y'
 
-                if y_n == 'n':
-                    self.tmp_err.append('Please fix the base directory'
-                                        ' (path_wy) in your config file.')
-                    print(self.tmp_err)
-                    sys.exit()
-                elif y_n == 'y':
-                    self.make_rigid_directories(path_names_att)
+            # if y_n == 'n':
+            #     self.tmp_err.append('Please fix the base directory'
+            #                         ' (path_wy) in your config file.')
+            #     print(self.tmp_err)
+            #     sys.exit()
+            # elif y_n == 'y':
+            # self.make_rigid_directories(path_names_att)
 
-            else:
-                self.tmp_warn.append('Directory structure leading to '
-                                     '{} already exists.'.format(self.pathdd))
+            # else:
+            #     self.tmp_warn.append('Directory structure leading to '
+            #                          '{} already exists.'.format(self.pathdd))
 
             # make sure runs exists
-            if not os.path.exists(os.path.join(self.path_wy, 'runs/')):
-                os.makedirs(os.path.join(self.path_wy, 'runs/'))
+            # if not os.path.exists(self.pathr):
+            #     os.makedirs(self.pathr)
 
-            # if we're not running forecast, make sure path to outputs exists
-            if not os.path.exists(self.pathro):
-                os.makedirs(self.pathro)
-
-            # find where to write file
-            fp_desc = os.path.join(self.path_wy, 'projectDescription.txt')
-
-            if not os.path.isfile(fp_desc):
-                # look for description or prompt for one
-                if self.desc is not None:
-                    pass
-                else:
-                    self.desc = input('\nNo description for project. '
-                                      'Enter one now, but do not use '
-                                      'any punctuation:\n')
-                f = open(fp_desc, 'w')
-                f.write(self.desc)
-                f.close()
-            else:
-                self.tmp_log.append('Description file already exists\n')
+            # # if we're not running forecast, make sure path to outputs exists
+            # if not os.path.exists(self.pathro):
+            #     os.makedirs(self.pathro)
 
         else:
             self.tmp_err.append('Base directory did not exist, '
@@ -538,6 +523,27 @@ class AWSM():
                                 'directory exists before running.')
             print(self.tmp_err)
             sys.exit()
+
+    def create_project_description(self):
+        """Create a project description in the base water year directory
+        """
+
+        # find where to write file
+        fp_desc = os.path.join(self.path_wy, 'projectDescription.txt')
+
+        if not os.path.isfile(fp_desc):
+            # look for description or prompt for one
+            if self.desc is not None:
+                pass
+            else:
+                self.desc = input('\nNo description for project. '
+                                  'Enter one now, but do not use '
+                                  'any punctuation:\n')
+            f = open(fp_desc, 'w')
+            f.write(self.desc)
+            f.close()
+        else:
+            self.tmp_log.append('Description file already exists\n')
 
     def make_rigid_directories(self, path_name):
         """

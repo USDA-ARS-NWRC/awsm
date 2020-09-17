@@ -552,7 +552,8 @@ class AWSM():
             if not os.path.exists(path):
                 os.makedirs(path)
             else:
-                self.tmp_log.append('Directory --{}-- exists, not creating.\n')
+                self.tmp_log.append(
+                    'Directory --{}-- exists, not creating.\n'.format(path))
 
     def __enter__(self):
         self.start_time = datetime.now()

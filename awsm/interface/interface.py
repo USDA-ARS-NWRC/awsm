@@ -157,7 +157,7 @@ def run_awsm_daily(myawsm):
 
         # find day for labelling the output folder nested one more level in
         daily_append = '{}'.format(myawsm.start_date.strftime("%Y%m%d"))
-        myawsm.pathro = os.path.join(myawsm.pathrr, 'output'+daily_append)
+        myawsm.pathro = os.path.join(myawsm.path_output, 'output'+daily_append)
         if not os.path.exists(myawsm.pathro):
             os.makedirs(myawsm.pathro)
 

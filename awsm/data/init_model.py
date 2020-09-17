@@ -40,14 +40,14 @@ class ModelInit():
 
     """
 
-    def __init__(self, logger, cfg, topo, start_wyhr, pathrr, wy_start):
+    def __init__(self, logger, cfg, topo, start_wyhr, path_output, wy_start):
         """
         Args:
             logger:         AWSM logger
             cfg:            AWSM config dictionary
             topo:           AWSM topo class
             start_wyhr:     WYHR of run start date
-            pathrr:         run<date> directory
+            path_output:         run<date> directory
             wy_start:       datetime of water year start date
 
         """
@@ -66,7 +66,7 @@ class ModelInit():
         # type of model run
         self.model_type = cfg['awsm master']['model_type']
         # paths
-        self.pathrr = pathrr
+        self.path_output = path_output
         # restart parameters
         self.restart_crash = cfg['isnobal restart']['restart_crash']
         self.restart_hr = cfg['isnobal restart']['wyh_restart_output']
@@ -129,17 +129,17 @@ class ModelInit():
         self.init_type = 'netcdf_out'
         # find the correct output folder from which to restart
         if self.restart_folder == 'standard':
-            self.init_file = os.path.join(self.pathrr, 'snow.nc')
+            self.init_file = os.path.join(self.path_output, 'snow.nc')
 
         elif self.restart_folder == 'daily':
             fmt = '%Y%m%d'
             # get the date string
-            day_str = self.pathrr[-8:]
+            day_str = self.path_output[-8:]
             day_dt = pd.to_datetime(day_str) - \
                 pd.to_timedelta(1, unit='days')
             day_dt_str = day_dt.strftime(fmt)
             # get the previous day
-            path_prev_day = os.path.abspath(os.path.join(self.pathrr,
+            path_prev_day = os.path.abspath(os.path.join(self.path_output,
                                                          '..', 'run'+day_dt_str))
             self.init_file = os.path.join(path_prev_day, 'snow.nc')
 

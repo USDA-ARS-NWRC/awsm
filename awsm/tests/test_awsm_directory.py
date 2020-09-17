@@ -4,7 +4,7 @@ from awsm.framework.framework import AWSM
 from awsm.tests.awsm_test_case import AWSMTestCase
 
 
-class TestStandardRME(AWSMTestCase):
+class TestRMEPaths(AWSMTestCase):
     """
     Integration test for AWSM using reynolds mountain east
     """
@@ -15,14 +15,14 @@ class TestStandardRME(AWSMTestCase):
             str(self.basin_dir.joinpath('output/rme/wy1986/rme_test'))
         )
         self.assertEqual(
-            a.pathdd,
+            a.path_output,
             str(self.basin_dir.joinpath(
-                'output/rme/wy1986/rme_test/data/data3337_3344'))
+                'output/rme/wy1986/rme_test/run3337_3344'))
         )
         self.assertEqual(
-            a.pathrr,
+            a.path_log,
             str(self.basin_dir.joinpath(
-                'output/rme/wy1986/rme_test/runs/run3337_3344'))
+                'output/rme/wy1986/rme_test/run3337_3344/logs'))
         )
 
     def test_directory_creation_wyhr(self):
@@ -44,14 +44,14 @@ class TestStandardRME(AWSMTestCase):
             str(self.basin_dir.joinpath('output/rme/wy1986/rme_test'))
         )
         self.assertEqual(
-            a.pathdd,
+            a.path_output,
             str(self.basin_dir.joinpath(
-                'output/rme/wy1986/rme_test/data/data19860217_19860217'))
+                'output/rme/wy1986/rme_test/run19860217_19860217'))
         )
         self.assertEqual(
-            a.pathrr,
+            a.path_log,
             str(self.basin_dir.joinpath(
-                'output/rme/wy1986/rme_test/runs/run19860217_19860217'))
+                'output/rme/wy1986/rme_test/run19860217_19860217/logs'))
         )
 
     def test_directory_creation_day(self):
@@ -68,14 +68,14 @@ class TestStandardRME(AWSMTestCase):
             str(self.basin_dir.joinpath('output/rme/wy1986/rme_test'))
         )
         self.assertEqual(
-            a.pathdd,
+            a.path_output,
             str(self.basin_dir.joinpath(
-                'output/rme/wy1986/rme_test/data/data19860217'))
+                'output/rme/wy1986/rme_test/run19860217'))
         )
         self.assertEqual(
-            a.pathrr,
+            a.path_log,
             str(self.basin_dir.joinpath(
-                'output/rme/wy1986/rme_test/runs/run19860217'))
+                'output/rme/wy1986/rme_test/run19860217/logs'))
         )
 
     def test_directory_creation_multiple(self):

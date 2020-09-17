@@ -249,13 +249,13 @@ class AWSM():
 
         # TODO can this be a SMRF topo instance?
         self.topo = mytopo(self.config['topo'], self.mask_isnobal,
-                           self.model_type, 'UTM', self.pathdd)
+                           self.model_type, 'UTM', self.path_output)
 
         # ################ Generate config backup ##################
         # if self.config['output']['input_backup']:
         # set location for backup and output backup of awsm sections
         config_backup_location = \
-            os.path.join(self.pathdd, 'awsm_config_backup.ini')
+            os.path.join(self.path_output, 'awsm_config_backup.ini')
         generate_config(self.ucfg, config_backup_location)
 
         # create log now that directory structure is done
@@ -268,7 +268,7 @@ class AWSM():
                 self.config,
                 self.topo,
                 self.start_wyhr,
-                self.pathrr,
+                self.path_output,
                 self.wy_start)
 
     def createLog(self):
@@ -305,16 +305,16 @@ class AWSM():
         if self.config['awsm system']['log_to_file']:
             if self.config['isnobal restart']['restart_crash']:
                 logfile = \
-                    os.path.join(self.pathll,
+                    os.path.join(self.path_log,
                                  'log_restart_{}.out'.format(self.restart_hr))
             elif self.do_forecast:
                 logfile = \
-                    os.path.join(self.pathll,
+                    os.path.join(self.path_log,
                                  'log_forecast_'
                                  '{}.out'.format(self.folder_date_stamp))
             else:
                 logfile = \
-                    os.path.join(self.pathll,
+                    os.path.join(self.path_log,
                                  'log_{}.out'.format(self.folder_date_stamp))
             # let user know
             print('Logging to file: {}'.format(logfile))
@@ -398,13 +398,19 @@ class AWSM():
             self.proj
         )
 
+        # all files will now be under one single folder
+        self.path_output = os.path.join(
+            self.path_wy,
+            'run{}'.format(self.folder_date_stamp))
+        self.path_log = os.path.join(self.path_output, 'logs')
+
         # specific data folder conatining
-        self.pathd = os.path.join(self.path_wy, 'data')
-        self.pathr = os.path.join(self.path_wy, 'runs')
+        # self.pathd = os.path.join(self.path_wy, 'data')
+        # self.pathr = os.path.join(self.path_wy, 'runs')
         # log folders
-        self.pathlog = os.path.join(self.path_wy, 'logs')
-        self.pathll = os.path.join(self.pathlog,
-                                   'log{}'.format(self.folder_date_stamp))
+
+        # self.path_log = os.path.join(self.pathlog,
+        #                            'log{}'.format(self.folder_date_stamp))
 
         # name of temporary smrf file to write out
         self.smrfini = os.path.join(self.path_wy, 'tmp_smrf_config.ini')
@@ -414,14 +420,14 @@ class AWSM():
         # if not self.do_forecast:
         # assign path names for isnobal, path_names_att will be used
         # to create necessary directories
-        path_names_att = ['pathdd', 'pathrr']
-        self.pathdd = \
-            os.path.join(self.pathd,
-                         'data{}'.format(self.folder_date_stamp))
-        self.pathrr = \
-            os.path.join(self.pathr,
-                         'run{}'.format(self.folder_date_stamp))
-        self.smrf_output_path = self.pathdd
+        path_names_att = ['path_output', 'path_log']
+        # self.pathdd = \
+        #     os.path.join(self.pathd,
+        #                  'data{}'.format(self.folder_date_stamp))
+        # self.path_run = \
+        #     os.path.join(self.path_wy,
+        #                  'run{}'.format(self.folder_date_stamp))
+        self.smrf_output_path = self.path_output
 
         # self.pathi = os.path.join(self.pathdd, 'input/')
         # self.pathinit = os.path.join(self.pathdd, 'init/')
@@ -456,7 +462,7 @@ class AWSM():
         #     check_if_data = not os.path.exists(self.pathdd)
 
         # add log path to create directory
-        path_names_att.append('pathll')
+        path_names_att.append('path_log')
         # always check paths
         # check_if_data = True
 

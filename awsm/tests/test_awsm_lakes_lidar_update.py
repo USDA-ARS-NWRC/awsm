@@ -31,7 +31,7 @@ class TestLakesLidarUpdate(AWSMTestCaseLakes):
                 'update_file': './topo/lidar_depths.nc',
                 'buffer': 400,
                 'flight_numbers': 1,
-                'update_change_file': 'output/lakes/devel/wy2020/lakes_gold/run0015_0017/model_lidar_change.nc'
+                'update_change_file': 'output/lakes/wy2020/lakes_gold/run0015_0017/model_lidar_change.nc'  # noqa
             }
         }
         config.raw_cfg.update(adj_config)
@@ -97,9 +97,6 @@ class TestLakesLidarUpdate(AWSMTestCaseLakes):
 
     def test_cold_content(self):
         self.compare_netcdf_files('em.nc', 'cold_content')
-
-    def test_model_change_depth(self):
-        self.compare_netcdf_files('model_lidar_change.nc', 'depth_change')
 
     def test_model_change_depth(self):
         self.compare_netcdf_files('model_lidar_change.nc', 'depth_change')

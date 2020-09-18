@@ -63,7 +63,6 @@ class StateUpdater():
         self.ny = myawsm.topo.ny
         self.nx = myawsm.topo.nx
         self.topo = myawsm.topo
-        self.pathinit = myawsm.pathinit
 
     def do_update_pysnobal(self, output_rec, dt):
         """

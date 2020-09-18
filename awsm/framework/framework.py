@@ -102,9 +102,6 @@ class AWSM():
         # options for masking isnobal
         self.mask_isnobal = self.config['awsm master']['mask_isnobal']
 
-        # prompt for making directories
-        self.prompt_dirs = self.config['awsm master']['prompt_dirs']
-
         # store smrf version if running smrf
         self.smrf_version = smrf.__version__
 
@@ -138,8 +135,6 @@ class AWSM():
         self.basin = self.config['paths']['basin']
         # water year of run
         self.wy = utils.water_day(tmp_date)[1]
-        # if the run is operational or not
-        self.isops = self.config['paths']['isops']
         # name of project if not an operational run
         self.proj = self.config['paths']['proj']
         # check for project description
@@ -277,22 +272,6 @@ class AWSM():
         saved logging statements.
         '''
 
-        level_styles = {'info': {'color': 'white'},
-                        'notice': {'color': 'magenta'},
-                        'verbose': {'color': 'blue'},
-                        'success': {'color': 'green', 'bold': True},
-                        'spam': {'color': 'green', 'faint': True},
-                        'critical': {'color': 'red', 'bold': True},
-                        'error': {'color': 'red'},
-                        'debug': {'color': 'green'},
-                        'warning': {'color': 'yellow'}}
-
-        field_styles = {'hostname': {'color': 'magenta'},
-                        'programname': {'color': 'cyan'},
-                        'name': {'color': 'white'},
-                        'levelname': {'color': 'white', 'bold': True},
-                        'asctime': {'color': 'green'}}
-
         # start logging
         loglevel = self.config['awsm system']['log_level'].upper()
 
@@ -329,14 +308,14 @@ class AWSM():
 
         # dump saved logs
         if len(self.tmp_log) > 0:
-            for l in self.tmp_log:
-                self._logger.info(l)
+            for line in self.tmp_log:
+                self._logger.info(line)
         if len(self.tmp_warn) > 0:
-            for l in self.tmp_warn:
-                self._logger.warning(l)
+            for line in self.tmp_warn:
+                self._logger.warning(line)
         if len(self.tmp_err) > 0:
-            for l in self.tmp_err:
-                self._logger.error(l)
+            for line in self.tmp_err:
+                self._logger.error(line)
 
     def runSmrf(self):
         """
@@ -355,8 +334,9 @@ class AWSM():
 
     def run_awsm_daily(self):
         """
-        This function runs :mod: `awsm.interface.smrf_ipysnobal.run_smrf_ipysnobal`
-        on an hourly output from Pysnobal, outputting to daily folders, similar
+        This function runs
+        :mod:`awsm.interface.smrf_ipysnobal.run_smrf_ipysnobal` on an
+        hourly output from Pysnobal, outputting to daily folders, similar
         to the HRRR froecast.
         """
 
@@ -404,124 +384,19 @@ class AWSM():
             'run{}'.format(self.folder_date_stamp))
         self.path_log = os.path.join(self.path_output, 'logs')
 
-        # specific data folder conatining
-        # self.pathd = os.path.join(self.path_wy, 'data')
-        # self.pathr = os.path.join(self.path_wy, 'runs')
-        # log folders
-
-        # self.path_log = os.path.join(self.pathlog,
-        #                            'log{}'.format(self.folder_date_stamp))
-
         # name of temporary smrf file to write out
         self.smrfini = os.path.join(self.path_wy, 'tmp_smrf_config.ini')
         self.forecastini = os.path.join(self.path_wy,
                                         'tmp_smrf_forecast_config.ini')
 
-        # if not self.do_forecast:
         # assign path names for isnobal, path_names_att will be used
         # to create necessary directories
         path_names_att = ['path_output', 'path_log']
-        # self.pathdd = \
-        #     os.path.join(self.pathd,
-        #                  'data{}'.format(self.folder_date_stamp))
-        # self.path_run = \
-        #     os.path.join(self.path_wy,
-        #                  'run{}'.format(self.folder_date_stamp))
-        self.smrf_output_path = self.path_output
-
-        # self.pathi = os.path.join(self.pathdd, 'input/')
-        # self.pathinit = os.path.join(self.pathdd, 'init/')
-        # self.pathro = os.path.join(self.pathrr, 'output/')
-        # self.paths = os.path.join(self.pathdd, 'smrfOutputs')
-        # self.ppt_desc = \
-        #     os.path.join(self.pathdd,
-        #                  'ppt_desc{}.txt'.format(self.folder_date_stamp))
-        # self.path_ppt = os.path.join(self.pathdd, 'ppt_4b')
-
-        # used to check if data direcotry exists
-        # check_if_data = not os.path.exists(self.pathdd)
-        # else:
-        #     path_names_att = ['pathdd', 'pathrr', 'pathi',
-        #                       'pathinit', 'pathro', 'paths', 'path_ppt']
-        #     self.pathdd = \
-        #         os.path.join(self.pathd,
-        #                      'forecast{}'.format(self.folder_date_stamp))
-        #     self.pathrr = \
-        #         os.path.join(self.pathr,
-        #                      'forecast{}'.format(self.folder_date_stamp))
-        #     self.pathi = os.path.join(self.pathdd, 'input/')
-        #     self.pathinit = os.path.join(self.pathdd, 'init/')
-        #     self.pathro = os.path.join(self.pathrr, 'output/')
-        #     self.paths = os.path.join(self.pathdd, 'smrfOutputs')
-        #     self.ppt_desc = \
-        #         os.path.join(self.pathdd,
-        #                      'ppt_desc{}.txt'.format(self.folder_date_stamp))
-        #     self.path_ppt = os.path.join(self.pathdd, 'ppt_4b')
-        #
-        #     # used to check if data direcotry exists
-        #     check_if_data = not os.path.exists(self.pathdd)
-
-        # add log path to create directory
-        path_names_att.append('path_log')
-        # always check paths
-        # check_if_data = True
 
         # Only start if your drive exists
         if os.path.exists(self.path_dr):
             self.make_rigid_directories(path_names_att)
             self.create_project_description()
-            # If the specific path to your WY does not exist,
-            # create it and following directories/
-            # If the working path specified in the config file does not exist
-            # if not os.path.exists(self.path_wy):
-            # y_n = 'a'  # set a funny value to y_n
-            # # while it is not y or n (for yes or no)
-            # while y_n not in ['y', 'n']:
-            #     if self.prompt_dirs:
-            #         y_n = input('Directory %s does not exist. Create base '
-            #                     'directory and all subdirectories? '
-            #                     '(y n): ' % self.path_wy)
-            #     else:
-            #         y_n = 'y'
-
-            # if y_n == 'n':
-            #     self.tmp_err.append('Please fix the base directory'
-            #                         ' (path_wy) in your config file.')
-            #     print(self.tmp_err)
-            #     sys.exit()
-            # elif y_n == 'y':
-            # self.make_rigid_directories(path_names_att)
-
-            # If WY exists, but not this exact run for the dates, create it
-            # elif check_if_data:
-            # y_n = 'a'
-            # while y_n not in ['y', 'n']:
-            #     if self.prompt_dirs:
-            #         y_n = input('Directory %s does not exist. Create base '
-            #                     'directory and all subdirectories? '
-            #                     '(y n): ' % self.pathdd)
-            #     else:
-            #         y_n = 'y'
-
-            # if y_n == 'n':
-            #     self.tmp_err.append('Please fix the base directory'
-            #                         ' (path_wy) in your config file.')
-            #     print(self.tmp_err)
-            #     sys.exit()
-            # elif y_n == 'y':
-            # self.make_rigid_directories(path_names_att)
-
-            # else:
-            #     self.tmp_warn.append('Directory structure leading to '
-            #                          '{} already exists.'.format(self.pathdd))
-
-            # make sure runs exists
-            # if not os.path.exists(self.pathr):
-            #     os.makedirs(self.pathr)
-
-            # # if we're not running forecast, make sure path to outputs exists
-            # if not os.path.exists(self.pathro):
-            #     os.makedirs(self.pathro)
 
         else:
             self.tmp_err.append('Base directory did not exist, '
@@ -616,25 +491,18 @@ def run_awsm_daily_ops(config_file):
         model_start = config.cfg['time']['start_date']
 
     model_end = config.cfg['time']['end_date']
-    isops = config.cfg['paths']['isops']
-    if isops:
-        devops = 'ops'
-    else:
-        devops = 'devel'
 
     # find output location for previous output
     paths = config.cfg['paths']
 
     prev_out_base = os.path.join(paths['path_dr'],
                                  paths['basin'],
-                                 devops,
                                  'wy{}'.format(wy),
                                  paths['proj'],
                                  'runs')
 
     prev_data_base = os.path.join(paths['path_dr'],
                                   paths['basin'],
-                                  devops,
                                   'wy{}'.format(wy),
                                   paths['proj'],
                                   'data')

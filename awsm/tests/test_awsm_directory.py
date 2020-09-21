@@ -17,12 +17,12 @@ class TestRMEPaths(AWSMTestCase):
         self.assertEqual(
             a.path_output,
             str(self.basin_dir.joinpath(
-                'output/rme/wy1986/rme_test/run3337_3344'))
+                'output/rme/wy1986/rme_test/run19860217_19860217'))
         )
         self.assertEqual(
             a.path_log,
             str(self.basin_dir.joinpath(
-                'output/rme/wy1986/rme_test/run3337_3344/logs'))
+                'output/rme/wy1986/rme_test/run19860217_19860217/logs'))
         )
 
     def test_directory_creation_wyhr(self):

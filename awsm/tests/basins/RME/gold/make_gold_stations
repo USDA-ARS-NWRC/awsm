@@ -18,7 +18,7 @@ then
     awsm tests/RME/gold/gold_config.ini
 
     echo "Cleaning up"
-    mv tests/RME/gold/rme/devel/wy1986/rme_test/runs/run3337_3344/*.nc tests/RME/gold/
+    mv tests/RME/gold/rme/devel/wy1986/rme_test/runs/run19860217_19860217/*.nc tests/RME/gold/
     rm -r tests/RME/gold/rme/
 else
     echo "RME station gold files not updated"

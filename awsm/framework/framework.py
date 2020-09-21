@@ -265,6 +265,7 @@ class AWSM():
         if len(errors) > 0:
             print("Errors in the config file. "
                   "See configuration status report above.")
+            sys.exit()
 
     def load_topo(self):
 

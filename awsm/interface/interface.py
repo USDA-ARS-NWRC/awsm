@@ -20,7 +20,7 @@ def create_smrf_config(myawsm):
     # ### read in base and write out the specific config file for smrf #######
     # ########################################################################
 
-    delete_keys = myawsm.sec_awsm
+    delete_keys = myawsm.awsm_config_sections
 
     # Write out config file to run smrf
     # make copy and delete only awsm sections

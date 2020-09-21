@@ -5,19 +5,21 @@ import sys
 from datetime import datetime
 
 import pandas as pd
+import numpy as np
+import netCDF4 as nc
 import pytz
 from inicheck.config import MasterConfig, UserConfig
 from inicheck.output import print_config_report, generate_config
 from inicheck.tools import get_user_config, check_config, cast_all_variables
 from smrf.utils import utils
 import smrf
-from spatialnc.topo import topo as mytopo
+
+
 import smrf.framework.logger as logger
 
 from awsm.data.init_model import modelInit
 from awsm.framework import ascii_art
-from awsm.interface import interface as smin, smrf_ipysnobal as smrf_ipy, \
-    ingest_data
+from awsm.interface import interface as smin, smrf_ipysnobal as smrf_ipy
 
 
 class AWSM():
@@ -37,53 +39,13 @@ class AWSM():
         Args:
             config: string path to the config file or inicheck UserConfig instance
         """
-        # read the config file and store
-        awsm_mcfg = MasterConfig(modules='awsm')
-        smrf_mcfg = MasterConfig(modules='smrf')
 
-        if isinstance(config, str):
-            if not os.path.isfile(config):
-                raise Exception('Configuration file does not exist --> {}'
-                                .format(config))
-            configFile = config
-
-            try:
-                combined_mcfg = MasterConfig(modules=['smrf', 'awsm'])
-
-                # Read in the original users config
-                self.ucfg = get_user_config(configFile, mcfg=combined_mcfg)
-                self.configFile = configFile
-
-            except UnicodeDecodeError as e:
-                print(e)
-                raise Exception(('The configuration file is not encoded in '
-                                 'UTF-8, please change and retry'))
-
-        elif isinstance(config, UserConfig):
-            self.ucfg = config
-            configFile = ''
-
-        else:
-            raise Exception(
-                'Config passed to AWSM is neither file name nor UserConfig instance')
+        self.read_config(config)
 
         # create blank log and error log because logger is not initialized yet
         self.tmp_log = []
         self.tmp_err = []
         self.tmp_warn = []
-
-        # Check the user config file for errors and report issues if any
-        self.tmp_log.append("Checking config file for issues...")
-        warnings, errors = check_config(self.ucfg)
-        print_config_report(warnings, errors)
-
-        self.config = self.ucfg.cfg
-
-        # Exit AWSM if config file has errors
-        if len(errors) > 0:
-            print("Errors in the config file. "
-                  "See configuration status report above.")
-            # sys.exit()
 
         # ################## Decide which modules to run #####################
         self.do_smrf = self.config['awsm master']['run_smrf']
@@ -236,20 +198,12 @@ class AWSM():
                 if not isinstance(self.flight_numbers, list):
                     self.flight_numbers = [self.flight_numbers]
 
-        # list of sections releated to AWSM
-        # These will be removed for smrf config
-        self.sec_awsm = awsm_mcfg.cfg.keys()
-        self.sec_smrf = smrf_mcfg.cfg.keys()
-
         # Make rigid directory structure
         self.mk_directories()
 
         # ################ Topo data for iSnobal ##################
         self.soil_temp = self.config['soil_temp']['temp']
-
-        # TODO can this be a SMRF topo instance?
-        self.topo = mytopo(self.config['topo'], self.mask_isnobal,
-                           self.model_type, 'UTM', self.pathdd)
+        self.load_topo()
 
         # ################ Generate config backup ##################
         # if self.config['output']['input_backup']:
@@ -266,6 +220,72 @@ class AWSM():
             self.myinit = modelInit(self._logger, self.config, self.topo,
                                     self.start_wyhr, self.pathro, self.pathrr,
                                     self.pathinit, self.wy_start)
+
+    @property
+    def awsm_config_sections(self):
+        return MasterConfig(modules='awsm').cfg.keys()
+
+    @property
+    def smrf_config_sections(self):
+        return MasterConfig(modules='smrf').cfg.keys()
+
+    def read_config(self, config):
+
+        if isinstance(config, str):
+            if not os.path.isfile(config):
+                raise Exception('Configuration file does not exist --> {}'
+                                .format(config))
+            configFile = config
+
+            try:
+                combined_mcfg = MasterConfig(modules=['smrf', 'awsm'])
+
+                # Read in the original users config
+                self.ucfg = get_user_config(configFile, mcfg=combined_mcfg)
+                self.configFile = configFile
+
+            except UnicodeDecodeError as e:
+                print(e)
+                raise Exception(('The configuration file is not encoded in '
+                                 'UTF-8, please change and retry'))
+
+        elif isinstance(config, UserConfig):
+            self.ucfg = config
+            configFile = ''
+
+        else:
+            raise Exception("""Config passed to AWSM is neither file """
+                            """name nor UserConfig instance""")
+
+        # Check the user config file for errors and report issues if any
+        warnings, errors = check_config(self.ucfg)
+        print_config_report(warnings, errors)
+
+        self.config = self.ucfg.cfg
+
+        if len(errors) > 0:
+            print("Errors in the config file. "
+                  "See configuration status report above.")
+
+    def load_topo(self):
+
+        self.topo = smrf.data.load_topo.Topo(self.config['topo'])
+
+        if not self.mask_isnobal:
+            self.topo.mask = np.ones_like(self.topo.dem)
+
+        # see if roughness is in the topo
+        f = nc.Dataset(self.config['topo']['filename'], 'r')
+        f.set_always_mask(False)
+        if 'roughness' not in f.variables.keys():
+            self.tmp_warn.append(
+                'No surface roughness given in topo, setting to 5mm')
+            self.topo.roughness = 0.005 * np.ones_like(self.topo.dem)
+        else:
+            self.topo.roughness = f.variables['roughness'][:].astype(
+                np.float64)
+
+        f.close()
 
     def createLog(self):
         '''

@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 import pytz
-from smrf.utils import utils
+
 
 C_TO_K = 273.16
 FREEZE = C_TO_K
@@ -41,20 +41,20 @@ class ModelInit():
 
     """
 
-    def __init__(self, logger, cfg, topo, start_wyhr, path_output, wy_start, start_date):
+    def __init__(self, logger, cfg, topo, path_output, start_date):
         """
         Args:
             logger:         AWSM logger
             cfg:            AWSM config dictionary
             topo:           AWSM topo class
-            start_wyhr:     WYHR of run start date
             path_output:         run<date> directory
-            wy_start:       datetime of water year start date
+            start_date:     AWSM start date
 
         """
 
         self.logger = logger
         self.topo = topo
+        self.start_date = start_date
 
         # get parameters from awsm
         self.init_file = cfg['files']['init_file']
@@ -73,12 +73,6 @@ class ModelInit():
         self.restart_hr = cfg['isnobal restart']['wyh_restart_output']
         self.depth_thresh = cfg['isnobal restart']['depth_thresh']
         self.restart_folder = cfg['isnobal restart']['output_folders']
-
-        # water year hours
-        self.start_wyhr = start_wyhr
-        # datetime of october 1 of the correct year
-        self.wy_start = wy_start
-        self.tzinfo = pytz.timezone(cfg['time']['time_zone'])
 
         # dictionary to store init data
         self.init = {}
@@ -119,9 +113,9 @@ class ModelInit():
 
     def get_crash_init(self):
         """
-        Initializes simulation variables for special case when restarting a crashed
-        run. Zeros depth under specified threshold and zeros other snow parameters
-        that must be dealt with when depth is set to zero.
+        Initializes simulation variables for special case when restarting a
+        crashed run. Zeros depth under specified threshold and zeros other
+        snow parameters that must be dealt with when depth is set to zero.
 
         Modifies:
             init:    dictionary of initialized variables
@@ -140,8 +134,8 @@ class ModelInit():
                 pd.to_timedelta(1, unit='days')
             day_dt_str = day_dt.strftime(fmt)
             # get the previous day
-            path_prev_day = os.path.abspath(os.path.join(self.path_output,
-                                                         '..', 'run'+day_dt_str))
+            path_prev_day = os.path.join(self.path_output,
+                                         '..', 'run'+day_dt_str)
             self.init_file = os.path.join(path_prev_day, 'snow.nc')
 
         self.get_netcdf_out()
@@ -201,62 +195,31 @@ class ModelInit():
 
     def get_netcdf_out(self):
         """
-        Get init fields from output netcdf at correct time index
+        Get init fields from output netcdf for the closest date within
+        24 hours of the start date
         """
-        i = nc.Dataset(self.init_file)
-        # ds = xr.open_dataset(self.init_file)
 
-        # netCDF>1.4.0 returns as masked arrays even if no missing values
-        # are present. This will ensure that if the array has no missing
-        # values, a normal numpy array is returned
-        i.set_always_mask(False)
+        ds = xr.open_dataset(self.init_file)
 
-        # find time step indices to grab
-        time = i.variables['time'][:]
-        t_units = i.variables['time'].units
-        nc_calendar = i.variables['time'].calendar
-        nc_dates = nc.num2date(
-            time, t_units, nc_calendar,
-            only_use_cftime_datetimes=False,
-            only_use_python_datetimes=True,
-        )
+        init_data = ds.sel(time=self.start_date, method='nearest')
+        time_diff = self.start_date.tz_localize(None) - init_data.time.values
 
-        if self.restart_crash:
-            tmpwyhr = self.restart_hr
-        else:
-            # start date water year hour
-            tmpwyhr = self.start_wyhr
-
-        # make sure we account for time zones
-        if hasattr(i.variables['time'], 'time_zone'):
-            tzn = pytz.timezone(i.variables['time'].time_zone)
-            nc_dates = [tzn.localize(ndt) for ndt in nc_dates]
-            if self.tzinfo != tzn:
-                nc_dates = [self.tzinfo.localize(ndt) for ndt in nc_dates]
-        else:
-            nc_dates = [ndt.replace(tzinfo=self.tzinfo) for ndt in nc_dates]
-
-        # find water year hours
-        nc_wyhr = np.array([utils.water_day(ndt)[0]*24.0 for ndt in nc_dates])
-
-        # find closest location that the water year hours equal the restart hr
-        idt = np.argmin(np.absolute(nc_wyhr - tmpwyhr))  # returns index
-
-        if np.min(np.absolute(nc_wyhr - tmpwyhr)) > 24.0:
+        if time_diff.total_seconds() < 0 or \
+                time_diff.total_seconds() > 24*3600:
             self.logger.error(
                 'No time in restart file that is within a day of restart time')
 
         self.logger.warning(
-            'Initializing PySnobal with state from water year hour {}'.format(nc_wyhr[idt]))
+            'Initializing PySnobal with state from {}'.format(init_data.time))
 
-        self.init['z_s'] = i.variables['thickness'][idt, :]
-        self.init['rho'] = i.variables['snow_density'][idt, :]
-        self.init['T_s_0'] = i.variables['temp_surf'][idt, :]
-        self.init['T_s'] = i.variables['temp_snowcover'][idt, :]
-        self.init['T_s_l'] = i.variables['temp_lower'][idt, :]
-        self.init['h2o_sat'] = i.variables['water_saturation'][idt, :]
+        self.init['z_s'] = init_data.thickness.values
+        self.init['rho'] = init_data.snow_density.values
+        self.init['T_s_0'] = init_data.temp_surf.values
+        self.init['T_s'] = init_data.temp_snowcover.values
+        self.init['T_s_l'] = init_data.temp_lower.values
+        self.init['h2o_sat'] = init_data.water_saturation.values
 
-        i.close()
+        ds.close()
 
     def zero_crash_depths(self, depth_thresh, z_s, rho, T_s_0, T_s_l, T_s, h2o_sat):
         """

@@ -81,10 +81,6 @@ class AWSM():
         self.start_wyhr = int(utils.water_day(self.start_date)[0]*24)
         self.end_wyhr = int(utils.water_day(self.end_date)[0]*24)
 
-        # find start of water year
-        tmpwy = utils.water_day(self.start_date)[1] - 1
-        self.wy_start = pd.to_datetime('{:d}-10-01'.format(tmpwy))
-
         # ################ Store some paths from config file ##################
         # path to the base drive (i.e. /data/blizzard)
         if self.config['paths']['path_dr'] is not None:
@@ -177,7 +173,6 @@ class AWSM():
             # find restart hour datetime
             reset_offset = pd.to_timedelta(self.restart_hr, unit='h')
             # set a new start date for this run
-            self.restart_date = self.wy_start + reset_offset
             self.tmp_log.append('Restart date is {}'.format(self.start_date))
 
         # read in update depth parameters
@@ -216,9 +211,7 @@ class AWSM():
                 self._logger,
                 self.config,
                 self.topo,
-                self.start_wyhr,
                 self.path_output,
-                self.wy_start,
                 self.start_date)
 
     @property

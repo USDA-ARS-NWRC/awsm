@@ -19,7 +19,7 @@ class TestStandardRME(AWSMTestCase):
         cls.gold_snow = os.path.join(cls.gold_dir, 'snow.nc')
 
         cls.output_path = cls.basin_dir.joinpath(
-            'output/rme/devel/wy1986/rme_test/runs/run3337_3344'
+            'output/rme/wy1986/rme_test/run3337_3344'
         )
 
         run_awsm(cls.config_file)

@@ -8,5 +8,5 @@ Sphinx
 sphinx-rtd-theme==0.2.5b1
 bumpversion==0.5.3
 tox
-git+https://github.com/USDA-ARS-NWRC/goldmeister.git@master
+git+https://github.com/USDA-ARS-NWRC/goldmeister.git@main
 matplotlib

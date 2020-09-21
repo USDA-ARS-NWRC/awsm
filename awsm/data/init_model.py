@@ -3,6 +3,7 @@ import os
 import netCDF4 as nc
 import numpy as np
 import pandas as pd
+import xarray as xr
 import pytz
 from smrf.utils import utils
 
@@ -40,7 +41,7 @@ class ModelInit():
 
     """
 
-    def __init__(self, logger, cfg, topo, start_wyhr, path_output, wy_start):
+    def __init__(self, logger, cfg, topo, start_wyhr, path_output, wy_start, start_date):
         """
         Args:
             logger:         AWSM logger
@@ -203,6 +204,7 @@ class ModelInit():
         Get init fields from output netcdf at correct time index
         """
         i = nc.Dataset(self.init_file)
+        # ds = xr.open_dataset(self.init_file)
 
         # netCDF>1.4.0 returns as masked arrays even if no missing values
         # are present. This will ensure that if the array has no missing

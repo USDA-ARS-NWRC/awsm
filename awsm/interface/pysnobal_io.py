@@ -142,8 +142,9 @@ def output_files(options, init, start_date, myawsm):
         em.createVariable('x', 'f', dimensions[2])
 
         # setattr(em.variables['time'], 'units', 'hours since %s' % options['time']['start_date'])
-        setattr(em.variables['time'], 'units', 'hours since %s' % start_date)
-        setattr(em.variables['time'], 'time_zone', myawsm.tmz)
+        setattr(em.variables['time'], 'units',
+                'hours since %s' % start_date.tz_localize(None))
+        setattr(em.variables['time'], 'time_zone', str(myawsm.tzinfo).lower())
         setattr(em.variables['time'], 'calendar', 'standard')
         #     setattr(em.variables['time'], 'time_zone', time_zone)
         em.variables['x'][:] = init['x']
@@ -214,8 +215,10 @@ def output_files(options, init, start_date, myawsm):
         snow.createVariable('y', 'f', dimensions[1])
         snow.createVariable('x', 'f', dimensions[2])
 
-        setattr(snow.variables['time'], 'units', 'hours since %s' % start_date)
-        setattr(snow.variables['time'], 'time_zone', myawsm.tmz)
+        setattr(snow.variables['time'], 'units',
+                'hours since %s' % start_date.tz_localize(None))
+        setattr(snow.variables['time'], 'time_zone',
+                str(myawsm.tzinfo).lower())
         setattr(snow.variables['time'], 'calendar', 'standard')
         #     setattr(snow.variables['time'], 'time_zone', time_zone)
         snow.variables['x'][:] = init['x']

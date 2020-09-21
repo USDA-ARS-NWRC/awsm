@@ -71,18 +71,18 @@ class AWSM():
         self.start_date = pd.to_datetime(self.config['time']['start_date'])
         self.end_date = pd.to_datetime(self.config['time']['end_date'])
         self.time_step = self.config['time']['time_step']
-        self.tmz = self.config['time']['time_zone']
         self.tzinfo = pytz.timezone(self.config['time']['time_zone'])
+
         # date to use for finding wy
-        tmp_date = self.start_date.replace(tzinfo=self.tzinfo)
-        tmp_end_date = self.end_date.replace(tzinfo=self.tzinfo)
+        self.start_date = self.start_date.replace(tzinfo=self.tzinfo)
+        self.end_date = self.end_date.replace(tzinfo=self.tzinfo)
 
         # find water year hour of start and end date
-        self.start_wyhr = int(utils.water_day(tmp_date)[0]*24)
-        self.end_wyhr = int(utils.water_day(tmp_end_date)[0]*24)
+        self.start_wyhr = int(utils.water_day(self.start_date)[0]*24)
+        self.end_wyhr = int(utils.water_day(self.end_date)[0]*24)
 
         # find start of water year
-        tmpwy = utils.water_day(tmp_date)[1] - 1
+        tmpwy = utils.water_day(self.start_date)[1] - 1
         self.wy_start = pd.to_datetime('{:d}-10-01'.format(tmpwy))
 
         # ################ Store some paths from config file ##################
@@ -96,7 +96,7 @@ class AWSM():
         # name of your basin (i.e. Tuolumne)
         self.basin = self.config['paths']['basin']
         # water year of run
-        self.wy = utils.water_day(tmp_date)[1]
+        self.wy = utils.water_day(self.start_date)[1]
         # name of project if not an operational run
         self.proj = self.config['paths']['proj']
         # check for project description
@@ -218,7 +218,8 @@ class AWSM():
                 self.topo,
                 self.start_wyhr,
                 self.path_output,
-                self.wy_start)
+                self.wy_start,
+                self.start_date)
 
     @property
     def awsm_config_sections(self):

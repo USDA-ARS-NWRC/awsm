@@ -4,7 +4,6 @@ import netCDF4 as nc
 import numpy as np
 import pandas as pd
 import xarray as xr
-import pytz
 
 
 C_TO_K = 273.16

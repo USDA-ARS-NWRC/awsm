@@ -38,9 +38,11 @@ class StateUpdater():
         if self.update_change_file is not None:
             start_date = myawsm.config['time']['start_date']
             time_zone = myawsm.config['time']['time_zone']
-            self.delta_ds = self.initialize_update_output(start_date, time_zone,
-                                                          __version__,
-                                                          myawsm.smrf_version)
+            self.delta_ds = self.initialize_update_output(
+                start_date,
+                time_zone,
+                __version__,
+                myawsm.smrf_version)
 
         # calculate offset for each section of the run and filter updates
         # update_info, runsteps, offsets, firststeps = self.calc_offsets_nsteps(myawsm, update_info)

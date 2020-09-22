@@ -67,44 +67,9 @@ class AWSM():
         # store smrf version if running smrf
         self.smrf_version = smrf.__version__
 
-        # ################ Time information ##################
-        self.start_date = pd.to_datetime(self.config['time']['start_date'])
-        self.end_date = pd.to_datetime(self.config['time']['end_date'])
-        self.time_step = self.config['time']['time_step']
-        self.tzinfo = pytz.timezone(self.config['time']['time_zone'])
-
-        # date to use for finding wy
-        self.start_date = self.start_date.replace(tzinfo=self.tzinfo)
-        self.end_date = self.end_date.replace(tzinfo=self.tzinfo)
-
-        # find water year hour of start and end date
-        self.start_wyhr = int(utils.water_day(self.start_date)[0]*24)
-        self.end_wyhr = int(utils.water_day(self.end_date)[0]*24)
-
-        # ################ Store some paths from config file ##################
-        # path to the base drive (i.e. /data/blizzard)
-        if self.config['paths']['path_dr'] is not None:
-            self.path_dr = os.path.abspath(self.config['paths']['path_dr'])
-        else:
-            print('No base path to drive given. Exiting now!')
-            sys.exit()
-
-        # name of your basin (i.e. Tuolumne)
-        self.basin = self.config['paths']['basin']
-        # water year of run
-        self.wy = utils.water_day(self.start_date)[1]
-        # name of project if not an operational run
-        self.proj = self.config['paths']['proj']
-        # check for project description
-        self.desc = self.config['paths']['desc']
-        # find style for folder date stamp
-        self.folder_date_style = self.config['paths']['folder_date_style']
-
-        # setting to output in seperate daily folders
-        self.daily_folders = self.config['awsm system']['daily_folders']
-        if self.daily_folders and not self.run_smrf_ipysnobal:
-            raise ValueError('Cannot run daily_folders with anything other'
-                             ' than run_smrf_ipysnobal')
+        self.parse_time()
+        self.parse_folder_structure()
+        self.mk_directories()
 
         if self.do_forecast:
             self.tmp_log.append('Forecasting set to True')
@@ -187,9 +152,6 @@ class AWSM():
             if self.flight_numbers is not None:
                 if not isinstance(self.flight_numbers, list):
                     self.flight_numbers = [self.flight_numbers]
-
-        # Make rigid directory structure
-        self.mk_directories()
 
         # ################ Topo data for iSnobal ##################
         self.soil_temp = self.config['soil_temp']['temp']
@@ -280,6 +242,48 @@ class AWSM():
                 np.float64)
 
         f.close()
+
+    def parse_time(self):
+        """Parse the time configuration
+        """
+
+        self.start_date = pd.to_datetime(self.config['time']['start_date'])
+        self.end_date = pd.to_datetime(self.config['time']['end_date'])
+        self.time_step = self.config['time']['time_step']
+        self.tzinfo = pytz.timezone(self.config['time']['time_zone'])
+
+        # date to use for finding wy
+        self.start_date = self.start_date.replace(tzinfo=self.tzinfo)
+        self.end_date = self.end_date.replace(tzinfo=self.tzinfo)
+
+        # find water year hour of start and end date
+        self.start_wyhr = int(utils.water_day(self.start_date)[0]*24)
+        self.end_wyhr = int(utils.water_day(self.end_date)[0]*24)
+
+    def parse_folder_structure(self):
+        """Parse the config to get the folder structure
+
+        Raises:
+            ValueError: daily_folders can only be ran with smrf_ipysnobal
+        """
+
+        if self.config['paths']['path_dr'] is not None:
+            self.path_dr = os.path.abspath(self.config['paths']['path_dr'])
+        else:
+            print('No base path to drive given. Exiting now!')
+            sys.exit()
+
+        self.basin = self.config['paths']['basin']
+        self.water_year = utils.water_day(self.start_date)[1]
+        self.project_name = self.config['paths']['project_name']
+        self.project_description = self.config['paths']['project_description']
+        self.folder_date_style = self.config['paths']['folder_date_style']
+
+        # setting to output in seperate daily folders
+        self.daily_folders = self.config['awsm system']['daily_folders']
+        if self.daily_folders and not self.run_smrf_ipysnobal:
+            raise ValueError('Cannot run daily_folders with anything other'
+                             ' than run_smrf_ipysnobal')
 
     def createLog(self):
         '''
@@ -372,11 +376,7 @@ class AWSM():
         self.tmp_log.append('AWSM creating directories')
 
         # string to append to folders indicatiing run start and end
-        if self.folder_date_style == 'wyhr':
-            self.folder_date_stamp = '{:04d}_{:04d}'.format(self.start_wyhr,
-                                                            self.end_wyhr)
-
-        elif self.folder_date_style == 'day':
+        if self.folder_date_style == 'day':
             self.folder_date_stamp = \
                 '{}'.format(self.start_date.strftime("%Y%m%d"))
 
@@ -389,8 +389,8 @@ class AWSM():
         self.path_wy = os.path.join(
             self.path_dr,
             self.basin,
-            'wy{}'.format(self.wy),
-            self.proj
+            'wy{}'.format(self.water_year),
+            self.project_name
         )
 
         # all files will now be under one single folder
@@ -429,14 +429,14 @@ class AWSM():
 
         if not os.path.isfile(fp_desc):
             # look for description or prompt for one
-            if self.desc is not None:
+            if self.project_description is not None:
                 pass
             else:
-                self.desc = input('\nNo description for project. '
-                                  'Enter one now, but do not use '
-                                  'any punctuation:\n')
+                self.project_description = input('\nNo description for project. '
+                                                 'Enter one now, but do not use '
+                                                 'any punctuation:\n')
             f = open(fp_desc, 'w')
-            f.write(self.desc)
+            f.write(self.project_description)
             f.close()
         else:
             self.tmp_log.append('Description file already exists\n')
@@ -513,13 +513,13 @@ def run_awsm_daily_ops(config_file):
     prev_out_base = os.path.join(paths['path_dr'],
                                  paths['basin'],
                                  'wy{}'.format(wy),
-                                 paths['proj'],
+                                 paths['project_name'],
                                  'runs')
 
     prev_data_base = os.path.join(paths['path_dr'],
                                   paths['basin'],
                                   'wy{}'.format(wy),
-                                  paths['proj'],
+                                  paths['project_name'],
                                   'data')
 
     # find day of start and end

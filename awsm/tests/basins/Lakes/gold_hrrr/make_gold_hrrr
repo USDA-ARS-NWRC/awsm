@@ -5,22 +5,24 @@
 # file will put the outputs in the correct place
 #
 # Run as:
-#     $ ./tests/basins/Lakes/gold_hrrr/make_gold_hrrr
+#     $ ./awsm/tests/basins/Lakes/gold_hrrr/make_gold_hrrr
 
 read -r -p "Recreating Lakes HRRR gold standard, are you sure? [y/N] " response
 if [[ "$response" = "yes" || "$response" = "y" ]]
 then
     echo "Updating Lakes HRRR gold files"
     echo "Removing old gold files"
-    rm tests/basins/Lakes/gold_hrrr/*.nc
+    rm awsm/tests/basins/Lakes/gold_hrrr/*.nc
     
     echo "Running AWSM"
-    awsm tests/basins/Lakes/gold_hrrr/gold_config.ini
+    awsm awsm/tests/basins/Lakes/gold_hrrr/gold_config.ini
 
     echo "Cleaning up"
-    mv tests/basins/Lakes/gold_hrrr/lakes/devel/wy2020/lakes_gold/runs/run20191001_20191001/*.nc \
-        tests/basins/Lakes/gold_hrrr
-    rm -rf tests/basins/Lakes/gold_hrrr/lakes
+    mv awsm/tests/basins/Lakes/gold_hrrr/lakes/wy2020/lakes_gold/run20191001_20191001/snow.nc \
+        awsm/tests/basins/Lakes/gold_hrrr
+    mv awsm/tests/basins/Lakes/gold_hrrr/lakes/wy2020/lakes_gold/run20191001_20191001/em.nc \
+        awsm/tests/basins/Lakes/gold_hrrr
+    rm -rf awsm/tests/basins/Lakes/gold_hrrr/lakes
 else
     echo "Lakes HRRR gold files not updated"
 fi

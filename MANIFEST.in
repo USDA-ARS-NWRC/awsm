@@ -12,4 +12,6 @@ recursive-include awsm/tests *
 recursive-exclude * __pycache__
 recursive-exclude * *.py[co]
 
+recursive-exclude * *.grib2.*.idx
+
 recursive-include docs *.rst conf.py Makefile make.bat *.jpg *.png *.gif

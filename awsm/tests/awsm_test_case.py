@@ -126,10 +126,11 @@ class AWSMTestCase(unittest.TestCase):
                     raise AssertionError(error_msg)
                 print('Arrays are not exact match but close with rtol={}'.format(rtol))  # noqa
         else:
-            np.testing.assert_almost_equal(
+            np.testing.assert_allclose(
                 not_gold,
                 gold,
-                decimal=3,
+                atol=0,
+                rtol=0.01,
                 err_msg=error_msg
             )
 
@@ -160,7 +161,10 @@ class AWSMTestCase(unittest.TestCase):
         """
 
         gold = nc.Dataset(self.gold_dir.joinpath(output_file))
+        gold.set_always_mask(False)
+
         test = nc.Dataset(self.output_path.joinpath(output_file))
+        test.set_always_mask(False)
 
         # just compare the variable desired with time,x,y
         variables = ['time', 'x', 'y', variable]

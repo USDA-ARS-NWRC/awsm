@@ -61,7 +61,7 @@ test-all: ## run tests on every Python version with tox
 
 coverage: ## run coverage and submit
 	coverage run --source awsm setup.py test
-	coverage report --fail-under=40
+	coverage report --fail-under=75
 
 coveralls: coverage ## run coveralls
 	coveralls

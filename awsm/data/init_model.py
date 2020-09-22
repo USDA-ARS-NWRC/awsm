@@ -1,4 +1,5 @@
 import os
+import logging
 
 import netCDF4 as nc
 import numpy as np
@@ -40,10 +41,9 @@ class ModelInit():
 
     """
 
-    def __init__(self, logger, cfg, topo, path_output, start_date):
+    def __init__(self, cfg, topo, path_output, start_date):
         """
         Args:
-            logger:         AWSM logger
             cfg:            AWSM config dictionary
             topo:           AWSM topo class
             path_output:         run<date> directory
@@ -51,7 +51,7 @@ class ModelInit():
 
         """
 
-        self.logger = logger
+        self._logger = logging.getLogger(__name__)
         self.topo = topo
         self.start_date = start_date
 
@@ -60,7 +60,7 @@ class ModelInit():
         self.init_type = cfg['files']['init_type']
 
         if self.init_file is not None:
-            self.logger.info(
+            self._logger.info(
                 'Using {} to build model init state.'.format(self.init_file))
 
         # type of model run
@@ -155,7 +155,7 @@ class ModelInit():
         """
         Set init fields for zero init
         """
-        self.logger.info('No init file given, using zero fields')
+        self._logger.info('No init file given, using zero fields')
         self.init['z_s'] = 0.0*self.topo.mask  # snow depth
         self.init['rho'] = 0.0*self.topo.mask  # snow density
 
@@ -177,7 +177,7 @@ class ModelInit():
         flds = ['z_s', 'rho', 'T_s_0', 'T_s', 'h2o_sat', 'T_s_l']
 
         if len(i.variables['time'][:]) > 1:
-            self.logger.warning(
+            self._logger.warning(
                 """More than one time step found in the init """
                 """file, using first index""")
 
@@ -205,10 +205,10 @@ class ModelInit():
 
         if time_diff.total_seconds() < 0 or \
                 time_diff.total_seconds() > 24*3600:
-            self.logger.error(
+            self._logger.error(
                 'No time in restart file that is within a day of restart time')
 
-        self.logger.warning(
+        self._logger.warning(
             'Initializing PySnobal with state from {}'.format(init_data.time))
 
         self.init['z_s'] = init_data.thickness.values
@@ -244,9 +244,9 @@ class ModelInit():
         num_pix = len(np.where(idz)[0])
         num_pix_tot = z_s.size
 
-        self.logger.warning(
+        self._logger.warning(
             'Zeroing depth in pixels lower than {} [m]'.format(depth_thresh))
-        self.logger.warning(
+        self._logger.warning(
             'Zeroing depth in {} out of {} total pixels'.format(num_pix, num_pix_tot))
 
         z_s[idz] = 0.0

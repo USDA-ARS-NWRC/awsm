@@ -37,7 +37,8 @@ class AWSM():
         """
         Initialize the model, read config file, start and end date, and logging
         Args:
-            config: string path to the config file or inicheck UserConfig instance
+            config: string path to the config file or inicheck UserConfig
+                instance
         """
 
         self.read_config(config)
@@ -46,6 +47,11 @@ class AWSM():
         self.tmp_log = []
         self.tmp_err = []
         self.tmp_warn = []
+
+        self.parse_time()
+        self.parse_folder_structure()
+        self.mk_directories()
+        self.create_log()
 
         # ################## Decide which modules to run #####################
         self.do_smrf = self.config['awsm master']['run_smrf']
@@ -66,10 +72,6 @@ class AWSM():
 
         # store smrf version if running smrf
         self.smrf_version = smrf.__version__
-
-        self.parse_time()
-        self.parse_folder_structure()
-        self.mk_directories()
 
         if self.do_forecast:
             self.tmp_log.append('Forecasting set to True')
@@ -165,12 +167,11 @@ class AWSM():
         generate_config(self.ucfg, config_backup_location)
 
         # create log now that directory structure is done
-        self.createLog()
+        # self.create_log()
 
         # if we have a model, initialize it
         if self.model_type is not None:
             self.myinit = ModelInit(
-                self._logger,
                 self.config,
                 self.topo,
                 self.path_output,
@@ -285,7 +286,7 @@ class AWSM():
             raise ValueError('Cannot run daily_folders with anything other'
                              ' than run_smrf_ipysnobal')
 
-    def createLog(self):
+    def create_log(self):
         '''
         Now that the directory structure is done, create log file and print out
         saved logging statements.
@@ -301,19 +302,19 @@ class AWSM():
         # setup the logging
         logfile = None
         if self.config['awsm system']['log_to_file']:
-            if self.config['isnobal restart']['restart_crash']:
-                logfile = \
-                    os.path.join(self.path_log,
-                                 'log_restart_{}.out'.format(self.restart_hr))
-            elif self.do_forecast:
-                logfile = \
-                    os.path.join(self.path_log,
-                                 'log_forecast_'
-                                 '{}.out'.format(self.folder_date_stamp))
-            else:
-                logfile = \
-                    os.path.join(self.path_log,
-                                 'log_{}.out'.format(self.folder_date_stamp))
+            # if self.config['isnobal restart']['restart_crash']:
+            #     logfile = \
+            #         os.path.join(self.path_log,
+            #                      'log_restart_{}.out'.format(self.restart_hr))
+            # elif self.do_forecast:
+            #     logfile = \
+            #         os.path.join(self.path_log,
+            #                      'log_forecast_'
+            #                      '{}.out'.format(self.folder_date_stamp))
+            # else:
+            logfile = \
+                os.path.join(self.path_log,
+                             'log_{}.out'.format(self.folder_date_stamp))
             # let user know
             print('Logging to file: {}'.format(logfile))
 

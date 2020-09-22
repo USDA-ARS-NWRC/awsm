@@ -436,9 +436,9 @@ class AWSM():
                 self.project_description = input('\nNo description for project. '
                                                  'Enter one now, but do not use '
                                                  'any punctuation:\n')
-            f = open(fp_desc, 'w')
-            f.write(self.project_description)
-            f.close()
+            with open(fp_desc, 'w') as f:
+                f.write(self.project_description)
+
         else:
             self.tmp_log.append('Description file already exists\n')
 

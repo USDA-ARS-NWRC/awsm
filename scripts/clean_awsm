@@ -2,8 +2,11 @@
 # -*- coding: utf-8 -*-
 
 from awsm.framework.framework import AWSM
-import sys, os, shutil
+import sys
+import os
+import shutil
 import argparse
+
 
 def delete_path(fp):
     if os.path.isdir(fp):
@@ -27,13 +30,16 @@ def run():
     will be loaded to run the full program.
     '''
     # Path for Docker use only
-    parser = argparse.ArgumentParser(description='Clean unwanted awsm directories.'\
-                                    'this will delete the run, data, or log folder for the date range in the '\
-                                    'config file provided to the script.')
+    parser = argparse.ArgumentParser(description='Clean unwanted awsm directories.'
+                                     'this will delete the run, data, or log folder for the date range in the '
+                                     'config file provided to the script.')
     parser.add_argument('fps', metavar='F', type=str, help='awsm config file')
-    parser.add_argument('--runs', action="store_true", help='delete runs directory')
-    parser.add_argument('--data', action="store_true", help='delete data directory')
-    parser.add_argument('--logs', action="store_true", help='delete logs directory')
+    parser.add_argument('--runs', action="store_true",
+                        help='delete runs directory')
+    parser.add_argument('--data', action="store_true",
+                        help='delete data directory')
+    parser.add_argument('--logs', action="store_true",
+                        help='delete logs directory')
 
     # get args
     args = parser.parse_args()
@@ -57,11 +63,11 @@ def run():
     else:
         with AWSM(fps) as a:
             if del_runs:
-                delete_path(a.pathrr)
+                delete_path(a.path_output)
             if del_data:
-                delete_path(a.pathdd)
+                delete_path(a.path_output)
             if del_logs:
-                delete_path(a.pathll)
+                delete_path(a.path_log)
 
 
 if __name__ == '__main__':

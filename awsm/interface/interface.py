@@ -38,7 +38,7 @@ def create_smrf_config(myawsm):
         smrf_cfg.cfg['time']['start_date'] = myawsm.restart_date
 
     # set output location in smrf config
-    smrf_cfg.cfg['output']['out_location'] = os.path.join(myawsm.paths)
+    smrf_cfg.cfg['output']['out_location'] = myawsm.path_output
     #smrf_cfg.cfg['system']['temp_dir'] = os.path.join(myawsm.paths, 'tmp')
     if myawsm.do_forecast:
         fp_smrfini = myawsm.forecastini
@@ -157,7 +157,7 @@ def run_awsm_daily(myawsm):
 
         # find day for labelling the output folder nested one more level in
         daily_append = '{}'.format(myawsm.start_date.strftime("%Y%m%d"))
-        myawsm.pathro = os.path.join(myawsm.pathrr, 'output'+daily_append)
+        myawsm.pathro = os.path.join(myawsm.path_output, 'output'+daily_append)
         if not os.path.exists(myawsm.pathro):
             os.makedirs(myawsm.pathro)
 

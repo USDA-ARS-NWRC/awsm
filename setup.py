@@ -55,6 +55,5 @@ setup(
     },
     setup_requires=[
         'setuptools_scm',
-        'numpy<1.19'
     ],
 )

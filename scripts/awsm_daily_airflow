@@ -23,7 +23,7 @@ def mod_config(config_file, start_date, no_previous):
 
     # get config instance
     config = get_user_config(config_file,
-                             modules = ['smrf','awsm'])
+                             modules=['smrf', 'awsm'])
 
     # copy the config and get total start and end
     # config = deepcopy(base_config)
@@ -42,25 +42,18 @@ def mod_config(config_file, start_date, no_previous):
 
     # # find output location for previous output
     paths = config.cfg['paths']
-    isops = paths['isops']
-    if isops:
-        ops = 'ops'
-    else:
-        ops = 'devel'
 
     prev_out_base = os.path.join(paths['path_dr'],
                                  paths['basin'],
-                                 ops,
                                  'wy{}'.format(wy),
                                  paths['proj'],
                                  'runs')
 
     prev_data_base = os.path.join(paths['path_dr'],
-                                 paths['basin'],
-                                 ops,
-                                 'wy{}'.format(wy),
-                                 paths['proj'],
-                                 'data')
+                                  paths['basin'],
+                                  'wy{}'.format(wy),
+                                  paths['proj'],
+                                  'data')
 
     new_config = copy.deepcopy(config)
 
@@ -105,7 +98,7 @@ def parse_arguments():
         help='Config file that will be modified for the current run date'
     )
     parser.add_argument(
-        '-sd','--start_date',
+        '-sd', '--start_date',
         required=True,
         help='start date for run'
     )

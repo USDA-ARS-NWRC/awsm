@@ -1,97 +1,60 @@
 import copy
 import os
-import subprocess
-from datetime import datetime
+import logging
 
 import numpy as np
 import pandas as pd
-import smrf
-from smrf import data
+from smrf.framework.model_framework import run_smrf
 from smrf.utils import utils
 
 
-def create_smrf_config(myawsm):
-    """
-    Create a smrf config for running standard :mod: `smr` run. Use the
-    :mod: `AWSM` config and remove the sections specific to :mod: `AWSM`.
-    We do this because these sections will break the config checker utility
-    """
-    # ########################################################################
-    # ### read in base and write out the specific config file for smrf #######
-    # ########################################################################
+class SMRFConnector():
 
-    delete_keys = myawsm.awsm_config_sections
+    def __init__(self, myawsm):
 
-    # Write out config file to run smrf
-    # make copy and delete only awsm sections
-    smrf_cfg = copy.deepcopy(myawsm.ucfg)
-    for key in myawsm.ucfg.cfg.keys():
-        if key in delete_keys:
-            del smrf_cfg.cfg[key]
+        self._logger = logging.getLogger(__name__)
+        self.myawsm = myawsm
 
-    # make sure start and end date are correcting
-    smrf_cfg.cfg['time']['start_date'] = myawsm.start_date
-    smrf_cfg.cfg['time']['end_date'] = myawsm.end_date
+        self.create_smrf_config()
 
-    # change start date if using smrf_ipysnobal and restarting
-    if myawsm.restart_run and myawsm.run_smrf_ipysnobal:
-        smrf_cfg.cfg['time']['start_date'] = myawsm.restart_date
+        self._logger.info('SMRFConnector initialized')
 
-    # set output location in smrf config
-    smrf_cfg.cfg['output']['out_location'] = myawsm.path_output
-    #smrf_cfg.cfg['system']['temp_dir'] = os.path.join(myawsm.paths, 'tmp')
-    if myawsm.do_forecast:
-        fp_smrfini = myawsm.forecastini
-    else:
-        fp_smrfini = myawsm.smrfini
+    def create_smrf_config(self):
+        """
+        Create a smrf config for running standard :mod: `smr` run. Use the
+        :mod: `AWSM` config and remove the sections specific to :mod: `AWSM`.
+        We do this because these sections will break the config checker utility
+        """
+        self.myawsm._logger.info('Making SMRF config')
 
-    myawsm._logger.info('Making SMRF config!')
+        delete_keys = self.myawsm.awsm_config_sections
 
-    return smrf_cfg
+        # Write out config file to run smrf
+        # make copy and delete only awsm sections
+        smrf_config = copy.deepcopy(self.myawsm.ucfg)
+        for key in self.myawsm.ucfg.cfg.keys():
+            if key in delete_keys:
+                del smrf_config.cfg[key]
 
+        # make sure start and end date are correcting
+        smrf_config.cfg['time']['start_date'] = self.myawsm.start_date
+        smrf_config.cfg['time']['end_date'] = self.myawsm.end_date
 
-def smrfMEAS(myawsm):
-    '''
-    Run standard SMRF run. Calls
-    :mod: `awsm.interface.interface.creae_smrf_config`
-    to make :mod: `smrf` config file and runs
-    :mod: `smrf.framework.SMRF` similar to standard run_smrf script
+        # change start date if using smrf_ipysnobal and restarting
+        if self.myawsm.restart_run and self.myawsm.run_smrf_ipysnobal:
+            smrf_config.cfg['time']['start_date'] = self.myawsm.restart_date
 
-    Args:
-        myawsm: AWSM instance
-    '''
+        # set output location in smrf config
+        smrf_config.cfg['output']['out_location'] = self.myawsm.path_output
 
-    # #####################################################################
-    # ### run smrf with the config file we just made ######################
-    # #####################################################################
-    if myawsm.end_date > myawsm.start_date:
-        myawsm._logger.info('Running SMRF')
-        # first create config to run smrf
-        smrf_cfg = create_smrf_config(myawsm)
+        self.smrf_config = smrf_config
 
-        start = datetime.now()
+    def run_smrf(self):
+        """Run SMRF using the `run_smrf` from the SMRF API
+        """
 
-        with smrf.framework.SMRF(smrf_cfg, myawsm._logger) as s:
-            # 2. load topo data
-            s.loadTopo()
-
-            # 3. initialize the distribution
-            s.create_distribution()
-
-            # initialize the outputs if desired
-            s.initializeOutput()
-
-            # ==============================================================
-            # Distribute data
-            # ==============================================================
-
-            # 5. load weather data  and station metadata
-            s.loadData()
-
-            # 6. distribute
-            s.distributeData()
-
-            s._logger.info(datetime.now() - start)
+        self._logger.info('Running SMRF')
+        run_smrf(self.smrf_config)
 
 
 def run_awsm_daily(myawsm):
@@ -114,7 +77,7 @@ def run_awsm_daily(myawsm):
 
     # set variables for adding a day or hour
     add_day = pd.to_timedelta(23, unit='h')
-    add_hour = pd.to_timedelta(1, unit='h')
+    # add_hour = pd.to_timedelta(1, unit='h')
 
     start_day = pd.to_datetime(d[0].strftime("%Y%m%d"))
     end_day = pd.to_datetime(d[-1].strftime("%Y%m%d"))
@@ -143,11 +106,14 @@ def run_awsm_daily(myawsm):
             myawsm.start_date = d[0]
             myawsm.end_date = d[0] + start_diff
         elif day == total_days - 1:
-            myawsm.start_date = start_day + pd.to_timedelta(24*day, unit='h')
+            myawsm.start_date = start_day + \
+                pd.to_timedelta(24*day, unit='h')
             myawsm.end_date = myawsm.start_date + end_diff
         else:
-            myawsm.start_date = start_day + pd.to_timedelta(24*day, unit='h')
-            myawsm.end_date = myawsm.start_date + pd.to_timedelta(23, unit='h')
+            myawsm.start_date = start_day + \
+                pd.to_timedelta(24*day, unit='h')
+            myawsm.end_date = myawsm.start_date + \
+                pd.to_timedelta(23, unit='h')
 
         # recalculate start and end water year hour
         tmp_date = myawsm.start_date.replace(tzinfo=myawsm.tzinfo)
@@ -157,11 +123,13 @@ def run_awsm_daily(myawsm):
 
         # find day for labelling the output folder nested one more level in
         daily_append = '{}'.format(myawsm.start_date.strftime("%Y%m%d"))
-        myawsm.pathro = os.path.join(myawsm.path_output, 'output'+daily_append)
+        myawsm.pathro = os.path.join(
+            myawsm.path_output, 'output'+daily_append)
         if not os.path.exists(myawsm.pathro):
             os.makedirs(myawsm.pathro)
 
-        # turn off forecast for daily run (will be turned on later if it was true)
+        # turn off forecast for daily run (will be turned on later if it
+        # was true)
         myawsm.config['gridded']['hrrr_forecast_flag'] = False
 
         # ################# run_model for day ###############################
@@ -198,8 +166,10 @@ def run_awsm_daily(myawsm):
                                                       unit='h')
 
                 # recalculate start and end water year hour
-                tmp_date = myawsm.start_date.replace(tzinfo=myawsm.tzinfo)
-                tmp_end_date = myawsm.end_date.replace(tzinfo=myawsm.tzinfo)
+                tmp_date = myawsm.start_date.replace(
+                    tzinfo=myawsm.tzinfo)
+                tmp_end_date = myawsm.end_date.replace(
+                    tzinfo=myawsm.tzinfo)
                 myawsm.start_wyhr = int(utils.water_day(tmp_date)[0]*24)
                 myawsm.end_wyhr = int(utils.water_day(tmp_end_date)[0]*24)
 

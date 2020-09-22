@@ -15,8 +15,9 @@ from topocalc.shade import shade
 from smrf.envphys import sunang
 from smrf.utils import queue
 
-from awsm.interface import ipysnobal, interface, initialize_model as initmodel, \
+from awsm.interface import ipysnobal, initialize_model as initmodel, \
     pysnobal_io as io_mod
+from awsm.interface.interface import SMRFConnector
 from awsm.interface.ingest_data import StateUpdater
 
 from pysnobal.c_snobal import snobal
@@ -124,12 +125,12 @@ def run_smrf_ipysnobal(myawsm):
         myawsm: AWSM instance
     """
     # first create config to run smrf
-    smrf_cfg = interface.create_smrf_config(myawsm)
+    smrf_connector = SMRFConnector(myawsm)
 
     # start = datetime.now()
 
     # initialize
-    with smrf.framework.SMRF(smrf_cfg, myawsm._logger) as s:
+    with smrf.framework.SMRF(smrf_connector.smrf_config, myawsm._logger) as s:
         # if input has run_for_nsteps, make sure not to go past it
         if myawsm.run_for_nsteps is not None:
             change_in_hours = int(myawsm.run_for_nsteps *

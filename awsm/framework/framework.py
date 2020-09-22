@@ -19,7 +19,8 @@ import smrf.framework.logger as logger
 
 from awsm.data.init_model import ModelInit
 from awsm.framework import ascii_art
-from awsm.interface import interface as smin, smrf_ipysnobal as smrf_ipy
+from awsm.interface import smrf_ipysnobal as smrf_ipy
+from awsm.interface.interface import SMRFConnector
 
 
 class AWSM():
@@ -329,10 +330,10 @@ class AWSM():
 
     def runSmrf(self):
         """
-        Run smrf. Calls :mod: `awsm.interface.interface.smrfMEAS`
+        Run smrf. Calls :mod: `awsm.interface.smrf_connector.smrfMEAS`
         """
-        # modify config and run smrf
-        smin.smrfMEAS(self)
+
+        SMRFConnector(self).run_smrf()
 
     def run_smrf_ipysnobal(self):
         """

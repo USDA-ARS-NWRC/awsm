@@ -292,13 +292,6 @@ class AWSM():
         saved logging statements.
         '''
 
-        # start logging
-        loglevel = self.config['awsm system']['log_level'].upper()
-
-        numeric_level = getattr(logging, loglevel, None)
-        if not isinstance(numeric_level, int):
-            raise ValueError('Invalid log level: %s' % loglevel)
-
         # setup the logging
         logfile = None
         if self.config['awsm system']['log_to_file']:
@@ -327,15 +320,12 @@ class AWSM():
         self._logger.info(ascii_art.TITLE)
 
         # dump saved logs
-        if len(self.tmp_log) > 0:
-            for line in self.tmp_log:
-                self._logger.info(line)
-        if len(self.tmp_warn) > 0:
-            for line in self.tmp_warn:
-                self._logger.warning(line)
-        if len(self.tmp_err) > 0:
-            for line in self.tmp_err:
-                self._logger.error(line)
+        for line in self.tmp_log:
+            self._logger.info(line)
+        for line in self.tmp_warn:
+            self._logger.warning(line)
+        for line in self.tmp_err:
+            self._logger.error(line)
 
     def runSmrf(self):
         """

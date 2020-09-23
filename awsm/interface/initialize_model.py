@@ -125,8 +125,7 @@ def get_timestep_netcdf(force, tstep, point=None):
 
             # pull out the value
             if point is None:
-                inpt[map_val[f]] = force[f].variables[v][t,
-                                                         :].astype(np.float64)
+                inpt[map_val[f]] = force[f].variables[v][t, :].astype(np.float64)
             else:
                 inpt[map_val[f]] = np.atleast_2d(
                     force[f].variables[v][t, point[0], point[1]].astype(np.float64))

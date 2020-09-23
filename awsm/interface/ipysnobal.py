@@ -1,24 +1,21 @@
-# -*- coding: utf-8 -*-
-"""
-ipysnobal: the Python implementation of iSnobal
-
-This is not a replica of iSnobal but my interpretation and
-porting to Python.  See pysnobal.exact for more direct
-interpretation
-
-Authors: Scott Havens, Micah Sandusky
-"""
 
 from pysnobal.c_snobal import snobal
-
+from datetime import datetime
 import sys
-
+import pytz
+import logging
 import numpy as np
 from smrf.utils import utils
+from smrf.framework.model_framework import SMRF
+from topocalc.shade import shade
+from smrf.envphys import sunang
+from smrf.utils import queue
 
 import threading
 from awsm.interface import initialize_model as initmodel
 from awsm.interface import pysnobal_io as io_mod
+from awsm.interface.ingest_data import StateUpdater
+from awsm.interface.interface import SMRFConnector
 
 C_TO_K = 273.16
 FREEZE = C_TO_K
@@ -27,6 +24,549 @@ FREEZE = C_TO_K
 
 
 def K_TO_C(x): return x - FREEZE
+
+
+class PySnobal():
+
+    # map function from these values to the ones required by snobal
+    MAP_INPUTS = {
+        'air_temp': 'T_a',
+        'net_solar': 'S_n',
+        'thermal': 'I_lw',
+        'vapor_pressure': 'e_a',
+        'wind_speed': 'u',
+        'soil_temp': 'T_g',
+        'precip': 'm_pp',
+        'percent_snow': 'percent_snow',
+        'snow_density': 'rho_snow',
+        'precip_temp': 'T_pp'
+    }
+
+    # def __init__(self, date_time, variable_list, awsm_output_vars,
+    #              options, params, tstep_info, init,
+    #              output_rec, nx, ny, soil_temp, logger, tzi):
+    def __init__(self, myawsm):
+        """
+        Args:
+            date_time:  array of date_time
+            variable_list: list of forcing variables to recieve from smrf
+            output_vars:    list of variables to output
+            options:    dictionary of Snobal options
+            params:     dictionary of Snobal params
+            tstep_info: dictionary of info for Snobal time steps
+            init:       dictionary of init info for Snobal
+            output_rec: dictionary to store Snobal variables between time steps
+            nx:         number of points in X direction
+            ny:         number of points in y direction
+            soil_temp:  uniform soil temperature (float)
+            logger:     initialized AWSM logger
+            tzi:        time zone information
+        """
+        self._logger = logging.getLogger(__name__)
+        self.awsm = myawsm
+        self._logger.debug('Initialized PySnobal')
+
+    def initialize_ipysnobal(self, date_time, variable_list,
+                             options, params, tstep_info, init,
+                             output_rec):
+
+        self.date_time = date_time
+        self.variable_list = variable_list
+        #  = awsm_output_vars
+        self.options = options
+        self.params = params
+        self.tstep_info = tstep_info
+        self.init = init
+        self.output_rec = output_rec
+        # self.awsm.topo.nx = nx
+        # self.awsm.topo.ny = ny
+        # self.awsm.soil_temp = soil_temp
+        self.nthreads = self.options['output']['nthreads']
+        # self.tzinfo = tzi
+
+    def run_single_fist_step(self, s):
+        """
+        mimic the main.c from the Snobal model. Recieves forcing data from SMRF
+        in non-threaded application and initializes very first step.
+
+        Args:
+            s:  smrf class instance
+
+        """
+
+        # loop through the input
+        # do_data_tstep needs two input records so only go
+        # to the last record-1
+
+        self.data_tstep = self.tstep_info[0]['time_step']
+        self.timeSinceOut = 0.0
+        wyhr = utils.water_day(self.date_time[0])[0] * 24.0
+        start_step = wyhr  # if restart then it would be higher if this were iSnobal
+        # start_step = 0 # if restart then it would be higher if this were iSnobal
+        step_time = start_step * self.data_tstep
+        # step_time = start_step * 60.0
+
+        self.output_rec['current_time'] = step_time * \
+            np.ones(self.output_rec['elevation'].shape)
+        self.output_rec['time_since_out'] = self.timeSinceOut * \
+            np.ones(self.output_rec['elevation'].shape)
+
+        # get first time step
+        self.input1 = {}
+        for var, v in self.variable_list.items():
+            # get the data desired
+            data = getattr(s.distribute[v['module']], v['variable'])
+
+            if data is None:
+                data = np.zeros((self.awsm.topo.ny, self.awsm.topo.nx))
+                self._logger.info(
+                    'No data from smrf to iSnobal for {} in {}'.format(v, self.date_time[0]))
+                self.input1[self.MAP_INPUTS[var]] = data
+            else:
+                self.input1[self.MAP_INPUTS[var]] = data
+
+        # set ground temp
+        # TODO get soil temp in SMRF distribute function
+        self.input1['T_g'] = self.awsm.soil_temp * \
+            np.ones((self.awsm.topo.ny, self.awsm.topo.nx))
+
+        self.input1['T_a'] += FREEZE
+        self.input1['T_pp'] += FREEZE
+        self.input1['T_g'] += FREEZE
+
+        # for counting how many steps since the start of the run
+        self.j = 1
+
+        self._logger.info(
+            'Finished initializing first time step for iPySnobal')
+
+    def run_single(self, tstep, s, updater=None):
+        """
+        Runs each time step of Pysnobal when running with SMRF in non-threaded
+        application.
+
+        Args:
+            tstep: datetime time step
+            s:     smrf class instance
+            updater: depth updater class
+
+        """
+        # pbar = progressbar.ProgressBar(max_value=len(options['time']['date_time']))
+
+        self.input2 = {}
+        for var, v in self.variable_list.items():
+            # get the data desired
+            data = getattr(s.distribute[v['module']], v['variable'])
+            if data is None:
+
+                data = np.zeros((self.awsm.topo.ny, self.awsm.topo.nx))
+                self._logger.info('No data from smrf to iSnobal for {} in {}'
+                                  .format(v, tstep))
+                self.input2[self.MAP_INPUTS[var]] = data
+            else:
+                self.input2[self.MAP_INPUTS[var]] = data
+        # set ground temp
+        self.input2['T_g'] = self.awsm.soil_temp * \
+            np.ones((self.awsm.topo.ny, self.awsm.topo.nx))
+        # convert variables to Kelvin
+        self.input2['T_a'] += FREEZE
+        self.input2['T_pp'] += FREEZE
+        self.input2['T_g'] += FREEZE
+
+        first_step = self.j
+
+        # update depth if necessary
+        if updater is not None:
+            # if tstep.tz_localize(None) in updater.update_dates:
+            if tstep in updater.update_dates:
+                # print('doing that update thing')
+                # self.output_rec = \
+                #     updater.do_update_pysnobal(self.output_rec, tstep.tz_localize(None))
+                self.output_rec = \
+                    updater.do_update_pysnobal(self.output_rec, tstep)
+                first_step = 1
+
+        self._logger.info('running PySnobal for time step: {}'.format(tstep))
+        rt = snobal.do_tstep_grid(self.input1, self.input2, self.output_rec,
+                                  self.tstep_info, self.options['constants'],
+                                  self.params, first_step=first_step,
+                                  nthreads=self.nthreads)
+
+        if rt != -1:
+            self.logger.error('ipysnobal error on time step {}, pixel {}'
+                              .format(tstep, rt))
+            sys.exit()
+
+        self._logger.info('Finished time step: {}'.format(tstep))
+        self.input1 = self.input2.copy()
+
+        # output at the frequency and the last time step
+        if ((self.j)*(self.data_tstep/3600.0) % self.options['output']['frequency'] == 0)\
+                or (self.j == len(self.options['time']['date_time']) - 1):
+            io_mod.output_timestep(self.output_rec, tstep, self.options,
+                                   self.awsm.pysnobal_output_vars)
+            self.output_rec['time_since_out'] = np.zeros(
+                self.output_rec['elevation'].shape)
+
+        self.j += 1
+
+    def run_ipysnobal(self):
+        """
+        Function to run PySnobal from netcdf forcing data,
+        not from SMRF instance.
+
+        Args:
+            self.awsm:  awsm class
+
+        """
+        # initialize ipysnobal state
+        # get dem
+        dem = self.awsm.topo.dem
+
+        self._logger.info('Initializing PySnobal from netcdf files')
+        options, params, tstep_info, init, output_rec = \
+            init_from_smrf(self.awsm, dem=dem)
+
+        data_tstep = tstep_info[0]['time_step']
+        timeSinceOut = 0.0
+        start_step = 0  # if restart then it would be higher if this were iSnobal
+        step_time = start_step * data_tstep
+
+        output_rec['current_time'] = step_time * \
+            np.ones(output_rec['elevation'].shape)
+        output_rec['time_since_out'] = timeSinceOut * \
+            np.ones(output_rec['elevation'].shape)
+
+        self.awsm._logger.info('getting inputs for first timestep')
+        if self.awsm.forcing_data_type == 'netcdf':
+            force = io_mod.open_files_nc(self.awsm)
+            input1 = initmodel.get_timestep_netcdf(
+                force, options['time']['date_time'][0])
+
+        # initialize updater if required
+        if self.awsm.update_depth:
+            updater = StateUpdater(self.awsm)
+        else:
+            updater = None
+
+        self.awsm._logger.info('starting PySnobal time series loop')
+        j = 1
+        # run PySnobal
+        # TODO this will need to change, it should be the other way around
+        # where it goes one less
+        for tstep in options['time']['date_time'][1:]:
+            # for tstep in options['time']['date_time'][953:958]:
+            self.awsm._logger.info(
+                'running PySnobal for timestep: {}'.format(tstep))
+            if self.awsm.forcing_data_type == 'netcdf':
+                input2 = initmodel.get_timestep_netcdf(force, tstep)
+
+            first_step = j
+            # update depth if necessary
+            if updater is not None:
+                if tstep in updater.update_dates:
+                    start_z = output_rec['z_s'].copy()
+                    output_rec = \
+                        updater.do_update_pysnobal(output_rec, tstep)
+                    first_step = 1
+
+            rt = snobal.do_tstep_grid(input1, input2, output_rec, tstep_info,
+                                      options['constants'], params, first_step=first_step,
+                                      nthreads=self.awsm.ipy_threads)
+
+            if rt != -1:
+                raise ValueError(
+                    'ipysnobal error on time step %s, pixel %i' % (tstep, rt))
+                # break
+
+            input1 = input2.copy()
+
+            # output at the frequency and the last time step
+            if ((j)*(data_tstep/3600.0) % options['output']['frequency'] == 0) \
+                    or (j == len(options['time']['date_time']) - 1):
+                self.awsm._logger.info('Outputting {}'.format(tstep))
+                io_mod.output_timestep(output_rec, tstep, options,
+                                       self.awsm.pysnobal_output_vars)
+                output_rec['time_since_out'] = np.zeros(
+                    output_rec['elevation'].shape)
+
+            self.awsm._logger.info('Finished timestep: {}'.format(tstep))
+
+            j += 1
+
+            # if input has run_for_nsteps, make sure not to go past it
+            if self.awsm.run_for_nsteps is not None:
+                if j > self.awsm.run_for_nsteps:
+                    break
+
+        # close input files
+        if self.awsm.forcing_data_type == 'netcdf':
+            io_mod.close_files(force)
+
+    def run_smrf_ipysnobal(self):
+        """
+        Function to run SMRF and pass outputs in memory to python wrapped
+        iSnobal.
+
+        Args:
+            myawsm: AWSM instance
+        """
+        # first create config to run smrf
+        smrf_connector = SMRFConnector(self.awsm)
+
+        # start = datetime.now()
+
+        # initialize
+        with SMRF(smrf_connector.smrf_config, self._logger) as s:
+            # if input has run_for_nsteps, make sure not to go past it
+            if self.awsm.run_for_nsteps is not None:
+                change_in_hours = int(self.awsm.run_for_nsteps *
+                                      s.config['time']['time_step']/60)
+                # recalculate end_date before initializing run
+                s.end_date = s.start_date + pd.to_timedelta(change_in_hours - 1,
+                                                            unit='h')
+                self.awsm.end_date = s.end_date
+                s.date_time = s.date_time[:self.awsm.run_for_nsteps]
+                s.time_steps = self.awsm.run_for_nsteps
+
+            # load topo data
+            s.loadTopo()
+
+            # 3. initialize the distribution
+            s.create_distribution()
+
+            # load weather data  and station metadata
+            s.loadData()
+
+            # run threaded or not
+            if s.threading:
+                self.run_smrf_ipysnobal_threaded(s)
+            else:
+                self.run_smrf_ipysnobal_single(s)
+
+            s._logger.debug('DONE!!!!')
+
+    def run_smrf_ipysnobal_single(self, s):
+        """
+        Running smrf and PySnobal in non-threaded application.
+
+        Args:
+            myawsm:  awsm class
+            s:       smrf class
+
+        """
+
+        # -------------------------------------
+        # Initialize the distibution
+        s.initialize_distribution()
+
+        # -------------------------------------
+        # initialize ipysnobal state
+        options, params, tstep_info, init, output_rec = \
+            init_from_smrf(self.awsm, s)
+
+        # -------------------------------------
+        # create variable list
+        force_variables = ['thermal', 'air_temp', 'vapor_pressure', 'wind_speed',
+                           'net_solar', 'soil_temp', 'precip', 'percent_snow',
+                           'snow_density', 'precip_temp']
+
+        # Collect the potential output variables
+        possible_output_variables = {}
+        for variable, module in s.distribute.items():
+            possible_output_variables.update(module.output_variables)
+
+        variable_list = {}
+        for force_variable in force_variables:
+
+            if force_variable in possible_output_variables.keys():
+                module = possible_output_variables[force_variable]['module']
+
+                variable_list[force_variable] = {
+                    'variable': force_variable,
+                    'module': module
+                }
+
+            else:
+                raise ValueError('Not distributing necessary '
+                                 'variables to run PySnobal!')
+
+        # -------------------------------------
+        # initialize updater if required
+        if self.awsm.update_depth:
+            updater = StateUpdater(self.awsm)
+        else:
+            updater = None
+        # initialize pysnobal run class
+        self.initialize_ipysnobal(
+            s.date_time,
+            variable_list,
+            options,
+            params,
+            tstep_info,
+            init,
+            output_rec)
+
+        # -------------------------------------
+        # Distribute the data
+        for output_count, t in enumerate(s.date_time):
+            # wait here for the model to catch up if needed
+
+            startTime = datetime.now()
+
+            s._logger.info('Distributing time step %s' % t)
+            # 0.1 sun angle for time step
+            cosz, azimuth, rad_vec = sunang.sunang(
+                t.astimezone(pytz.utc),
+                s.topo.basin_lat,
+                s.topo.basin_long,
+            )
+
+            # 0.2 illumination angle
+            illum_ang = None
+            if cosz > 0:
+                illum_ang = shade(
+                    s.topo.sin_slope,
+                    s.topo.aspect,
+                    azimuth,
+                    cosz)
+
+            # 1. Air temperature
+            s.distribute['air_temp'].distribute(s.data.air_temp.loc[t])
+
+            # 2. Vapor pressure
+            s.distribute['vapor_pressure'].distribute(
+                s.data.vapor_pressure.loc[t],
+                s.distribute['air_temp'].air_temp)
+
+            # 3. Wind_speed and wind_direction
+            s.distribute['wind'].distribute(
+                s.data.wind_speed.loc[t],
+                s.data.wind_direction.loc[t],
+                t)
+
+            # 4. Precipitation
+            s.distribute['precipitation'].distribute(
+                s.data.precip.loc[t],
+                s.distribute['vapor_pressure'].dew_point,
+                s.distribute['vapor_pressure'].precip_temp,
+                s.distribute['air_temp'].air_temp,
+                t,
+                s.data.wind_speed.loc[t],
+                s.data.air_temp.loc[t],
+                s.distribute['wind'].wind_direction,
+                s.distribute['wind'].wind_model.dir_round_cell,
+                s.distribute['wind'].wind_speed,
+                s.distribute['wind'].wind_model.cellmaxus
+            )
+
+            # 5. Albedo
+            s.distribute['albedo'].distribute(
+                t,
+                illum_ang,
+                s.distribute['precipitation'].storm_days
+            )
+
+            # 6. cloud factor
+            s.distribute['cloud_factor'].distribute(s.data.cloud_factor.loc[t])
+
+            # 7. solar
+            s.distribute['solar'].distribute(
+                t,
+                s.distribute["cloud_factor"].cloud_factor,
+                illum_ang,
+                cosz,
+                azimuth,
+                s.distribute['albedo'].albedo_vis,
+                s.distribute['albedo'].albedo_ir)
+
+            # 7. thermal radiation
+            if s.distribute['thermal'].gridded and \
+                    s.config['gridded']['data_type'] != 'hrrr_grib':
+                s.distribute['thermal'].distribute_thermal(
+                    s.data.thermal.loc[t],
+                    s.distribute['air_temp'].air_temp)
+            else:
+                s.distribute['thermal'].distribute(
+                    t,
+                    s.distribute['air_temp'].air_temp,
+                    s.distribute['vapor_pressure'].vapor_pressure,
+                    s.distribute['vapor_pressure'].dew_point,
+                    s.distribute['cloud_factor'].cloud_factor)
+
+            # 8. Soil temperature
+            s.distribute['soil_temp'].distribute()
+
+            # 9. pass info to PySnobal
+            if output_count == 0:
+                self.run_single_fist_step(s)
+            elif output_count > 0:
+                self.run_single(t, s, updater)
+            else:
+                raise ValueError('Problem with times in run ipysnobal single')
+
+            telapsed = datetime.now() - startTime
+            s._logger.debug('{0:.2f} seconds for time step'
+                            .format(telapsed.total_seconds()))
+
+        s.forcing_data = 1
+
+    def run_smrf_ipysnobal_threaded(self, s):
+        """
+        Function to run SMRF (threaded) and pass outputs in memory to python wrapped
+        iSnobal. iPySnobal has replaced the output queue in this implimentation.
+
+        Args:
+            s:       SMRF instance
+
+        """
+        # initialize ipysnobal state
+        options, params, tstep_info, init, output_rec = \
+            init_from_smrf(self.awsm, s)
+
+        s.create_data_queue()
+        s.set_queue_variables()
+        s.create_distributed_threads(['isnobal'])
+        s.smrf_queue['isnobal'] = queue.DateQueueThreading(
+            s.queue_max_values,
+            s.time_out,
+            name='isnobal')
+
+        del s.smrf_queue['output']
+
+        # initialize updater if required
+        if self.awsm.update_depth:
+            updater = StateUpdater(self.awsm)
+        else:
+            updater = None
+
+        # isnobal thread
+        s.threads.append(QueueIsnobal(
+            s.smrf_queue,
+            s.date_time,
+            s.thread_queue_variables,
+            self.awsm.pysnobal_output_vars,
+            options,
+            params,
+            tstep_info,
+            init,
+            output_rec,
+            s.topo.nx,
+            s.topo.ny,
+            self.awsm.soil_temp,
+            self.awsm._logger,
+            self.awsm.tzinfo,
+            updater))
+
+        # the cleaner
+        s.threads.append(queue.QueueCleaner(s.date_time, s.smrf_queue))
+
+        # start all the threads
+        for i in range(len(s.threads)):
+            s.threads[i].start()
+
+        for i in range(len(s.threads)):
+            s.threads[i].join()
 
 # ###############################################################
 # ########## Functions for interfacing with smrf run ############
@@ -38,7 +578,7 @@ def init_from_smrf(myawsm, mysmrf=None, dem=None):
     mimic the main.c from the Snobal model
 
     Args:
-        myawsm: AWSM instance
+        self.awsm: AWSM instance
         mysmrf: SMRF isntance
         dem:    digital elevation data
     """
@@ -143,11 +683,11 @@ class QueueIsnobal(threading.Thread):
             np.ones(self.output_rec['elevation'].shape)
 
         # map function from these values to the ones required by snobal
-        map_val = {'air_temp': 'T_a', 'net_solar': 'S_n', 'thermal': 'I_lw',
-                   'vapor_pressure': 'e_a', 'wind_speed': 'u',
-                   'soil_temp': 'T_g', 'precip': 'm_pp',
-                   'percent_snow': 'percent_snow', 'snow_density': 'rho_snow',
-                   'precip_temp': 'T_pp'}
+        MAP_INPUTS = {'air_temp': 'T_a', 'net_solar': 'S_n', 'thermal': 'I_lw',
+                      'vapor_pressure': 'e_a', 'wind_speed': 'u',
+                      'soil_temp': 'T_g', 'precip': 'm_pp',
+                      'percent_snow': 'percent_snow', 'snow_density': 'rho_snow',
+                      'precip_temp': 'T_pp'}
 
         # get first time step
         input1 = {}
@@ -160,14 +700,14 @@ class QueueIsnobal(threading.Thread):
                     data = np.zeros((self.ny, self.nx))
                     self._logger.info('No data from smrf to iSnobal for {} in {}'
                                       .format(v, self.date_time[0]))
-                    input1[map_val[v]] = data
+                    input1[MAP_INPUTS[v]] = data
                 else:
-                    input1[map_val[v]] = data
+                    input1[MAP_INPUTS[v]] = data
             elif v != 'soil_temp':
                 self._logger.error('Value not in keys: {}'.format(v))
 
         # set ground temp
-        input1['T_g'] = self.soil_temp*np.ones((self.ny, self.nx))
+        input1['T_g'] = self.soil_temp * np.ones((self.ny, self.nx))
 
         input1['T_a'] += FREEZE
         input1['T_pp'] += FREEZE
@@ -194,11 +734,12 @@ class QueueIsnobal(threading.Thread):
                         data = np.zeros((self.ny, self.nx))
                         self._logger.info(
                             'No data from smrf to iSnobal for {} in {}'.format(v, tstep))
-                        input2[map_val[v]] = data
+                        input2[MAP_INPUTS[v]] = data
                     else:
-                        input2[map_val[v]] = data
+                        input2[MAP_INPUTS[v]] = data
             # set ground temp
-            input2['T_g'] = self.soil_temp*np.ones((self.ny, self.nx))
+            input2['T_g'] = self.soil_temp * np.ones((self.ny, self.nx))
+
             # convert variables to Kelvin
             input2['T_a'] += FREEZE
             input2['T_pp'] += FREEZE
@@ -245,180 +786,3 @@ class QueueIsnobal(threading.Thread):
             self.queue['isnobal'].put([tstep, True])
 
             # self._logger.debug('%s iSnobal run from queues' % tstep)
-
-
-class PySnobal():
-    """
-    Takes values from the SMRF and uses them to run iPySnobal in non-threaded
-    implimentation
-    """
-
-    def __init__(self, date_time, variable_list, awsm_output_vars,
-                 options, params, tstep_info, init,
-                 output_rec, nx, ny, soil_temp, logger, tzi):
-        """
-        Args:
-            date_time:  array of date_time
-            variable_list: list of forcing variables to recieve from smrf
-            output_vars:    list of variables to output
-            options:    dictionary of Snobal options
-            params:     dictionary of Snobal params
-            tstep_info: dictionary of info for Snobal time steps
-            init:       dictionary of init info for Snobal
-            output_rec: dictionary to store Snobal variables between time steps
-            nx:         number of points in X direction
-            ny:         number of points in y direction
-            soil_temp:  uniform soil temperature (float)
-            logger:     initialized AWSM logger
-            tzi:        time zone information
-        """
-
-        self.date_time = date_time
-        self.variable_list = variable_list
-        self.awsm_output_vars = awsm_output_vars
-        self.options = options
-        self.params = params
-        self.tstep_info = tstep_info
-        self.init = init
-        self.output_rec = output_rec
-        self.nx = nx
-        self.ny = ny
-        self.soil_temp = soil_temp
-        self.nthreads = self.options['output']['nthreads']
-        self.tzinfo = tzi
-
-        # map function from these values to the ones required by snobal
-        self.map_val = {'air_temp': 'T_a', 'net_solar': 'S_n', 'thermal': 'I_lw',
-                        'vapor_pressure': 'e_a', 'wind_speed': 'u',
-                        'soil_temp': 'T_g', 'precip': 'm_pp',
-                        'percent_snow': 'percent_snow',
-                        'snow_density': 'rho_snow',
-                        'precip_temp': 'T_pp'}
-
-        # get AWSM logger
-        self._logger = logger
-        self._logger.debug('Initialized iPySnobal thread')
-
-    def run_single_fist_step(self, s):
-        """
-        mimic the main.c from the Snobal model. Recieves forcing data from SMRF
-        in non-threaded application and initializes very first step.
-
-        Args:
-            s:  smrf class instance
-
-        """
-
-        # loop through the input
-        # do_data_tstep needs two input records so only go
-        # to the last record-1
-
-        self.data_tstep = self.tstep_info[0]['time_step']
-        self.timeSinceOut = 0.0
-        tmp_date = self.date_time[0].replace(tzinfo=self.tzinfo)
-        wyhr = utils.water_day(tmp_date)[0] * 24.0
-        start_step = wyhr  # if restart then it would be higher if this were iSnobal
-        # start_step = 0 # if restart then it would be higher if this were iSnobal
-        step_time = start_step * self.data_tstep
-        # step_time = start_step * 60.0
-
-        self.output_rec['current_time'] = step_time * \
-            np.ones(self.output_rec['elevation'].shape)
-        self.output_rec['time_since_out'] = self.timeSinceOut * \
-            np.ones(self.output_rec['elevation'].shape)
-
-        # get first time step
-        self.input1 = {}
-        for var, v in self.variable_list.items():
-            # get the data desired
-            data = getattr(s.distribute[v['module']], v['variable'])
-
-            if data is None:
-                data = np.zeros((self.ny, self.nx))
-                self._logger.info(
-                    'No data from smrf to iSnobal for {} in {}'.format(v, self.date_time[0]))
-                self.input1[self.map_val[var]] = data
-            else:
-                self.input1[self.map_val[var]] = data
-
-        # set ground temp
-        self.input1['T_g'] = self.soil_temp*np.ones((self.ny, self.nx))
-
-        self.input1['T_a'] += FREEZE
-        self.input1['T_pp'] += FREEZE
-        self.input1['T_g'] += FREEZE
-
-        # for counting how many steps since the start of the run
-        self.j = 1
-
-        self._logger.info(
-            'Finished initializing first time step for iPySnobal')
-
-    def run_single(self, tstep, s, updater=None):
-        """
-        Runs each time step of Pysnobal when running with SMRF in non-threaded
-        application.
-
-        Args:
-            tstep: datetime time step
-            s:     smrf class instance
-            updater: depth updater class
-
-        """
-        # pbar = progressbar.ProgressBar(max_value=len(options['time']['date_time']))
-
-        self.input2 = {}
-        for var, v in self.variable_list.items():
-            # get the data desired
-            data = getattr(s.distribute[v['module']], v['variable'])
-            if data is None:
-
-                data = np.zeros((self.ny, self.nx))
-                self._logger.info('No data from smrf to iSnobal for {} in {}'
-                                  .format(v, tstep))
-                self.input2[self.map_val[var]] = data
-            else:
-                self.input2[self.map_val[var]] = data
-        # set ground temp
-        self.input2['T_g'] = self.soil_temp*np.ones((self.ny, self.nx))
-        # convert variables to Kelvin
-        self.input2['T_a'] += FREEZE
-        self.input2['T_pp'] += FREEZE
-        self.input2['T_g'] += FREEZE
-
-        first_step = self.j
-
-        # update depth if necessary
-        if updater is not None:
-            # if tstep.tz_localize(None) in updater.update_dates:
-            if tstep in updater.update_dates:
-                # print('doing that update thing')
-                # self.output_rec = \
-                #     updater.do_update_pysnobal(self.output_rec, tstep.tz_localize(None))
-                self.output_rec = \
-                    updater.do_update_pysnobal(self.output_rec, tstep)
-                first_step = 1
-
-        self._logger.info('running PySnobal for time step: {}'.format(tstep))
-        rt = snobal.do_tstep_grid(self.input1, self.input2, self.output_rec,
-                                  self.tstep_info, self.options['constants'],
-                                  self.params, first_step=first_step,
-                                  nthreads=self.nthreads)
-
-        if rt != -1:
-            self.logger.error('ipysnobal error on time step {}, pixel {}'
-                              .format(tstep, rt))
-            sys.exit()
-
-        self._logger.info('Finished time step: {}'.format(tstep))
-        self.input1 = self.input2.copy()
-
-        # output at the frequency and the last time step
-        if ((self.j)*(self.data_tstep/3600.0) % self.options['output']['frequency'] == 0)\
-                or (self.j == len(self.options['time']['date_time']) - 1):
-            io_mod.output_timestep(self.output_rec, tstep, self.options,
-                                   self.awsm_output_vars)
-            self.output_rec['time_since_out'] = np.zeros(
-                self.output_rec['elevation'].shape)
-
-        self.j += 1

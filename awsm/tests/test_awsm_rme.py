@@ -1,4 +1,5 @@
 import os
+from inicheck.tools import cast_all_variables
 
 from awsm.framework.framework import run_awsm
 from awsm.tests.awsm_test_case import AWSMTestCase
@@ -80,3 +81,30 @@ class TestStandardRME(AWSMTestCase):
 
     def test_cold_content(self):
         self.compare_netcdf_files('em.nc', 'cold_content')
+
+
+class TestRMESMRFiPysnobal(TestStandardRME):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.load_base_config()
+        cls.create_output_dir()
+
+        cls.gold_dir = cls.basin_dir.joinpath('gold')
+
+        cls.gold_em = os.path.join(cls.gold_dir, 'em.nc')
+        cls.gold_snow = os.path.join(cls.gold_dir, 'snow.nc')
+
+        cls.output_path = cls.basin_dir.joinpath(
+            'output/rme/wy1986/rme_test/run19860217_19860217'
+        )
+
+        config = cls.base_config_copy()
+        config.raw_cfg['awsm master']['run_smrf'] = False
+        config.raw_cfg['awsm master']['model_type'] = 'smrf_ipysnobal'
+        config.raw_cfg['system']['threading'] = False
+
+        config.apply_recipes()
+        config = cast_all_variables(config, config.mcfg)
+
+        run_awsm(config)

@@ -54,7 +54,7 @@ class SMRFConnector():
         """
 
         self._logger.info('Running SMRF')
-        run_smrf(self.smrf_config)
+        run_smrf(self.smrf_config, self._logger)
 
 
 def run_awsm_daily(myawsm):

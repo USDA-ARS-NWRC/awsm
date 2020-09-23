@@ -19,8 +19,9 @@ import smrf.framework.logger as logger
 
 from awsm.data.init_model import ModelInit
 from awsm.framework import ascii_art
-from awsm.interface import smrf_ipysnobal as smrf_ipy
+from awsm.interface import smrf_ipysnobal as smrf_ipy, interface as smin
 from awsm.interface.interface import SMRFConnector
+from awsm.interface.ipysnobal import PySnobal
 
 
 class AWSM():
@@ -340,8 +341,8 @@ class AWSM():
         Run smrf and pass inputs to ipysnobal in memory.
         Calls :mod: `awsm.interface.smrf_ipysnobal.run_smrf_ipysnobal`
         """
-
-        smrf_ipy.run_smrf_ipysnobal(self)
+        PySnobal(self).run_smrf_ipysnobal()
+        # smrf_ipy.run_smrf_ipysnobal(self)
 
     def run_awsm_daily(self):
         """
@@ -358,7 +359,8 @@ class AWSM():
         Run PySnobal from previously run smrf forcing data
         Calls :mod: `awsm.interface.smrf_ipysnobal.run_ipysnobal`
         """
-        smrf_ipy.run_ipysnobal(self)
+        PySnobal(self).run_ipysnobal()
+        # smrf_ipy.run_ipysnobal(self)
 
     def mk_directories(self):
         """

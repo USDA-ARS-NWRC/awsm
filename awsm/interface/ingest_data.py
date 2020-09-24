@@ -5,6 +5,7 @@ from collections import OrderedDict
 from datetime import datetime
 
 import netCDF4 as nc
+import logging
 import numpy as np
 from netCDF4 import Dataset
 from smrf.utils import utils
@@ -26,7 +27,7 @@ class StateUpdater():
         # read in updates and store both dates and images
         update_info, x, y = self.initialize_aso_updates(myawsm, self.update_fp)
 
-        self._logger = myawsm._logger
+        self._logger = logging.getLogger(__name__)
         self.end_date = myawsm.end_date
         self.x = x
         self.y = y
@@ -38,9 +39,11 @@ class StateUpdater():
         if self.update_change_file is not None:
             start_date = myawsm.config['time']['start_date']
             time_zone = myawsm.config['time']['time_zone']
-            self.delta_ds = self.initialize_update_output(start_date, time_zone,
-                                                          __version__,
-                                                          myawsm.smrf_version)
+            self.delta_ds = self.initialize_update_output(
+                start_date,
+                time_zone,
+                __version__,
+                myawsm.smrf_version)
 
         # calculate offset for each section of the run and filter updates
         # update_info, runsteps, offsets, firststeps = self.calc_offsets_nsteps(myawsm, update_info)
@@ -99,16 +102,17 @@ class StateUpdater():
                                                          self.update_info[un])
 
         # calculate the change from the update
-        idsnow = ~np.isnan(updated_fields['D'])
+        no_update = np.isnan(self.update_info[un]['depth'])
         # difference in depth
         diff_z = updated_fields['D'] - output_rec['z_s']
+        diff_z[no_update] = np.nan
         # difference in density
         diff_rho = updated_fields['rho'] - output_rec['rho']
-        diff_rho[~idsnow] = np.nan
+        diff_rho[no_update] = np.nan
         # difference in SWE
         diff_swe = updated_fields['D'] * \
             updated_fields['rho'] - output_rec['m_s']
-        diff_swe[~idsnow] = np.nan
+        diff_swe[no_update] = np.nan
 
         # check to see if last update for the time period
 
@@ -147,11 +151,12 @@ class StateUpdater():
         """
 
         # Update the snow depths in the initialization file using ASO lidar:
-        fp = update_fp
-        # read in update files
-        ds = Dataset(fp, 'r')
+        ds = Dataset(update_fp, 'r')
+        ds.set_always_mask(False)
+
         # get all depths, x, y, time
         D_all = ds.variables['depth'][:]
+        D_all = D_all.filled(fill_value=np.nan)
         D_all[np.isinf(D_all)] = np.nan
         D_all[D_all > 200.0] = np.nan
         if np.any(D_all) > 100:

@@ -20,7 +20,7 @@ class TestLakesInit(AWSMTestCaseLakes):
         cls.gold_snow = os.path.join(cls.gold_dir, 'snow.nc')
 
         cls.output_path = cls.basin_dir.joinpath(
-            'output/lakes/wy2020/lakes_gold/run0015_0017'
+            'output/lakes/wy2020/lakes_gold/run20191001_20191001'
         )
 
         config = cls.base_config_copy()

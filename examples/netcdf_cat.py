@@ -86,7 +86,8 @@ def combine_nc(tot, old):
     tot.createVariable('x', 'f', dimensions[2])
 
     setattr(tot.variables['time'], 'units', old[0].variables['time'].units)
-    setattr(tot.variables['time'], 'calendar', old[0].variables['time'].calendar)
+    setattr(tot.variables['time'], 'calendar',
+            old[0].variables['time'].calendar)
     tot.variables['x'][:] = old[0].variables['x'][:]
     tot.variables['y'][:] = old[0].variables['y'][:]
 
@@ -96,7 +97,8 @@ def combine_nc(tot, old):
 
         tot.createVariable(v, 'f', dimensions[:3], chunksizes=cs)
         setattr(tot.variables[v], 'units', old[0].variables[v].units)
-        setattr(tot.variables[v], 'description', old[0].variables[v].description)
+        setattr(tot.variables[v], 'description',
+                old[0].variables[v].project_descriptionription)
 
     # =======================================================================
     # Start reading in and combining data
@@ -143,7 +145,8 @@ def combine_nc(tot, old):
     # save dates
     if delete_duplicates:
         nc_dates = avoid_duplicate(nc_dates, nc_dates)
-    tot.variables['time'][:] = nc.date2num(nc_dates, t_units, calendar=nc_calendar)
+    tot.variables['time'][:] = nc.date2num(
+        nc_dates, t_units, calendar=nc_calendar)
     # sync and close files
     tot.sync()
     return tot
@@ -197,5 +200,5 @@ def run():
     snow_tot.close()
 
 
-if __name__ =='__main__':
+if __name__ == '__main__':
     run()

@@ -106,16 +106,31 @@ class AWSMTestCase(unittest.TestCase):
         """
 
         if os.getenv('NOT_ON_GOLD_HOST') is None:
-            np.testing.assert_array_equal(
-                not_gold,
-                gold,
-                err_msg=error_msg
-            )
+            try:
+                np.testing.assert_array_equal(
+                    not_gold,
+                    gold,
+                    err_msg=error_msg
+                )
+            except AssertionError:
+                for rtol in [1e-5, 1e-4]:
+                    status = np.allclose(
+                        not_gold,
+                        gold,
+                        atol=0,
+                        rtol=rtol
+                    )
+                    if status:
+                        break
+                if not status:
+                    raise AssertionError(error_msg)
+                print('Arrays are not exact match but close with rtol={}'.format(rtol))  # noqa
         else:
-            np.testing.assert_almost_equal(
+            np.testing.assert_allclose(
                 not_gold,
                 gold,
-                decimal=3,
+                atol=0,
+                rtol=0.01,
                 err_msg=error_msg
             )
 
@@ -146,7 +161,10 @@ class AWSMTestCase(unittest.TestCase):
         """
 
         gold = nc.Dataset(self.gold_dir.joinpath(output_file))
+        gold.set_always_mask(False)
+
         test = nc.Dataset(self.output_path.joinpath(output_file))
+        test.set_always_mask(False)
 
         # just compare the variable desired with time,x,y
         variables = ['time', 'x', 'y', variable]

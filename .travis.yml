@@ -64,7 +64,7 @@ jobs:
       env: TOXENV=py38
 
     - <<: *unittest
-      os: osxq
+      os: osx
       osx_image: xcode11.2  # Python 3.7.X running on macOS 10.14
       language: shell
       env:
@@ -87,7 +87,5 @@ jobs:
           repo: USDA-ARS-NWRC/awsm
 
   allow_failures:
-    - python: 3.6
-      env: TOXENV=coverage
     - python: 3.6
       env: TOXENV=flake8

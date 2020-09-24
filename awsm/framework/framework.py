@@ -5,19 +5,21 @@ import sys
 from datetime import datetime
 
 import pandas as pd
+import numpy as np
+import netCDF4 as nc
 import pytz
 from inicheck.config import MasterConfig, UserConfig
 from inicheck.output import print_config_report, generate_config
 from inicheck.tools import get_user_config, check_config, cast_all_variables
 from smrf.utils import utils
 import smrf
-from spatialnc.topo import topo as mytopo
+
+
 import smrf.framework.logger as logger
 
 from awsm.data.init_model import ModelInit
 from awsm.framework import ascii_art
-from awsm.interface import interface as smin, smrf_ipysnobal as smrf_ipy, \
-    ingest_data
+from awsm.interface import interface as smin, smrf_ipysnobal as smrf_ipy
 
 
 class AWSM():
@@ -35,55 +37,21 @@ class AWSM():
         """
         Initialize the model, read config file, start and end date, and logging
         Args:
-            config: string path to the config file or inicheck UserConfig instance
+            config: string path to the config file or inicheck UserConfig
+                instance
         """
-        # read the config file and store
-        awsm_mcfg = MasterConfig(modules='awsm')
-        smrf_mcfg = MasterConfig(modules='smrf')
 
-        if isinstance(config, str):
-            if not os.path.isfile(config):
-                raise Exception('Configuration file does not exist --> {}'
-                                .format(config))
-            configFile = config
-
-            try:
-                combined_mcfg = MasterConfig(modules=['smrf', 'awsm'])
-
-                # Read in the original users config
-                self.ucfg = get_user_config(configFile, mcfg=combined_mcfg)
-                self.configFile = configFile
-
-            except UnicodeDecodeError as e:
-                print(e)
-                raise Exception(('The configuration file is not encoded in '
-                                 'UTF-8, please change and retry'))
-
-        elif isinstance(config, UserConfig):
-            self.ucfg = config
-            configFile = ''
-
-        else:
-            raise Exception(
-                'Config passed to AWSM is neither file name nor UserConfig instance')
+        self.read_config(config)
 
         # create blank log and error log because logger is not initialized yet
         self.tmp_log = []
         self.tmp_err = []
         self.tmp_warn = []
 
-        # Check the user config file for errors and report issues if any
-        self.tmp_log.append("Checking config file for issues...")
-        warnings, errors = check_config(self.ucfg)
-        print_config_report(warnings, errors)
-
-        self.config = self.ucfg.cfg
-
-        # Exit AWSM if config file has errors
-        if len(errors) > 0:
-            print("Errors in the config file. "
-                  "See configuration status report above.")
-            # sys.exit()
+        self.parse_time()
+        self.parse_folder_structure()
+        self.mk_directories()
+        self.create_log()
 
         # ################## Decide which modules to run #####################
         self.do_smrf = self.config['awsm master']['run_smrf']
@@ -104,49 +72,6 @@ class AWSM():
 
         # store smrf version if running smrf
         self.smrf_version = smrf.__version__
-
-        # ################ Time information ##################
-        self.start_date = pd.to_datetime(self.config['time']['start_date'])
-        self.end_date = pd.to_datetime(self.config['time']['end_date'])
-        self.time_step = self.config['time']['time_step']
-        self.tmz = self.config['time']['time_zone']
-        self.tzinfo = pytz.timezone(self.config['time']['time_zone'])
-        # date to use for finding wy
-        tmp_date = self.start_date.replace(tzinfo=self.tzinfo)
-        tmp_end_date = self.end_date.replace(tzinfo=self.tzinfo)
-
-        # find water year hour of start and end date
-        self.start_wyhr = int(utils.water_day(tmp_date)[0]*24)
-        self.end_wyhr = int(utils.water_day(tmp_end_date)[0]*24)
-
-        # find start of water year
-        tmpwy = utils.water_day(tmp_date)[1] - 1
-        self.wy_start = pd.to_datetime('{:d}-10-01'.format(tmpwy))
-
-        # ################ Store some paths from config file ##################
-        # path to the base drive (i.e. /data/blizzard)
-        if self.config['paths']['path_dr'] is not None:
-            self.path_dr = os.path.abspath(self.config['paths']['path_dr'])
-        else:
-            print('No base path to drive given. Exiting now!')
-            sys.exit()
-
-        # name of your basin (i.e. Tuolumne)
-        self.basin = self.config['paths']['basin']
-        # water year of run
-        self.wy = utils.water_day(tmp_date)[1]
-        # name of project if not an operational run
-        self.proj = self.config['paths']['proj']
-        # check for project description
-        self.desc = self.config['paths']['desc']
-        # find style for folder date stamp
-        self.folder_date_style = self.config['paths']['folder_date_style']
-
-        # setting to output in seperate daily folders
-        self.daily_folders = self.config['awsm system']['daily_folders']
-        if self.daily_folders and not self.run_smrf_ipysnobal:
-            raise ValueError('Cannot run daily_folders with anything other'
-                             ' than run_smrf_ipysnobal')
 
         if self.do_forecast:
             self.tmp_log.append('Forecasting set to True')
@@ -215,7 +140,6 @@ class AWSM():
             # find restart hour datetime
             reset_offset = pd.to_timedelta(self.restart_hr, unit='h')
             # set a new start date for this run
-            self.restart_date = self.wy_start + reset_offset
             self.tmp_log.append('Restart date is {}'.format(self.start_date))
 
         # read in update depth parameters
@@ -231,20 +155,9 @@ class AWSM():
                 if not isinstance(self.flight_numbers, list):
                     self.flight_numbers = [self.flight_numbers]
 
-        # list of sections releated to AWSM
-        # These will be removed for smrf config
-        self.sec_awsm = awsm_mcfg.cfg.keys()
-        self.sec_smrf = smrf_mcfg.cfg.keys()
-
-        # Make rigid directory structure
-        self.mk_directories()
-
         # ################ Topo data for iSnobal ##################
         self.soil_temp = self.config['soil_temp']['temp']
-
-        # TODO can this be a SMRF topo instance?
-        self.topo = mytopo(self.config['topo'], self.mask_isnobal,
-                           self.model_type, 'UTM', self.path_output)
+        self.load_topo()
 
         # ################ Generate config backup ##################
         # if self.config['output']['input_backup']:
@@ -254,47 +167,147 @@ class AWSM():
         generate_config(self.ucfg, config_backup_location)
 
         # create log now that directory structure is done
-        self.createLog()
+        # self.create_log()
 
         # if we have a model, initialize it
         if self.model_type is not None:
             self.myinit = ModelInit(
-                self._logger,
                 self.config,
                 self.topo,
-                self.start_wyhr,
                 self.path_output,
-                self.wy_start)
+                self.start_date)
 
-    def createLog(self):
+    @property
+    def awsm_config_sections(self):
+        return MasterConfig(modules='awsm').cfg.keys()
+
+    @property
+    def smrf_config_sections(self):
+        return MasterConfig(modules='smrf').cfg.keys()
+
+    def read_config(self, config):
+
+        if isinstance(config, str):
+            if not os.path.isfile(config):
+                raise Exception('Configuration file does not exist --> {}'
+                                .format(config))
+            configFile = config
+
+            try:
+                combined_mcfg = MasterConfig(modules=['smrf', 'awsm'])
+
+                # Read in the original users config
+                self.ucfg = get_user_config(configFile, mcfg=combined_mcfg)
+                self.configFile = configFile
+
+            except UnicodeDecodeError as e:
+                print(e)
+                raise Exception(('The configuration file is not encoded in '
+                                 'UTF-8, please change and retry'))
+
+        elif isinstance(config, UserConfig):
+            self.ucfg = config
+            configFile = ''
+
+        else:
+            raise Exception("""Config passed to AWSM is neither file """
+                            """name nor UserConfig instance""")
+
+        # Check the user config file for errors and report issues if any
+        warnings, errors = check_config(self.ucfg)
+        print_config_report(warnings, errors)
+
+        self.config = self.ucfg.cfg
+
+        if len(errors) > 0:
+            print("Errors in the config file. "
+                  "See configuration status report above.")
+            sys.exit()
+
+    def load_topo(self):
+
+        self.topo = smrf.data.load_topo.Topo(self.config['topo'])
+
+        if not self.mask_isnobal:
+            self.topo.mask = np.ones_like(self.topo.dem)
+
+        # see if roughness is in the topo
+        f = nc.Dataset(self.config['topo']['filename'], 'r')
+        f.set_always_mask(False)
+        if 'roughness' not in f.variables.keys():
+            self.tmp_warn.append(
+                'No surface roughness given in topo, setting to 5mm')
+            self.topo.roughness = 0.005 * np.ones_like(self.topo.dem)
+        else:
+            self.topo.roughness = f.variables['roughness'][:].astype(
+                np.float64)
+
+        f.close()
+
+    def parse_time(self):
+        """Parse the time configuration
+        """
+
+        self.start_date = pd.to_datetime(self.config['time']['start_date'])
+        self.end_date = pd.to_datetime(self.config['time']['end_date'])
+        self.time_step = self.config['time']['time_step']
+        self.tzinfo = pytz.timezone(self.config['time']['time_zone'])
+
+        # date to use for finding wy
+        self.start_date = self.start_date.replace(tzinfo=self.tzinfo)
+        self.end_date = self.end_date.replace(tzinfo=self.tzinfo)
+
+        # find water year hour of start and end date
+        self.start_wyhr = int(utils.water_day(self.start_date)[0]*24)
+        self.end_wyhr = int(utils.water_day(self.end_date)[0]*24)
+
+    def parse_folder_structure(self):
+        """Parse the config to get the folder structure
+
+        Raises:
+            ValueError: daily_folders can only be ran with smrf_ipysnobal
+        """
+
+        if self.config['paths']['path_dr'] is not None:
+            self.path_dr = os.path.abspath(self.config['paths']['path_dr'])
+        else:
+            print('No base path to drive given. Exiting now!')
+            sys.exit()
+
+        self.basin = self.config['paths']['basin']
+        self.water_year = utils.water_day(self.start_date)[1]
+        self.project_name = self.config['paths']['project_name']
+        self.project_description = self.config['paths']['project_description']
+        self.folder_date_style = self.config['paths']['folder_date_style']
+
+        # setting to output in seperate daily folders
+        self.daily_folders = self.config['awsm system']['daily_folders']
+        if self.daily_folders and not self.run_smrf_ipysnobal:
+            raise ValueError('Cannot run daily_folders with anything other'
+                             ' than run_smrf_ipysnobal')
+
+    def create_log(self):
         '''
         Now that the directory structure is done, create log file and print out
         saved logging statements.
         '''
 
-        # start logging
-        loglevel = self.config['awsm system']['log_level'].upper()
-
-        numeric_level = getattr(logging, loglevel, None)
-        if not isinstance(numeric_level, int):
-            raise ValueError('Invalid log level: %s' % loglevel)
-
         # setup the logging
         logfile = None
         if self.config['awsm system']['log_to_file']:
-            if self.config['isnobal restart']['restart_crash']:
-                logfile = \
-                    os.path.join(self.path_log,
-                                 'log_restart_{}.out'.format(self.restart_hr))
-            elif self.do_forecast:
-                logfile = \
-                    os.path.join(self.path_log,
-                                 'log_forecast_'
-                                 '{}.out'.format(self.folder_date_stamp))
-            else:
-                logfile = \
-                    os.path.join(self.path_log,
-                                 'log_{}.out'.format(self.folder_date_stamp))
+            # if self.config['isnobal restart']['restart_crash']:
+            #     logfile = \
+            #         os.path.join(self.path_log,
+            #                      'log_restart_{}.out'.format(self.restart_hr))
+            # elif self.do_forecast:
+            #     logfile = \
+            #         os.path.join(self.path_log,
+            #                      'log_forecast_'
+            #                      '{}.out'.format(self.folder_date_stamp))
+            # else:
+            logfile = \
+                os.path.join(self.path_log,
+                             'log_{}.out'.format(self.folder_date_stamp))
             # let user know
             print('Logging to file: {}'.format(logfile))
 
@@ -307,15 +320,12 @@ class AWSM():
         self._logger.info(ascii_art.TITLE)
 
         # dump saved logs
-        if len(self.tmp_log) > 0:
-            for line in self.tmp_log:
-                self._logger.info(line)
-        if len(self.tmp_warn) > 0:
-            for line in self.tmp_warn:
-                self._logger.warning(line)
-        if len(self.tmp_err) > 0:
-            for line in self.tmp_err:
-                self._logger.error(line)
+        for line in self.tmp_log:
+            self._logger.info(line)
+        for line in self.tmp_warn:
+            self._logger.warning(line)
+        for line in self.tmp_err:
+            self._logger.error(line)
 
     def runSmrf(self):
         """
@@ -357,11 +367,7 @@ class AWSM():
         self.tmp_log.append('AWSM creating directories')
 
         # string to append to folders indicatiing run start and end
-        if self.folder_date_style == 'wyhr':
-            self.folder_date_stamp = '{:04d}_{:04d}'.format(self.start_wyhr,
-                                                            self.end_wyhr)
-
-        elif self.folder_date_style == 'day':
+        if self.folder_date_style == 'day':
             self.folder_date_stamp = \
                 '{}'.format(self.start_date.strftime("%Y%m%d"))
 
@@ -374,8 +380,8 @@ class AWSM():
         self.path_wy = os.path.join(
             self.path_dr,
             self.basin,
-            'wy{}'.format(self.wy),
-            self.proj
+            'wy{}'.format(self.water_year),
+            self.project_name
         )
 
         # all files will now be under one single folder
@@ -414,15 +420,15 @@ class AWSM():
 
         if not os.path.isfile(fp_desc):
             # look for description or prompt for one
-            if self.desc is not None:
+            if self.project_description is not None:
                 pass
             else:
-                self.desc = input('\nNo description for project. '
-                                  'Enter one now, but do not use '
-                                  'any punctuation:\n')
-            f = open(fp_desc, 'w')
-            f.write(self.desc)
-            f.close()
+                self.project_description = input('\nNo description for project. '
+                                                 'Enter one now, but do not use '
+                                                 'any punctuation:\n')
+            with open(fp_desc, 'w') as f:
+                f.write(self.project_description)
+
         else:
             self.tmp_log.append('Description file already exists\n')
 
@@ -498,13 +504,13 @@ def run_awsm_daily_ops(config_file):
     prev_out_base = os.path.join(paths['path_dr'],
                                  paths['basin'],
                                  'wy{}'.format(wy),
-                                 paths['proj'],
+                                 paths['project_name'],
                                  'runs')
 
     prev_data_base = os.path.join(paths['path_dr'],
                                   paths['basin'],
                                   'wy{}'.format(wy),
-                                  paths['proj'],
+                                  paths['project_name'],
                                   'data')
 
     # find day of start and end

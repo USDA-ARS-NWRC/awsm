@@ -107,4 +107,4 @@ class TestRMESMRFiPysnobal(TestStandardRME):
         config.apply_recipes()
         config = cast_all_variables(config, config.mcfg)
 
-        run_awsm(config)
+        run_awsm(config, testing=True)

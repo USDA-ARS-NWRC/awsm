@@ -35,7 +35,7 @@ class AWSM():
     Attributes:
     """
 
-    def __init__(self, config):
+    def __init__(self, config, testing=False):
         """
         Initialize the model, read config file, start and end date, and logging
         Args:
@@ -44,6 +44,7 @@ class AWSM():
         """
 
         self.read_config(config)
+        self.testing = testing
 
         # create blank log and error log because logger is not initialized yet
         self.tmp_log = []
@@ -574,14 +575,14 @@ def run_awsm_daily_ops(config_file):
         run_awsm(new_config)
 
 
-def run_awsm(config):
+def run_awsm(config, testing=False):
     """
     Function that runs awsm how it should be operate for full runs.
 
     Args:
         config: string path to the config file or inicheck UserConfig instance
     """
-    with AWSM(config) as a:
+    with AWSM(config, testing) as a:
         if a.do_forecast:
             runtype = 'forecast'
         else:

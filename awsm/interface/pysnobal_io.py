@@ -45,10 +45,11 @@ def open_files_nc(myawsm):
 
     # soil temp can either be distributed for set to a constant
     try:
-        force['soil_temp'] = nc.Dataset(options['inputs']['soil_temp'], 'r')
-    except:
-        force['soil_temp'] = float(myawsm.soil_temp) * np.ones((myawsm.topo.ny,
-                                                                myawsm.topo.nx))
+        force['soil_temp'] = nc.Dataset(
+            os.path.join(myawsm.path_output, 'soil_temp.nc'), 'r')
+    except Exception:
+        force['soil_temp'] = float(myawsm.soil_temp) * \
+            np.ones_like(myawsm.topo.dem)
 
     force['precip_mass'] = nc.Dataset(
         os.path.join(myawsm.path_output, 'precip.nc'), 'r')

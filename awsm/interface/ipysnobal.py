@@ -97,29 +97,41 @@ class PySnobal():
         else:
             self.updater = None
 
-    def init_from_smrf(self):
-        """
-        mimic the main.c from the Snobal model
-        """
+    def initialize_ipysnobal(self):
 
         # parse the input arguments
         self.options, point_run = initmodel.get_args(self.awsm)
+        self.date_time = self.options['time']['date_time']
 
         # get the time step info
         self.params, self.tstep_info = initmodel.get_tstep_info(
             self.options['constants'],
             self.options,
-            self.awsm.mass_thresh)
+            self.awsm.mass_thresh
+        )
 
         # get init params
         self.init = self.awsm.myinit.init
 
         self.output_rec = initmodel.initialize(
-            self.params, self.tstep_info, self.init)
+            self.params,
+            self.tstep_info,
+            self.init
+        )
 
         # create the output files
-        io_mod.output_files(self.options, self.init,
-                            self.awsm.start_date, self.awsm)
+        io_mod.output_files(
+            self.options,
+            self.init,
+            self.awsm.start_date,
+            self.awsm
+        )
+
+        self.time_since_out = 0.0
+        self.start_step = 0  # if restart then it would be higher if this were iSnobal
+        step_time = self.start_step * self.data_tstep
+
+        self.set_current_time(step_time, self.time_since_out)
 
     def do_update(self, first_step, tstep):
 
@@ -145,19 +157,15 @@ class PySnobal():
 
                 if smrf_data is None:
                     smrf_data = self.init_zeros
-                    self._logger.info(
+                    self._logger.debug(
                         'No data from smrf to iSnobal for {} in {}'.format(
-                            v, time_step))
+                            v['variable'], time_step))
 
                 data[self.MAP_INPUTS[var]] = smrf_data
 
-            # set ground temp
-            # TODO get soil temp in SMRF distribute function
-            data['T_g'] = self.awsm.soil_temp * self.init_ones
-
-        data['T_a'] += FREEZE
-        data['T_pp'] += FREEZE
-        data['T_g'] += FREEZE
+        data['T_a'] = data['T_a'] + FREEZE
+        data['T_pp'] = data['T_pp'] + FREEZE
+        data['T_g'] = data['T_g'] + FREEZE
 
         return data
 
@@ -229,13 +237,7 @@ class PySnobal():
         """
 
         self._logger.info('Initializing PySnobal from netcdf files')
-        self.init_from_smrf()
-
-        time_since_out = 0.0
-        start_step = 0  # if restart then it would be higher if this were iSnobal
-        step_time = start_step * self.data_tstep
-
-        self.set_current_time(step_time, time_since_out)
+        self.initialize_ipysnobal()
 
         self._logger.info('getting inputs for first timestep')
 
@@ -249,7 +251,7 @@ class PySnobal():
 
         self._logger.info('starting PySnobal time series loop')
 
-        for step_index, tstep in enumerate(self.options['time']['date_time'][1:], 1):  # noqa
+        for step_index, tstep in enumerate(self.date_time[1:], 1):  # noqa
             self.run_full_timestep(tstep, step_index, force=force)
 
             # if input has run_for_nsteps, make sure not to go past it
@@ -301,30 +303,6 @@ class PySnobal():
 
             s._logger.debug('DONE!!!!')
 
-    def initialize_first_timestep(self, s):
-        """
-        Initialize the first input time step from SMRF
-
-        Args:
-            s:  smrf class instance
-
-        """
-
-        self.time_since_out = 0.0
-        wyhr = utils.water_day(self.date_time[0])[0] * 24.0
-        start_step = wyhr  # if restart then it would be higher if this were iSnobal
-        # start_step = 0 # if restart then it would be higher if this were iSnobal
-        step_time = start_step * self.data_tstep
-        # step_time = start_step * 60.0
-
-        self.set_current_time(step_time, self.time_since_out)
-
-        # get first time step
-        self.input1 = self.get_timestep_inputs(self.date_time[0], s=s)
-
-        self._logger.info(
-            'Finished initializing first time step for iPySnobal')
-
     def run_smrf_ipysnobal_serial(self, s):
         """
         Running smrf and PySnobal in non-threaded application.
@@ -337,36 +315,33 @@ class PySnobal():
 
         self._logger.info('Running SMRF and iPysnobal in serial')
 
-        s.initialize_distribution()
+        self.initialize_ipysnobal()
 
-        self.init_from_smrf()
-        self.date_time = s.date_time
-        self.nthreads = self.options['output']['nthreads']
+        s.initialize_distribution()
 
         self.variable_list = s.create_output_variable_dict(
             self.FORCING_VARIABLES, '.')
 
         self.initialize_updater()
 
-        for step_index, t in enumerate(s.date_time, 1):
+        # for step_index, t in enumerate(s.date_time, 1):
+        for step_index, tstep in enumerate(self.date_time, 0):
             startTime = datetime.now()
 
-            s.distribute_single_timestep(t)
+            s.distribute_single_timestep(tstep)
             # perhaps put s.output() here to get SMRF output?
 
             # run ipysnobal
-            if step_index == 1:
-                self.initialize_first_timestep(s)
-            elif step_index > 1:
-                self.run_full_timestep(t, step_index, s=s)
+            if step_index == 0:
+                self.input1 = self.get_timestep_inputs(tstep, s=s)
+            elif step_index > 0:
+                self.run_full_timestep(tstep, step_index, s=s)
             else:
                 raise ValueError('Problem with times in run ipysnobal single')
 
             telapsed = datetime.now() - startTime
             s._logger.debug('{0:.2f} seconds for time step'
                             .format(telapsed.total_seconds()))
-
-        s.forcing_data = 1
 
     # def run_smrf_ipysnobal_threaded(self, s):
     #     """
@@ -380,7 +355,7 @@ class PySnobal():
     #     """
     #     # initialize ipysnobal state
     #     options, params, tstep_info, init, output_rec = \
-    #         init_from_smrf(self.awsm, s)
+    #         initialize_ipysnobal(self.awsm, s)
 
     #     s.create_data_queue()
     #     s.set_queue_variables()

@@ -115,7 +115,7 @@ class TestLakesLidarUpdateSMRFiPysnobal(TestLakesLidarUpdate):
         cls.load_base_config()
         cls.create_output_dir()
 
-        cls.gold_dir = cls.basin_dir.joinpath('gold_hrrr')
+        cls.gold_dir = cls.basin_dir.joinpath('gold_hrrr_update')
 
         cls.gold_em = os.path.join(cls.gold_dir, 'em.nc')
         cls.gold_snow = os.path.join(cls.gold_dir, 'snow.nc')

@@ -232,7 +232,7 @@ class PySnobal():
 
         self.output_timestep(tstep, step_index)
 
-        self._logger.info('Finished timestep: {}'.format(tstep))
+        self._logger.info('Finished PySnobal timestep: {}'.format(tstep))
 
     def output_timestep(self, tstep, step_index):
 

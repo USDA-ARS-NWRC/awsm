@@ -1,21 +1,15 @@
 
 from pysnobal.c_snobal import snobal
 from datetime import datetime
-import sys
-import pytz
 import logging
 import numpy as np
-from smrf.utils import utils
 from smrf.framework.model_framework import SMRF
-from topocalc.shade import shade
-from smrf.envphys import sunang
 from smrf.utils import queue
 
 import threading
 from awsm.interface import initialize_model as initmodel
 from awsm.interface import pysnobal_io as io_mod
 from awsm.interface.ingest_data import StateUpdater
-from awsm.interface.interface import SMRFConnector
 
 C_TO_K = 273.16
 FREEZE = C_TO_K
@@ -27,20 +21,6 @@ def K_TO_C(x): return x - FREEZE
 
 
 class PySnobal():
-
-    # map function from these values to the ones required by snobal
-    MAP_INPUTS = {
-        'air_temp': 'T_a',
-        'net_solar': 'S_n',
-        'thermal': 'I_lw',
-        'vapor_pressure': 'e_a',
-        'wind_speed': 'u',
-        'soil_temp': 'T_g',
-        'precip': 'm_pp',
-        'percent_snow': 'percent_snow',
-        'snow_density': 'rho_snow',
-        'precip_temp': 'T_pp'
-    }
 
     FORCING_VARIABLES = [
         'thermal',
@@ -184,8 +164,8 @@ class PySnobal():
 
     def get_timestep_inputs(self, time_step):
 
-        if self.force is not None:
-            data = initmodel.get_timestep_netcdf(self.force, time_step)
+        if self.awsm.smrf_connector.force is not None:
+            data = self.awsm.smrf_connector.get_timestep_netcdf(time_step)
 
         else:
             data = {}
@@ -199,7 +179,7 @@ class PySnobal():
                         'No data from smrf to iSnobal for {} in {}'.format(
                             v['variable'], time_step))
 
-                data[self.MAP_INPUTS[var]] = smrf_data
+                data[self.awsm.smrf_connector.MAP_INPUTS[var]] = smrf_data
 
             data = self._only_for_testing(data)
 
@@ -302,7 +282,7 @@ class PySnobal():
 
         self._logger.info('getting inputs for first timestep')
 
-        self.force = io_mod.open_files_nc(self.awsm)
+        self.force = self.awsm.smrf_connector.open_netcdf_files()
         self.input1 = self.get_timestep_inputs(
             self.options['time']['date_time'][0],
         )
@@ -321,7 +301,7 @@ class PySnobal():
 
         # close input files
         if self.awsm.forcing_data_type == 'netcdf':
-            io_mod.close_files(self.force)
+            self.awsm.smrf_connector.close_netcdf_files()
 
     def run_smrf_ipysnobal(self):
         """
@@ -331,10 +311,8 @@ class PySnobal():
         Args:
             myawsm: AWSM instance
         """
-        # first create config to run smrf
-        smrf_connector = SMRFConnector(self.awsm)
 
-        with SMRF(smrf_connector.smrf_config, self._logger) as self.smrf:
+        with SMRF(self.awsm.smrf_connector.smrf_config, self._logger) as self.smrf:
             # # if input has run_for_nsteps, make sure not to go past it
             # if self.awsm.run_for_nsteps is not None:
             #     change_in_hours = int(self.awsm.run_for_nsteps *

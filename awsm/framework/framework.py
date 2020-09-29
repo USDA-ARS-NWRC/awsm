@@ -172,6 +172,8 @@ class AWSM():
         # create log now that directory structure is done
         # self.create_log()
 
+        self.smrf_connector = SMRFConnector(self)
+
         # if we have a model, initialize it
         if self.model_type is not None:
             self.myinit = ModelInit(
@@ -330,18 +332,19 @@ class AWSM():
         for line in self.tmp_err:
             self._logger.error(line)
 
-    def runSmrf(self):
+    def run_smrf(self):
         """
         Run smrf. Calls :mod: `awsm.interface.smrf_connector.smrfMEAS`
         """
 
-        SMRFConnector(self).run_smrf()
+        self.smrf_connector.run_smrf()
 
     def run_smrf_ipysnobal(self):
         """
         Run smrf and pass inputs to ipysnobal in memory.
         Calls :mod: `awsm.interface.smrf_ipysnobal.run_smrf_ipysnobal`
         """
+
         PySnobal(self).run_smrf_ipysnobal()
         # smrf_ipy.run_smrf_ipysnobal(self)
 
@@ -590,7 +593,7 @@ def run_awsm(config, testing=False):
 
         if not a.config['isnobal restart']['restart_crash']:
             if a.do_smrf:
-                a.runSmrf()
+                a.run_smrf()
 
             if a.model_type == 'ipysnobal':
                 a.run_ipysnobal()

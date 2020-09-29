@@ -7,7 +7,11 @@ from awsm.tests.awsm_test_case_lakes import AWSMTestCaseLakes
 
 class TestLakesLidarUpdate(AWSMTestCaseLakes):
     """
-    Integration test for AWSM using Lakes
+    Testing using Lakes:
+        - ipysnobal
+        - initialize from snow.nc
+        - loading from netcdf
+        - lidar updates
     """
 
     @classmethod
@@ -109,6 +113,12 @@ class TestLakesLidarUpdate(AWSMTestCaseLakes):
 
 
 class TestLakesLidarUpdateSMRFiPysnobal(TestLakesLidarUpdate):
+    """
+    Testing using Lakes:
+        - smrf_ipysnobal
+        - initialize from snow.nc
+        - lidar updates
+    """
 
     @classmethod
     def setUpClass(cls):
@@ -128,6 +138,49 @@ class TestLakesLidarUpdateSMRFiPysnobal(TestLakesLidarUpdate):
         config.raw_cfg['awsm master']['run_smrf'] = False
         config.raw_cfg['awsm master']['model_type'] = 'smrf_ipysnobal'
         config.raw_cfg['system']['threading'] = False
+        adj_config = {
+            'update depth': {
+                'update': True,
+                'update_file': './topo/lidar_depths.nc',
+                'buffer': 400,
+                'flight_numbers': 1,
+                'update_change_file': 'output/lakes/wy2020/lakes_gold/run20191001_20191001/model_lidar_change.nc'  # noqa
+            },
+        }
+        config.raw_cfg.update(adj_config)
+        config.apply_recipes()
+        config = cast_all_variables(config, config.mcfg)
+
+        run_awsm(config, testing=True)
+
+
+class TestLakesLidarUpdateSMRFiPysnobalThreaded(TestLakesLidarUpdate):
+    """
+    Testing using Lakes:
+        - smrf_ipysnobal
+        - threaded SMRF/iPysnobal
+        - initialize from snow.nc
+        - lidar updates
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.load_base_config()
+        cls.create_output_dir()
+
+        cls.gold_dir = cls.basin_dir.joinpath('gold_hrrr_update')
+
+        cls.gold_em = os.path.join(cls.gold_dir, 'em.nc')
+        cls.gold_snow = os.path.join(cls.gold_dir, 'snow.nc')
+
+        cls.output_path = cls.basin_dir.joinpath(
+            'output/lakes/wy2020/lakes_gold/run20191001_20191001'
+        )
+
+        config = cls.base_config_copy()
+        config.raw_cfg['awsm master']['run_smrf'] = False
+        config.raw_cfg['awsm master']['model_type'] = 'smrf_ipysnobal'
+        config.raw_cfg['system']['threading'] = True
         adj_config = {
             'update depth': {
                 'update': True,

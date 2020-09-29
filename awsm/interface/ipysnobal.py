@@ -14,11 +14,6 @@ from awsm.interface.ingest_data import StateUpdater
 C_TO_K = 273.16
 FREEZE = C_TO_K
 
-# Kelvin to Celsius
-
-
-def K_TO_C(x): return x - FREEZE
-
 
 class PySnobal():
 
@@ -35,26 +30,14 @@ class PySnobal():
         'precip_temp'
     ]
 
-    # def __init__(self, date_time, variable_list, awsm_output_vars,
-    #              options, params, tstep_info, init,
-    #              output_rec, nx, ny, soil_temp, logger, tzi):
     def __init__(self, myawsm):
-        """
+        """PySnobal class to run pysnobal. Will also run SMRF
+        in a threaded mode for smrf_ipysnobal
+
         Args:
-            date_time:  array of date_time
-            variable_list: list of forcing variables to recieve from smrf
-            output_vars:    list of variables to output
-            options:    dictionary of Snobal options
-            params:     dictionary of Snobal params
-            tstep_info: dictionary of info for Snobal time steps
-            init:       dictionary of init info for Snobal
-            output_rec: dictionary to store Snobal variables between time steps
-            nx:         number of points in X direction
-            ny:         number of points in y direction
-            soil_temp:  uniform soil temperature (float)
-            logger:     initialized AWSM logger
-            tzi:        time zone information
+            myawsm (AWSM): AWSM class instance
         """
+
         self._logger = logging.getLogger(__name__)
         self.awsm = myawsm
         self.smrf = None
@@ -118,7 +101,7 @@ class PySnobal():
         )
 
         # get init params
-        self.init = self.awsm.myinit.init
+        self.init = self.awsm.model_init.init
 
         self.output_rec = initmodel.initialize(
             self.params,

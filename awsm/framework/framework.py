@@ -176,7 +176,7 @@ class AWSM():
 
         # if we have a model, initialize it
         if self.model_type is not None:
-            self.myinit = ModelInit(
+            self.model_init = ModelInit(
                 self.config,
                 self.topo,
                 self.path_output,

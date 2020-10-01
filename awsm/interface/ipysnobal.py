@@ -1,19 +1,40 @@
 
 from pysnobal.c_snobal import snobal
-from datetime import datetime
+from datetime import datetime, timedelta
 import logging
 import numpy as np
 from smrf.framework.model_framework import SMRF
 from smrf.utils import queue
 from pysnobal import ipysnobal
+import pandas as pd
 
 import threading
-from awsm.interface import initialize_model as initmodel
 from awsm.interface import pysnobal_io as io_mod
 from awsm.interface.ingest_data import StateUpdater
 
+
 C_TO_K = 273.16
 FREEZE = C_TO_K
+# Kelvin to Celsius
+def K_TO_C(x): return x - FREEZE
+
+
+def check_range(value, min_val, max_val, descrip):
+    """
+    Check the range of the value
+    Args:
+        value:  value to check
+        min_val: minimum value
+        max_val: maximum value
+        descrip: short description of input
+
+    Returns:
+        True if within range
+    """
+    if (value < min_val) or (value > max_val):
+        raise ValueError("%s (%f) out of range: %f to %f",
+                         descrip, value, min_val, max_val)
+    pass
 
 
 class PySnobal():
@@ -91,8 +112,8 @@ class PySnobal():
     def initialize_ipysnobal(self):
 
         # parse the input arguments
-        self.options, point_run = initmodel.get_args(self.awsm)
-        self.date_time = self.options['time']['date_time']
+        # self.options, point_run = initmodel.get_args(self.awsm)
+        self.get_args()
 
         # get the time step info
         self.params, self.tstep_info = ipysnobal.get_tstep_info(
@@ -106,11 +127,8 @@ class PySnobal():
         # get init params
         self.init = self.awsm.model_init.init
 
-        self.output_rec = initmodel.initialize(
-            self.params,
-            self.tstep_info,
-            self.init
-        )
+        self.output_rec = ipysnobal.initialize(
+            self.params, self.tstep_info, self.init)
 
         # create the output files
         io_mod.output_files(
@@ -121,10 +139,127 @@ class PySnobal():
         )
 
         self.time_since_out = 0.0
-        self.start_step = 0  # if restart then it would be higher if this were iSnobal
+        self.start_step = 0  # if restart then it would be higher
         step_time = self.start_step * self.data_tstep
 
         self.set_current_time(step_time, self.time_since_out)
+
+    def get_args(self):
+        """
+        Parse the configuration file and returns a dictionary called options.
+        Options contains the following keys:
+
+        * z - site elevation (m)
+        * t - time steps: data [normal, [,medium [,small]]] (minutes)
+        * m - snowcover's maximum h2o content as volume ratio,
+        * d - maximum depth for active layer (m),
+        * s - snow properties input data file,
+        * h - measurement heights input data file,
+        * p - precipitation input data file,
+        * i - input data file,
+        * I - initial conditions
+        * o - optional output data file,
+        * O - how often output records written (data, normal, all),
+        * c - continue run even when no snowcover,
+        * K - accept temperatures in degrees K,
+        * T - run time steps' thresholds for a layer's mass (kg/m^2)
+
+        To-do: take all the rest of the default and check ranges for the
+        input arguments, i.e. rewrite the rest of getargs.c
+
+        """
+        # -------------------------------------------------------------------------
+        # these are the default options
+        options = {
+            'time_step': 60,
+            'max-h2o': 0.01,
+            # 'max_z0': DEFAULT_MAX_Z_S_0,
+            'c': True,
+            'K': True,
+            'mass_threshold': self.awsm.mass_thresh[0],
+            'time_z': 0,
+            'max_z_s_0': self.awsm.active_layer,
+            'z_u': 5.0,
+            'z_t': 5.0,
+            'z_g': 0.5,
+            'relative_heights': True,
+        }
+
+        # make blank config and fill with corresponding sections
+        config = {}
+        config['time'] = {}
+        config['output'] = {}
+        config['time']['time_step'] = self.awsm.time_step
+        if self.awsm.restart_run:
+            config['time']['start_date'] = self.awsm.restart_date
+        else:
+            config['time']['start_date'] = self.awsm.start_date
+
+        config['time']['end_date'] = self.awsm.end_date
+        config['output']['frequency'] = self.awsm.output_freq
+        # config['output'] = self.awsm.config['ipysnobal output']
+        config['output']['location'] = self.awsm.path_output
+        config['output']['nthreads'] = int(self.awsm.ipy_threads)
+        config['constants'] = self.awsm.config['ipysnobal constants']
+        # read in the constants
+        c = {}
+        for v in self.awsm.config['ipysnobal constants']:
+            c[v] = float(self.awsm.config['ipysnobal constants'][v])
+        options.update(c)  # update the default with any user values
+
+        config['constants'] = options
+
+        # ------------------------------------------------------------------------
+        # read in the time and ensure a few things
+        # nsteps will only be used if end_date is not specified
+        data_tstep_min = int(config['time']['time_step'])
+        check_range(data_tstep_min, 1.0, 3 * 60, "input data's time step")
+        if ((data_tstep_min > 60) and (data_tstep_min % 60 != 0)):
+            raise ValueError("""Data time step > 60 min must be multiple """
+                             """of 60 min (whole hours)""")
+        config['time']['time_step'] = data_tstep_min
+
+        # add to constant sections for tstep_info calculation
+        config['constants']['time_step'] = config['time']['time_step']
+
+        # read in the start date and end date
+        start_date = config['time']['start_date']
+
+        end_date = config['time']['end_date']
+        if end_date < start_date:
+            raise ValueError('end_date is before start_date')
+        nsteps = (end_date-start_date).total_seconds() / \
+            60  # elapsed time in minutes
+        nsteps = int(nsteps / config['time']['time_step'])
+
+        # create a date time vector
+        date_time = list(pd.date_range(
+            start_date,
+            end_date,
+            freq=timedelta(minutes=config['constants']['time_step'])))
+
+        if len(date_time) != nsteps + 1:
+            raise Exception(
+                'nsteps does not work with selected start and end dates')
+
+        config['time']['start_date'] = start_date
+        config['time']['end_date'] = end_date
+        config['time']['nsteps'] = nsteps
+        config['time']['date_time'] = date_time
+        self.date_time = date_time
+
+        # check the output section
+        config['output']['frequency'] = int(config['output']['frequency'])
+
+        config['output']['output_mode'] = 'data'
+        config['output']['out_filename'] = None
+        config['inputs'] = {}
+        config['inputs']['point'] = None
+        config['inputs']['input_type'] = self.awsm.ipy_init_type
+        config['inputs']['soil_temp'] = self.awsm.soil_temp
+
+        self.options = config
+        self.point_run = False
 
     def do_update(self, first_step, tstep):
 

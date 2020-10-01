@@ -5,6 +5,7 @@ import logging
 import numpy as np
 from smrf.framework.model_framework import SMRF
 from smrf.utils import queue
+from pysnobal import ipysnobal
 
 import threading
 from awsm.interface import initialize_model as initmodel
@@ -94,11 +95,13 @@ class PySnobal():
         self.date_time = self.options['time']['date_time']
 
         # get the time step info
-        self.params, self.tstep_info = initmodel.get_tstep_info(
-            self.options['constants'],
-            self.options,
-            self.awsm.mass_thresh
-        )
+        self.params, self.tstep_info = ipysnobal.get_tstep_info(
+            self.options['constants'], self.options)
+
+        # mass thresholds for run time steps
+        self.tstep_info[ipysnobal.NORMAL_TSTEP]['threshold'] = self.awsm.mass_thresh[0]  # noqa
+        self.tstep_info[ipysnobal.MEDIUM_TSTEP]['threshold'] = self.awsm.mass_thresh[1]  # noqa
+        self.tstep_info[ipysnobal.SMALL_TSTEP]['threshold'] = self.awsm.mass_thresh[2]  # noqa
 
         # get init params
         self.init = self.awsm.model_init.init

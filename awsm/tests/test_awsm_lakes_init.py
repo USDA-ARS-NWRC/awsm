@@ -162,3 +162,40 @@ class TestLakesInitSMRFiPysnobalThreaded(TestLakesInit):
         config = cast_all_variables(config, config.mcfg)
 
         run_awsm(config, testing=True)
+
+
+class TestLakesInitSMRFiPysnobalThreadedHRRR(TestLakesInit):
+    """
+    Testing using Lakes:
+        - smrf_ipysnobal
+        - initialize from init.nc file
+        - threaded SMRF/iPysnobal
+        - loading HRRR in timestep mode
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.load_base_config()
+        cls.create_output_dir()
+
+        cls.gold_dir = cls.basin_dir.joinpath('gold_hrrr')
+
+        cls.gold_em = os.path.join(cls.gold_dir, 'em.nc')
+        cls.gold_snow = os.path.join(cls.gold_dir, 'snow.nc')
+
+        cls.output_path = cls.basin_dir.joinpath(
+            'output/lakes/wy2020/lakes_gold/run20191001_20191001'
+        )
+
+        config = cls.base_config_copy()
+        config.raw_cfg['gridded']['hrrr_load_method'] = 'timestep'
+        config.raw_cfg['awsm master']['run_smrf'] = False
+        config.raw_cfg['awsm master']['model_type'] = 'smrf_ipysnobal'
+        config.raw_cfg['system']['threading'] = True
+        config.raw_cfg['files']['init_file'] = './topo/init.nc'
+        config.raw_cfg['files']['init_type'] = 'netcdf'
+
+        config.apply_recipes()
+        config = cast_all_variables(config, config.mcfg)
+
+        run_awsm(config, testing=True)

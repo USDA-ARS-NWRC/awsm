@@ -56,8 +56,8 @@ class ModelInit():
         self.start_date = start_date
 
         # get parameters from awsm
-        self.init_file = cfg['files']['init_file']
-        self.init_type = cfg['files']['init_type']
+        self.init_file = cfg['ipysnobal']['init_file']
+        self.init_type = cfg['ipysnobal']['init_type']
 
         if self.init_file is not None:
             self._logger.info(

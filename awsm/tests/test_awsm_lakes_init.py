@@ -28,8 +28,8 @@ class TestLakesInit(AWSMTestCaseLakes):
 
         config = cls.base_config_copy()
 
-        config.raw_cfg['files']['init_file'] = './topo/init.nc'
-        config.raw_cfg['files']['init_type'] = 'netcdf'
+        config.raw_cfg['ipysnobal']['init_file'] = './topo/init.nc'
+        config.raw_cfg['ipysnobal']['init_type'] = 'netcdf'
 
         config.apply_recipes()
         config = cast_all_variables(config, config.mcfg)
@@ -120,8 +120,8 @@ class TestLakesInitSMRFiPysnobal(TestLakesInit):
         config.raw_cfg['awsm master']['run_smrf'] = False
         config.raw_cfg['awsm master']['model_type'] = 'smrf_ipysnobal'
         config.raw_cfg['system']['threading'] = False
-        config.raw_cfg['files']['init_file'] = './topo/init.nc'
-        config.raw_cfg['files']['init_type'] = 'netcdf'
+        config.raw_cfg['ipysnobal']['init_file'] = './topo/init.nc'
+        config.raw_cfg['ipysnobal']['init_type'] = 'netcdf'
 
         config.apply_recipes()
         config = cast_all_variables(config, config.mcfg)
@@ -155,8 +155,8 @@ class TestLakesInitSMRFiPysnobalThreaded(TestLakesInit):
         config.raw_cfg['awsm master']['run_smrf'] = False
         config.raw_cfg['awsm master']['model_type'] = 'smrf_ipysnobal'
         config.raw_cfg['system']['threading'] = True
-        config.raw_cfg['files']['init_file'] = './topo/init.nc'
-        config.raw_cfg['files']['init_type'] = 'netcdf'
+        config.raw_cfg['ipysnobal']['init_file'] = './topo/init.nc'
+        config.raw_cfg['ipysnobal']['init_type'] = 'netcdf'
 
         config.apply_recipes()
         config = cast_all_variables(config, config.mcfg)
@@ -192,8 +192,8 @@ class TestLakesInitSMRFiPysnobalThreadedHRRR(TestLakesInit):
         config.raw_cfg['awsm master']['run_smrf'] = False
         config.raw_cfg['awsm master']['model_type'] = 'smrf_ipysnobal'
         config.raw_cfg['system']['threading'] = True
-        config.raw_cfg['files']['init_file'] = './topo/init.nc'
-        config.raw_cfg['files']['init_type'] = 'netcdf'
+        config.raw_cfg['ipysnobal']['init_file'] = './topo/init.nc'
+        config.raw_cfg['ipysnobal']['init_type'] = 'netcdf'
 
         config.apply_recipes()
         config = cast_all_variables(config, config.mcfg)

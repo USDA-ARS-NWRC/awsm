@@ -94,14 +94,6 @@ class AWSM():
                 print(self.tmp_err)
                 sys.exit()
 
-        # Time step mass thresholds for iSnobal
-        self.mass_thresh = []
-        self.mass_thresh.append(self.config['grid']['thresh_normal'])
-        self.mass_thresh.append(self.config['grid']['thresh_medium'])
-        self.mass_thresh.append(self.config['grid']['thresh_small'])
-
-        # threads for running iSnobal
-        self.ithreads = self.config['awsm system']['ithreads']
         # how often to output form iSnobal
         self.output_freq = self.config['awsm system']['output_frequency']
         # number of timesteps to run if ou don't want to run the whole thing
@@ -123,17 +115,6 @@ class AWSM():
             self.restart_hr = \
                 int(self.config['isnobal restart']['wyh_restart_output'])
             self.restart_folder = self.config['isnobal restart']['output_folders']
-
-        # iSnobal active layer
-        self.active_layer = self.config['grid']['active_layer']
-
-        # if we are going to run ipysnobal with smrf
-        if self.model_type in ['ipysnobal', 'smrf_ipysnobal']:
-            self.ipy_threads = self.ithreads
-            self.ipy_init_type = \
-                self.config['files']['init_type']
-            self.forcing_data_type = \
-                self.config['ipysnobal']['forcing_data_type']
 
         # parameters needed for restart procedure
         self.restart_run = False
@@ -530,9 +511,9 @@ def run_awsm_daily_ops(config_file):
         new_config = copy.deepcopy(config)
         if idd > 0:
             new_config.raw_cfg['isnobal restart']['restart_crash'] = False
-            new_config.raw_cfg['grid']['thresh_normal'] = 60
-            new_config.raw_cfg['grid']['thresh_medium'] = 10
-            new_config.raw_cfg['grid']['thresh_small'] = 1
+            new_config.raw_cfg['ipysnobal']['thresh_normal'] = 60
+            new_config.raw_cfg['ipysnobal']['thresh_medium'] = 10
+            new_config.raw_cfg['ipysnobal']['thresh_small'] = 1
         # get the end of the day
         ed = sd + add_day
 
@@ -555,8 +536,8 @@ def run_awsm_daily_ops(config_file):
                                     'snow.nc')
             # reset if running the model
             if new_config.cfg['awsm master']['model_type'] is not None:
-                new_config.raw_cfg['files']['init_type'] = 'netcdf_out'
-                new_config.raw_cfg['files']['init_file'] = prev_out
+                new_config.raw_cfg['ipysnobal']['init_type'] = 'netcdf_out'
+                new_config.raw_cfg['ipysnobal']['init_file'] = prev_out
 
             # if we have a previous storm day file, use it
             prev_storm = os.path.join(prev_data_base,

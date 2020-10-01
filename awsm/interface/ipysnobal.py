@@ -62,6 +62,7 @@ class PySnobal():
 
         self._logger = logging.getLogger(__name__)
         self.awsm = myawsm
+        self.config = self.awsm.config['ipysnobal']
         self.smrf = None
         self.force = None
         self.smrf_queue = None
@@ -131,9 +132,9 @@ class PySnobal():
             self.options['constants'], self.options)
 
         # mass thresholds for run time steps
-        self.time_step_info[ipysnobal.NORMAL_TSTEP]['threshold'] = self.awsm.mass_thresh[0]  # noqa
-        self.time_step_info[ipysnobal.MEDIUM_TSTEP]['threshold'] = self.awsm.mass_thresh[1]  # noqa
-        self.time_step_info[ipysnobal.SMALL_TSTEP]['threshold'] = self.awsm.mass_thresh[2]  # noqa
+        self.time_step_info[ipysnobal.NORMAL_TSTEP]['threshold'] = self.config['thresh_normal']  # noqa
+        self.time_step_info[ipysnobal.MEDIUM_TSTEP]['threshold'] = self.config['thresh_medium']  # noqa
+        self.time_step_info[ipysnobal.SMALL_TSTEP]['threshold'] = self.config['thresh_small']  # noqa
 
         # get init params
         self.init = self.awsm.model_init.init
@@ -186,7 +187,7 @@ class PySnobal():
         config['output'] = {
             'frequency': self.awsm.output_freq,
             'location': self.awsm.path_output,
-            'nthreads': self.awsm.ipy_threads,
+            'nthreads': self.config['ithreads'],
             'output_mode': 'data',
             'out_filename': None
         }
@@ -225,7 +226,7 @@ class PySnobal():
 
         config['inputs'] = {
             'point': None,
-            'input_type': self.awsm.ipy_init_type,
+            'input_type': self.config['init_type'],
             'soil_temp': self.awsm.soil_temp
         }
 
@@ -240,27 +241,19 @@ class PySnobal():
             dict: constant values for iSnobal
         """
 
-        constants = {
+        return {
             'time_step': 60,
-            'max-h2o': 0.01,
+            'max-h2o': self.config['max_h2o'],
             'c': True,
             'K': True,
-            'mass_threshold': self.awsm.mass_thresh[0],
+            'mass_threshold': self.config['thresh_normal'],
             'time_z': 0,
-            'max_z_s_0': self.awsm.active_layer,
-            'z_u': 5.0,
-            'z_t': 5.0,
-            'z_g': 0.5,
+            'max_z_s_0': self.config['active_layer'],
+            'z_u': self.config['z_u'],
+            'z_t': self.config['z_t'],
+            'z_g': self.config['z_g'],
             'relative_heights': True,
         }
-
-        # read in the constants
-        c = {}
-        for v in self.awsm.config['ipysnobal constants']:
-            c[v] = float(self.awsm.config['ipysnobal constants'][v])
-        constants.update(c)  # update the default with any user values
-
-        return constants
 
     def do_update(self, first_step):
         """If there is an update the the give time step, update the model state
@@ -362,7 +355,7 @@ class PySnobal():
             self.options['constants'],
             self.params,
             first_step=first_step,
-            nthreads=self.awsm.ipy_threads
+            nthreads=self.config['ithreads']
         )
 
         if rt != -1:
@@ -371,8 +364,8 @@ class PySnobal():
                     self.time_step, rt))
 
     def run_full_timestep(self):
-        """Run the full timestep for iPysnobal. Includes getting the input, 
-        running iPysnobal for the timestep, copying the input data and 
+        """Run the full timestep for iPysnobal. Includes getting the input,
+        running iPysnobal for the timestep, copying the input data and
         outputing the results if needed.
         """
 
@@ -473,8 +466,7 @@ class PySnobal():
                     break
 
         # close input files
-        if self.awsm.forcing_data_type == 'netcdf':
-            self.awsm.smrf_connector.close_netcdf_files()
+        self.awsm.smrf_connector.close_netcdf_files()
 
     def run_smrf_ipysnobal(self):
         """

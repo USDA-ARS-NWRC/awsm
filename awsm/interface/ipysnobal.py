@@ -9,7 +9,7 @@ from pysnobal import ipysnobal
 import pandas as pd
 
 import threading
-from awsm.interface import pysnobal_io as io_mod
+from awsm.interface import pysnobal_io
 from awsm.interface.ingest_data import StateUpdater
 
 
@@ -131,7 +131,7 @@ class PySnobal():
             self.params, self.tstep_info, self.init)
 
         # create the output files
-        io_mod.output_files(
+        pysnobal_io.output_files(
             self.options,
             self.init,
             self.awsm.start_date,
@@ -379,7 +379,7 @@ class PySnobal():
         if out_freq or last_tstep:
 
             self._logger.info('iPysnobal outputting {}'.format(tstep))
-            io_mod.output_timestep(
+            pysnobal_io.output_timestep(
                 self.output_rec,
                 tstep,
                 self.options,

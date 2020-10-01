@@ -19,8 +19,7 @@ import smrf.framework.logger as logger
 
 from awsm.data.init_model import ModelInit
 from awsm.framework import ascii_art
-from awsm.interface import smrf_ipysnobal as smrf_ipy, interface as smin
-from awsm.interface.interface import SMRFConnector
+from awsm.interface.smrf_connector import SMRFConnector
 from awsm.interface.ipysnobal import PySnobal
 
 
@@ -334,7 +333,7 @@ class AWSM():
 
     def run_smrf(self):
         """
-        Run smrf. Calls :mod: `awsm.interface.smrf_connector.smrfMEAS`
+        Run smrf through the :mod: `awsm.smrf_connector.SMRFConnector`
         """
 
         self.smrf_connector.run_smrf()
@@ -342,29 +341,26 @@ class AWSM():
     def run_smrf_ipysnobal(self):
         """
         Run smrf and pass inputs to ipysnobal in memory.
-        Calls :mod: `awsm.interface.smrf_ipysnobal.run_smrf_ipysnobal`
         """
 
         PySnobal(self).run_smrf_ipysnobal()
         # smrf_ipy.run_smrf_ipysnobal(self)
 
-    def run_awsm_daily(self):
-        """
-        This function runs
-        :mod:`awsm.interface.smrf_ipysnobal.run_smrf_ipysnobal` on an
-        hourly output from Pysnobal, outputting to daily folders, similar
-        to the HRRR froecast.
-        """
+    # def run_awsm_daily(self):
+    #     """
+    #     This function runs
+    #     :mod:`awsm.interface.smrf_ipysnobal.run_smrf_ipysnobal` on an
+    #     hourly output from Pysnobal, outputting to daily folders, similar
+    #     to the HRRR froecast.
+    #     """
 
-        smin.run_awsm_daily(self)
+    #     smin.run_awsm_daily(self)
 
     def run_ipysnobal(self):
         """
         Run PySnobal from previously run smrf forcing data
-        Calls :mod: `awsm.interface.smrf_ipysnobal.run_ipysnobal`
         """
         PySnobal(self).run_ipysnobal()
-        # smrf_ipy.run_ipysnobal(self)
 
     def mk_directories(self):
         """

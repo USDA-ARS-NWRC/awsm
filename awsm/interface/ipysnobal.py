@@ -467,6 +467,7 @@ class PySnobal():
 
         # close input files
         self.awsm.smrf_connector.close_netcdf_files()
+        self.options['output']['ipysnobal'].close()
 
     def run_smrf_ipysnobal(self):
         """
@@ -501,8 +502,7 @@ class PySnobal():
             else:
                 self.run_smrf_ipysnobal_serial()
 
-        self.options['output']['snow'].close()
-        self.options['output']['em'].close()
+        self.options['output']['ipysnobal'].close()
         self._logger.debug('DONE!!!!')
 
     def run_smrf_ipysnobal_serial(self):

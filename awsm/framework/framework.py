@@ -102,9 +102,6 @@ class AWSM():
         self.pysnobal_output_vars = self.config['awsm system']['variables']
         self.pysnobal_output_vars = [wrd.lower()
                                      for wrd in self.pysnobal_output_vars]
-        # snow and emname
-        self.snow_name = self.config['awsm system']['snow_name']
-        self.em_name = self.config['awsm system']['em_name']
 
         # options for restarting iSnobal
         self.restart_crash = False

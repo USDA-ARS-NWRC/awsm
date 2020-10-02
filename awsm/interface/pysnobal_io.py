@@ -14,64 +14,6 @@ FREEZE = C_TO_K
 def K_TO_C(x): return x - FREEZE
 
 
-def open_files_nc(myawsm):
-    """
-    Open the netCDF files for initial conditions and inputs
-    - Reads in the initial_conditions file
-    - Required variables are x,y,z,z_0
-    - The others z_s, rho, T_s_0, T_s, h2o_sat, mask can be specified
-    but will be set to default of 0's or 1's for mask
-    - Open the files for the inputs and store the file identifier
-
-    Args:
-        myawsm: awsm class
-    Returns:
-        force:  dictionary of opened netCDF forcing data files
-
-    """
-    # -------------------------------------------------------------------------
-    # get the forcing data and open the file
-    force = {}
-    force['thermal'] = nc.Dataset(
-        os.path.join(myawsm.path_output, 'thermal.nc'), 'r')
-    force['air_temp'] = nc.Dataset(
-        os.path.join(myawsm.path_output, 'air_temp.nc'), 'r')
-    force['vapor_pressure'] = nc.Dataset(
-        os.path.join(myawsm.path_output, 'vapor_pressure.nc'), 'r')
-    force['wind_speed'] = nc.Dataset(
-        os.path.join(myawsm.path_output, 'wind_speed.nc'), 'r')
-    force['net_solar'] = nc.Dataset(
-        os.path.join(myawsm.path_output, 'net_solar.nc'), 'r')
-
-    # soil temp can either be distributed for set to a constant
-    try:
-        force['soil_temp'] = nc.Dataset(options['inputs']['soil_temp'], 'r')
-    except:
-        force['soil_temp'] = float(myawsm.soil_temp) * np.ones((myawsm.topo.ny,
-                                                                myawsm.topo.nx))
-
-    force['precip_mass'] = nc.Dataset(
-        os.path.join(myawsm.path_output, 'precip.nc'), 'r')
-    force['percent_snow'] = nc.Dataset(
-        os.path.join(myawsm.path_output, 'percent_snow.nc'), 'r')
-    force['snow_density'] = nc.Dataset(
-        os.path.join(myawsm.path_output, 'snow_density.nc'), 'r')
-    force['precip_temp'] = nc.Dataset(
-        os.path.join(myawsm.path_output, 'precip_temp.nc'), 'r')
-
-    return force
-
-
-def close_files(force):
-    """
-    Close input netCDF forcing files
-    """
-
-    for f in force.keys():
-        if not isinstance(force[f], np.ndarray):
-            force[f].close()
-
-
 def output_files(options, init, start_date, myawsm):
     """
     Create the snow and em output netCDF file

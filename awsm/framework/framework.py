@@ -19,7 +19,8 @@ import smrf.framework.logger as logger
 
 from awsm.data.init_model import ModelInit
 from awsm.framework import ascii_art
-from awsm.interface import interface as smin, smrf_ipysnobal as smrf_ipy
+from awsm.interface.smrf_connector import SMRFConnector
+from awsm.interface.ipysnobal import PySnobal
 
 
 class AWSM():
@@ -33,7 +34,7 @@ class AWSM():
     Attributes:
     """
 
-    def __init__(self, config):
+    def __init__(self, config, testing=False):
         """
         Initialize the model, read config file, start and end date, and logging
         Args:
@@ -42,6 +43,7 @@ class AWSM():
         """
 
         self.read_config(config)
+        self.testing = testing
 
         # create blank log and error log because logger is not initialized yet
         self.tmp_log = []
@@ -169,9 +171,11 @@ class AWSM():
         # create log now that directory structure is done
         # self.create_log()
 
+        self.smrf_connector = SMRFConnector(self)
+
         # if we have a model, initialize it
         if self.model_type is not None:
-            self.myinit = ModelInit(
+            self.model_init = ModelInit(
                 self.config,
                 self.topo,
                 self.path_output,
@@ -327,37 +331,36 @@ class AWSM():
         for line in self.tmp_err:
             self._logger.error(line)
 
-    def runSmrf(self):
+    def run_smrf(self):
         """
-        Run smrf. Calls :mod: `awsm.interface.interface.smrfMEAS`
+        Run smrf through the :mod: `awsm.smrf_connector.SMRFConnector`
         """
-        # modify config and run smrf
-        smin.smrfMEAS(self)
+
+        self.smrf_connector.run_smrf()
 
     def run_smrf_ipysnobal(self):
         """
         Run smrf and pass inputs to ipysnobal in memory.
-        Calls :mod: `awsm.interface.smrf_ipysnobal.run_smrf_ipysnobal`
         """
 
-        smrf_ipy.run_smrf_ipysnobal(self)
+        PySnobal(self).run_smrf_ipysnobal()
+        # smrf_ipy.run_smrf_ipysnobal(self)
 
-    def run_awsm_daily(self):
-        """
-        This function runs
-        :mod:`awsm.interface.smrf_ipysnobal.run_smrf_ipysnobal` on an
-        hourly output from Pysnobal, outputting to daily folders, similar
-        to the HRRR froecast.
-        """
+    # def run_awsm_daily(self):
+    #     """
+    #     This function runs
+    #     :mod:`awsm.interface.smrf_ipysnobal.run_smrf_ipysnobal` on an
+    #     hourly output from Pysnobal, outputting to daily folders, similar
+    #     to the HRRR froecast.
+    #     """
 
-        smin.run_awsm_daily(self)
+    #     smin.run_awsm_daily(self)
 
     def run_ipysnobal(self):
         """
         Run PySnobal from previously run smrf forcing data
-        Calls :mod: `awsm.interface.smrf_ipysnobal.run_ipysnobal`
         """
-        smrf_ipy.run_ipysnobal(self)
+        PySnobal(self).run_ipysnobal()
 
     def mk_directories(self):
         """
@@ -571,14 +574,17 @@ def run_awsm_daily_ops(config_file):
         run_awsm(new_config)
 
 
-def run_awsm(config):
+def run_awsm(config, testing=False):
     """
     Function that runs awsm how it should be operate for full runs.
 
     Args:
         config: string path to the config file or inicheck UserConfig instance
+        testing: only to be used with unittests, if True will convert SMRF data
+            from to 32-bit then 64-bit to mimic writing the data to a
+            netcdf. This enables a single set of gold files.
     """
-    with AWSM(config) as a:
+    with AWSM(config, testing) as a:
         if a.do_forecast:
             runtype = 'forecast'
         else:
@@ -586,7 +592,7 @@ def run_awsm(config):
 
         if not a.config['isnobal restart']['restart_crash']:
             if a.do_smrf:
-                a.runSmrf()
+                a.run_smrf()
 
             if a.model_type == 'ipysnobal':
                 a.run_ipysnobal()

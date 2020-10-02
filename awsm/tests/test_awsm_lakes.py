@@ -1,4 +1,4 @@
-import os
+from inicheck.tools import cast_all_variables
 
 from awsm.framework.framework import run_awsm
 from awsm.tests.awsm_test_case_lakes import AWSMTestCaseLakes
@@ -6,7 +6,10 @@ from awsm.tests.awsm_test_case_lakes import AWSMTestCaseLakes
 
 class TestStandardLakes(AWSMTestCaseLakes):
     """
-    Integration test for AWSM using Lakes
+    Testing using Lakes:
+        - ipysnobal
+        - initialize from snow.nc file
+        - loading from netcdf
     """
 
     @classmethod
@@ -15,14 +18,11 @@ class TestStandardLakes(AWSMTestCaseLakes):
 
         cls.gold_dir = cls.basin_dir.joinpath('gold_hrrr')
 
-        cls.gold_em = os.path.join(cls.gold_dir, 'em.nc')
-        cls.gold_snow = os.path.join(cls.gold_dir, 'snow.nc')
-
         cls.output_path = cls.basin_dir.joinpath(
             'output/lakes/wy2020/lakes_gold/run20191001_20191001'
         )
 
-        run_awsm(cls.config_file)
+        run_awsm(cls.run_config, testing=True)
 
     def test_thickness(self):
         self.compare_netcdf_files('snow.nc', 'thickness')
@@ -80,3 +80,61 @@ class TestStandardLakes(AWSMTestCaseLakes):
 
     def test_cold_content(self):
         self.compare_netcdf_files('em.nc', 'cold_content')
+
+
+class TestLakesSMRFiPysnobal(TestStandardLakes):
+    """
+    Testing using Lakes:
+        - smrf_ipysnobal
+        - initialize from snow.nc file
+        - loading from netcdf
+    """
+
+    @classmethod
+    def configure(cls):
+        config = cls.base_config_copy()
+        config.raw_cfg['awsm master']['run_smrf'] = False
+        config.raw_cfg['awsm master']['model_type'] = 'smrf_ipysnobal'
+        config.raw_cfg['system']['threading'] = False
+
+        config.apply_recipes()
+        cls.run_config = cast_all_variables(config, config.mcfg)
+
+
+class TestLakesSMRFiPysnobalThreaded(TestStandardLakes):
+    """
+    Testing using Lakes:
+        - smrf_ipysnobal threaded
+        - initialize from snow.nc file
+    """
+
+    @classmethod
+    def configure(cls):
+
+        config = cls.base_config_copy()
+        config.raw_cfg['awsm master']['run_smrf'] = False
+        config.raw_cfg['awsm master']['model_type'] = 'smrf_ipysnobal'
+        config.raw_cfg['system']['threading'] = True
+
+        config.apply_recipes()
+        cls.run_config = cast_all_variables(config, config.mcfg)
+
+
+class TestLakesSMRFiPysnobalThreadedHRRR(TestStandardLakes):
+    """
+    Testing using Lakes:
+        - smrf_ipysnobal threaded
+        - initialize from snow.nc file
+        - loading HRRR in timestep mode
+    """
+
+    @classmethod
+    def configure(cls):
+        config = cls.base_config_copy()
+        config.raw_cfg['gridded']['hrrr_load_method'] = 'timestep'
+        config.raw_cfg['awsm master']['run_smrf'] = False
+        config.raw_cfg['awsm master']['model_type'] = 'smrf_ipysnobal'
+        config.raw_cfg['system']['threading'] = True
+
+        config.apply_recipes()
+        cls.run_config = cast_all_variables(config, config.mcfg)

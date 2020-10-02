@@ -6,7 +6,7 @@ from awsm.tests.awsm_test_case import AWSMTestCase
 
 class TestRMEPaths(AWSMTestCase):
     """
-    Integration test for AWSM using reynolds mountain east
+    Test the directory creation has the right structure
     """
 
     def assert_rme_wyhr(self, a):

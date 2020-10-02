@@ -1,4 +1,5 @@
 import os
+from inicheck.tools import cast_all_variables
 
 from awsm.framework.framework import run_awsm
 from awsm.tests.awsm_test_case import AWSMTestCase
@@ -6,7 +7,10 @@ from awsm.tests.awsm_test_case import AWSMTestCase
 
 class TestStandardRME(AWSMTestCase):
     """
-    Integration test for AWSM using reynolds mountain east
+    Testing using RME:
+        - ipysnobal
+        - initialize with all zeros
+        - loading from netcdf
     """
 
     @classmethod
@@ -15,14 +19,11 @@ class TestStandardRME(AWSMTestCase):
 
         cls.gold_dir = cls.basin_dir.joinpath('gold')
 
-        cls.gold_em = os.path.join(cls.gold_dir, 'em.nc')
-        cls.gold_snow = os.path.join(cls.gold_dir, 'snow.nc')
-
         cls.output_path = cls.basin_dir.joinpath(
             'output/rme/wy1986/rme_test/run19860217_19860217'
         )
 
-        run_awsm(cls.config_file)
+        run_awsm(cls.run_config, testing=True)
 
     def test_thickness(self):
         self.compare_netcdf_files('snow.nc', 'thickness')
@@ -80,3 +81,42 @@ class TestStandardRME(AWSMTestCase):
 
     def test_cold_content(self):
         self.compare_netcdf_files('em.nc', 'cold_content')
+
+
+class TestRMESMRFiPysnobal(TestStandardRME):
+    """
+    Testing using RME:
+        - smrf_ipysnobal
+        - initialize with all zeros
+        - loading from netcdf
+    """
+
+    @classmethod
+    def configure(cls):
+        config = cls.base_config_copy()
+        config.raw_cfg['awsm master']['run_smrf'] = False
+        config.raw_cfg['awsm master']['model_type'] = 'smrf_ipysnobal'
+        config.raw_cfg['system']['threading'] = False
+
+        config.apply_recipes()
+        cls.run_config = cast_all_variables(config, config.mcfg)
+
+
+class TestRMESMRFiPysnobalThread(TestStandardRME):
+    """
+    Testing using RME:
+        - smrf_ipysnobal
+        - SMRF threading
+        - initialize with all zeros
+        - loading from netcdf
+    """
+
+    @classmethod
+    def configure(cls):
+        config = cls.base_config_copy()
+        config.raw_cfg['awsm master']['run_smrf'] = False
+        config.raw_cfg['awsm master']['model_type'] = 'smrf_ipysnobal'
+        config.raw_cfg['system']['threading'] = True
+
+        config.apply_recipes()
+        cls.run_config = cast_all_variables(config, config.mcfg)

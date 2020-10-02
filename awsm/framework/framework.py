@@ -557,6 +557,9 @@ def run_awsm(config, testing=False):
 
     Args:
         config: string path to the config file or inicheck UserConfig instance
+        testing: only to be used with unittests, if True will convert SMRF data
+            from to 32-bit then 64-bit to mimic writing the data to a
+            netcdf. This enables a single set of gold files.
     """
     with AWSM(config, testing) as a:
         if a.do_forecast:

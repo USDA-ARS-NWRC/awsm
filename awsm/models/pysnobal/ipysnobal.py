@@ -39,7 +39,7 @@ def check_range(value, min_val, max_val, descrip):
 
 class PySnobal():
 
-    FORCING_VARIABLES = [
+    FORCING_VARIABLES = frozenset([
         'thermal',
         'air_temp',
         'vapor_pressure',
@@ -50,7 +50,7 @@ class PySnobal():
         'percent_snow',
         'snow_density',
         'precip_temp'
-    ]
+    ])
 
     def __init__(self, myawsm):
         """PySnobal class to run pysnobal. Will also run SMRF
@@ -475,16 +475,6 @@ class PySnobal():
         """
 
         with SMRF(self.awsm.smrf_connector.smrf_config, self._logger) as self.smrf:
-            # # if input has run_for_nsteps, make sure not to go past it
-            # if self.awsm.run_for_nsteps is not None:
-            #     change_in_hours = int(self.awsm.run_for_nsteps *
-            #                           s.config['time']['time_step']/60)
-            #     # recalculate end_date before initializing run
-            #     s.end_date = s.start_date + pd.to_timedelta(change_in_hours - 1,
-            #                                                 unit='h')
-            #     self.awsm.end_date = s.end_date
-            #     s.date_time = s.date_time[:self.awsm.run_for_nsteps]
-            #     s.time_steps = self.awsm.run_for_nsteps
 
             # load topo data
             self.smrf.loadTopo()

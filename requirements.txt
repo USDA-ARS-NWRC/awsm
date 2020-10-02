@@ -1,4 +1,3 @@
-cftime==1.1.2
-smrf-dev>=0.11.3,<0.12.0
+smrf-dev>=0.11.4,<0.12.0
 setuptools_scm<4.2
 xarray>=0.15,<0.16

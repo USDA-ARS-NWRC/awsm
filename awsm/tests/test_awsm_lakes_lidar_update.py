@@ -15,18 +15,7 @@ class TestLakesLidarUpdate(AWSMTestCaseLakes):
     """
 
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-
-        cls.gold_dir = cls.basin_dir.joinpath('gold_hrrr_update')
-
-        cls.gold_em = os.path.join(cls.gold_dir, 'ipysnobal.nc')
-        cls.gold_snow = os.path.join(cls.gold_dir, 'ipysnobal.nc')
-
-        cls.output_path = cls.basin_dir.joinpath(
-            'output/lakes/wy2020/lakes_gold/run20191001_20191001'
-        )
-
+    def configure(cls):
         config = cls.base_config_copy()
 
         adj_config = {
@@ -41,9 +30,22 @@ class TestLakesLidarUpdate(AWSMTestCaseLakes):
         config.raw_cfg.update(adj_config)
 
         config.apply_recipes()
-        config = cast_all_variables(config, config.mcfg)
+        cls.run_config = cast_all_variables(config, config.mcfg)
 
-        run_awsm(config)
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+
+        cls.gold_dir = cls.basin_dir.joinpath('gold_hrrr_update')
+
+        cls.gold_em = os.path.join(cls.gold_dir, 'em.nc')
+        cls.gold_snow = os.path.join(cls.gold_dir, 'snow.nc')
+
+        cls.output_path = cls.basin_dir.joinpath(
+            'output/lakes/wy2020/lakes_gold/run20191001_20191001'
+        )
+
+        run_awsm(cls.run_config, testing=True)
 
     def test_thickness(self):
         self.compare_netcdf_files('ipysnobal.nc', 'thickness')
@@ -121,19 +123,7 @@ class TestLakesLidarUpdateSMRFiPysnobal(TestLakesLidarUpdate):
     """
 
     @classmethod
-    def setUpClass(cls):
-        cls.load_base_config()
-        cls.create_output_dir()
-
-        cls.gold_dir = cls.basin_dir.joinpath('gold_hrrr_update')
-
-        cls.gold_em = os.path.join(cls.gold_dir, 'ipysnobal.nc')
-        cls.gold_snow = os.path.join(cls.gold_dir, 'ipysnobal.nc')
-
-        cls.output_path = cls.basin_dir.joinpath(
-            'output/lakes/wy2020/lakes_gold/run20191001_20191001'
-        )
-
+    def configure(cls):
         config = cls.base_config_copy()
         config.raw_cfg['awsm master']['run_smrf'] = False
         config.raw_cfg['awsm master']['model_type'] = 'smrf_ipysnobal'
@@ -149,9 +139,7 @@ class TestLakesLidarUpdateSMRFiPysnobal(TestLakesLidarUpdate):
         }
         config.raw_cfg.update(adj_config)
         config.apply_recipes()
-        config = cast_all_variables(config, config.mcfg)
-
-        run_awsm(config, testing=True)
+        cls.run_config = cast_all_variables(config, config.mcfg)
 
 
 class TestLakesLidarUpdateSMRFiPysnobalThreaded(TestLakesLidarUpdate):
@@ -164,37 +152,24 @@ class TestLakesLidarUpdateSMRFiPysnobalThreaded(TestLakesLidarUpdate):
     """
 
     @classmethod
-    def setUpClass(cls):
-        cls.load_base_config()
-        cls.create_output_dir()
-
-        cls.gold_dir = cls.basin_dir.joinpath('gold_hrrr_update')
-
-        cls.gold_em = os.path.join(cls.gold_dir, 'ipysnobal.nc')
-        cls.gold_snow = os.path.join(cls.gold_dir, 'ipysnobal.nc')
-
-        cls.output_path = cls.basin_dir.joinpath(
-            'output/lakes/wy2020/lakes_gold/run20191001_20191001'
-        )
+    def configure(cls):
 
         config = cls.base_config_copy()
         config.raw_cfg['awsm master']['run_smrf'] = False
         config.raw_cfg['awsm master']['model_type'] = 'smrf_ipysnobal'
         config.raw_cfg['system']['threading'] = True
         adj_config = {
-            'update depth': {
-                'update': True,
-                'update_file': './topo/lidar_depths.nc',
-                'buffer': 400,
-                'flight_numbers': 1,
-                'update_change_file': 'output/lakes/wy2020/lakes_gold/run20191001_20191001/model_lidar_change.nc'  # noqa
-            },
-        }
+                'update depth': {
+                    'update': True,
+                    'update_file': './topo/lidar_depths.nc',
+                    'buffer': 400,
+                    'flight_numbers': 1,
+                    'update_change_file': 'output/lakes/wy2020/lakes_gold/run20191001_20191001/model_lidar_change.nc'  # noqa
+                },
+            }
         config.raw_cfg.update(adj_config)
         config.apply_recipes()
-        config = cast_all_variables(config, config.mcfg)
-
-        run_awsm(config, testing=True)
+        cls.run_config = cast_all_variables(config, config.mcfg)
 
 
 class TestLakesLidarUpdateSMRFiPysnobalThreadedHRRR(TestLakesLidarUpdate):
@@ -208,18 +183,7 @@ class TestLakesLidarUpdateSMRFiPysnobalThreadedHRRR(TestLakesLidarUpdate):
     """
 
     @classmethod
-    def setUpClass(cls):
-        cls.load_base_config()
-        cls.create_output_dir()
-
-        cls.gold_dir = cls.basin_dir.joinpath('gold_hrrr_update')
-
-        cls.gold_em = os.path.join(cls.gold_dir, 'ipysnobal.nc')
-        cls.gold_snow = os.path.join(cls.gold_dir, 'ipysnobal.nc')
-
-        cls.output_path = cls.basin_dir.joinpath(
-            'output/lakes/wy2020/lakes_gold/run20191001_20191001'
-        )
+    def configure(cls):
 
         config = cls.base_config_copy()
         config.raw_cfg['gridded']['hrrr_load_method'] = 'timestep'
@@ -237,6 +201,4 @@ class TestLakesLidarUpdateSMRFiPysnobalThreadedHRRR(TestLakesLidarUpdate):
         }
         config.raw_cfg.update(adj_config)
         config.apply_recipes()
-        config = cast_all_variables(config, config.mcfg)
-
-        run_awsm(config, testing=True)
+        cls.run_config = cast_all_variables(config, config.mcfg)

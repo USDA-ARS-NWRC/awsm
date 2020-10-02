@@ -2,6 +2,7 @@ import copy
 import os
 import logging
 import pytz
+from types import MappingProxyType
 
 import numpy as np
 import netCDF4 as nc
@@ -11,7 +12,7 @@ from smrf.framework.model_framework import run_smrf
 class SMRFConnector():
 
     # map function from these values to the ones required by snobal
-    MAP_INPUTS = {
+    MAP_INPUTS = MappingProxyType({
         'air_temp': 'T_a',
         'net_solar': 'S_n',
         'thermal': 'I_lw',
@@ -22,7 +23,7 @@ class SMRFConnector():
         'percent_snow': 'percent_snow',
         'snow_density': 'rho_snow',
         'precip_temp': 'T_pp'
-    }
+    })
 
     def __init__(self, myawsm):
 
@@ -47,9 +48,9 @@ class SMRFConnector():
         # Write out config file to run smrf
         # make copy and delete only awsm sections
         smrf_config = copy.deepcopy(self.myawsm.ucfg)
-        for key in self.myawsm.ucfg.cfg.keys():
-            if key in delete_keys:
-                del smrf_config.cfg[key]
+        smrf_config.cfg = {
+            key: item for key, item in self.myawsm.ucfg.cfg.items() if key not in delete_keys  # noqa
+        }
 
         # make sure start and end date are correcting
         smrf_config.cfg['time']['start_date'] = self.myawsm.start_date
@@ -90,7 +91,7 @@ class SMRFConnector():
                     os.path.join(self.output_path, '{}.nc'.format(variable)),
                     'r')
 
-            except Exception:
+            except FileNotFoundError:
                 self.force['soil_temp'] = float(self.myawsm.soil_temp) * \
                     np.ones_like(self.myawsm.topo.dem)
 

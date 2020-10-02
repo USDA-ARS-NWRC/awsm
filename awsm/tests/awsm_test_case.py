@@ -60,9 +60,14 @@ class AWSMTestCase(unittest.TestCase):
             cls.config_file, modules=['smrf', 'awsm'])
 
     @classmethod
+    def configure(cls):
+        cls.run_config = cls.base_config_copy()
+
+    @classmethod
     def setUpClass(cls):
         cls.load_base_config()
         cls.create_output_dir()
+        cls.configure()
 
     @classmethod
     def tearDownClass(cls):

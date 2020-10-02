@@ -27,8 +27,8 @@ fp_list = ['/home/micahsandusky/Code/AWSM/test_data/RME_run/output/rme/devel/wy1
            ]
 
 # names of files to combine
-em_name = 'em.nc'
-snow_name = 'snow.nc'
+em_name = 'ipysnobal.nc'
+snow_name = 'ipysnobal.nc'
 
 # where to save the files
 out_snow_fp = '/home/micahsandusky/Code/AWSM/test_data/RME_run/output/rme/snow.nc'

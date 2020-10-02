@@ -163,7 +163,7 @@ class AWSMTestCase(unittest.TestCase):
         gold = nc.Dataset(self.gold_dir.joinpath(output_file))
         gold.set_always_mask(False)
 
-        test = nc.Dataset(self.output_path.joinpath('ipysnobal.nc'))
+        test = nc.Dataset(self.output_path.joinpath(output_file))
         test.set_always_mask(False)
 
         # just compare the variable desired with time,x,y

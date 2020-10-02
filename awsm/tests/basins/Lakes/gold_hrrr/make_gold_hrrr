@@ -18,9 +18,7 @@ then
     awsm awsm/tests/basins/Lakes/gold_hrrr/gold_config.ini
 
     echo "Cleaning up"
-    mv awsm/tests/basins/Lakes/gold_hrrr/lakes/wy2020/lakes_gold/run20191001_20191001/snow.nc \
-        awsm/tests/basins/Lakes/gold_hrrr
-    mv awsm/tests/basins/Lakes/gold_hrrr/lakes/wy2020/lakes_gold/run20191001_20191001/em.nc \
+    mv awsm/tests/basins/Lakes/gold_hrrr/lakes/wy2020/lakes_gold/run20191001_20191001/ipysnobal.nc \
         awsm/tests/basins/Lakes/gold_hrrr
     rm -rf awsm/tests/basins/Lakes/gold_hrrr/lakes
 else

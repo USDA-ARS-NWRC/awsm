@@ -123,7 +123,7 @@ class ModelInit():
         self.init_type = 'netcdf_out'
         # find the correct output folder from which to restart
         if self.restart_folder == 'standard':
-            self.init_file = os.path.join(self.path_output, 'snow.nc')
+            self.init_file = os.path.join(self.path_output, 'ipysnobal.nc')
 
         elif self.restart_folder == 'daily':
             fmt = '%Y%m%d'
@@ -135,7 +135,7 @@ class ModelInit():
             # get the previous day
             path_prev_day = os.path.join(self.path_output,
                                          '..', 'run'+day_dt_str)
-            self.init_file = os.path.join(path_prev_day, 'snow.nc')
+            self.init_file = os.path.join(path_prev_day, 'ipysnobal.nc')
 
         self.get_netcdf_out()
 

@@ -71,7 +71,7 @@ def mod_config(config_file, start_date, no_previous):
         prev_day = sd - pd.to_timedelta(1, unit='D')
         prev_out = os.path.join(prev_out_base,
                                 'run{}'.format(prev_day.strftime(fmt_day)),
-                                'snow.nc')
+                                'ipysnobal.nc')
         # reset if running the model
         if new_config.cfg['awsm master']['model_type'] is not None:
             new_config.raw_cfg['ipysnobal']['init_type'] = 'netcdf_out'

@@ -99,7 +99,7 @@ class AWSM():
         # number of timesteps to run if ou don't want to run the whole thing
         self.run_for_nsteps = self.config['awsm system']['run_for_nsteps']
         # pysnobal output variables
-        self.pysnobal_output_vars = self.config['awsm system']['variables']
+        self.pysnobal_output_vars = self.config['ipysnobal']['variables']
         self.pysnobal_output_vars = [wrd.lower()
                                      for wrd in self.pysnobal_output_vars]
 
@@ -530,7 +530,7 @@ def run_awsm_daily_ops(config_file):
             prev_day = sd - pd.to_timedelta(1, unit='D')
             prev_out = os.path.join(prev_out_base,
                                     'run{}'.format(prev_day.strftime(fmt_day)),
-                                    'snow.nc')
+                                    'ipysnobal.nc')
             # reset if running the model
             if new_config.cfg['awsm master']['model_type'] is not None:
                 new_config.raw_cfg['ipysnobal']['init_type'] = 'netcdf_out'

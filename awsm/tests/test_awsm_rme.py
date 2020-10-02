@@ -19,14 +19,11 @@ class TestStandardRME(AWSMTestCase):
 
         cls.gold_dir = cls.basin_dir.joinpath('gold')
 
-        cls.gold_em = os.path.join(cls.gold_dir, 'em.nc')
-        cls.gold_snow = os.path.join(cls.gold_dir, 'snow.nc')
-
         cls.output_path = cls.basin_dir.joinpath(
             'output/rme/wy1986/rme_test/run19860217_19860217'
         )
 
-        run_awsm(cls.config_file)
+        run_awsm(cls.run_config, testing=True)
 
     def test_thickness(self):
         self.compare_netcdf_files('snow.nc', 'thickness')
@@ -95,28 +92,14 @@ class TestRMESMRFiPysnobal(TestStandardRME):
     """
 
     @classmethod
-    def setUpClass(cls):
-        cls.load_base_config()
-        cls.create_output_dir()
-
-        cls.gold_dir = cls.basin_dir.joinpath('gold')
-
-        cls.gold_em = os.path.join(cls.gold_dir, 'em.nc')
-        cls.gold_snow = os.path.join(cls.gold_dir, 'snow.nc')
-
-        cls.output_path = cls.basin_dir.joinpath(
-            'output/rme/wy1986/rme_test/run19860217_19860217'
-        )
-
+    def configure(cls):
         config = cls.base_config_copy()
         config.raw_cfg['awsm master']['run_smrf'] = False
         config.raw_cfg['awsm master']['model_type'] = 'smrf_ipysnobal'
         config.raw_cfg['system']['threading'] = False
 
         config.apply_recipes()
-        config = cast_all_variables(config, config.mcfg)
-
-        run_awsm(config, testing=True)
+        cls.run_config = cast_all_variables(config, config.mcfg)
 
 
 class TestRMESMRFiPysnobalThread(TestStandardRME):
@@ -129,25 +112,11 @@ class TestRMESMRFiPysnobalThread(TestStandardRME):
     """
 
     @classmethod
-    def setUpClass(cls):
-        cls.load_base_config()
-        cls.create_output_dir()
-
-        cls.gold_dir = cls.basin_dir.joinpath('gold')
-
-        cls.gold_em = os.path.join(cls.gold_dir, 'em.nc')
-        cls.gold_snow = os.path.join(cls.gold_dir, 'snow.nc')
-
-        cls.output_path = cls.basin_dir.joinpath(
-            'output/rme/wy1986/rme_test/run19860217_19860217'
-        )
-
+    def configure(cls):
         config = cls.base_config_copy()
         config.raw_cfg['awsm master']['run_smrf'] = False
         config.raw_cfg['awsm master']['model_type'] = 'smrf_ipysnobal'
         config.raw_cfg['system']['threading'] = True
 
         config.apply_recipes()
-        config = cast_all_variables(config, config.mcfg)
-
-        run_awsm(config, testing=True)
+        cls.run_config = cast_all_variables(config, config.mcfg)

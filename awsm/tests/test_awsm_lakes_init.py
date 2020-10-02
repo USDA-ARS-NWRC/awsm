@@ -14,17 +14,7 @@ class TestLakesInit(AWSMTestCaseLakes):
     """
 
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-
-        cls.gold_dir = cls.basin_dir.joinpath('gold_hrrr')
-
-        cls.gold_em = os.path.join(cls.gold_dir, 'em.nc')
-        cls.gold_snow = os.path.join(cls.gold_dir, 'snow.nc')
-
-        cls.output_path = cls.basin_dir.joinpath(
-            'output/lakes/wy2020/lakes_gold/run20191001_20191001'
-        )
+    def configure(cls):
 
         config = cls.base_config_copy()
 
@@ -32,9 +22,18 @@ class TestLakesInit(AWSMTestCaseLakes):
         config.raw_cfg['files']['init_type'] = 'netcdf'
 
         config.apply_recipes()
-        config = cast_all_variables(config, config.mcfg)
+        cls.run_config = cast_all_variables(config, config.mcfg)
 
-        run_awsm(config)
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+
+        cls.gold_dir = cls.basin_dir.joinpath('gold_hrrr')
+        cls.output_path = cls.basin_dir.joinpath(
+            'output/lakes/wy2020/lakes_gold/run20191001_20191001'
+        )
+
+        run_awsm(cls.run_config, testing=True)
 
     def test_thickness(self):
         self.compare_netcdf_files('snow.nc', 'thickness')
@@ -103,18 +102,7 @@ class TestLakesInitSMRFiPysnobal(TestLakesInit):
     """
 
     @classmethod
-    def setUpClass(cls):
-        cls.load_base_config()
-        cls.create_output_dir()
-
-        cls.gold_dir = cls.basin_dir.joinpath('gold_hrrr')
-
-        cls.gold_em = os.path.join(cls.gold_dir, 'em.nc')
-        cls.gold_snow = os.path.join(cls.gold_dir, 'snow.nc')
-
-        cls.output_path = cls.basin_dir.joinpath(
-            'output/lakes/wy2020/lakes_gold/run20191001_20191001'
-        )
+    def configure(cls):
 
         config = cls.base_config_copy()
         config.raw_cfg['awsm master']['run_smrf'] = False
@@ -124,9 +112,7 @@ class TestLakesInitSMRFiPysnobal(TestLakesInit):
         config.raw_cfg['files']['init_type'] = 'netcdf'
 
         config.apply_recipes()
-        config = cast_all_variables(config, config.mcfg)
-
-        run_awsm(config, testing=True)
+        cls.run_config = cast_all_variables(config, config.mcfg)
 
 
 class TestLakesInitSMRFiPysnobalThreaded(TestLakesInit):
@@ -138,18 +124,7 @@ class TestLakesInitSMRFiPysnobalThreaded(TestLakesInit):
     """
 
     @classmethod
-    def setUpClass(cls):
-        cls.load_base_config()
-        cls.create_output_dir()
-
-        cls.gold_dir = cls.basin_dir.joinpath('gold_hrrr')
-
-        cls.gold_em = os.path.join(cls.gold_dir, 'em.nc')
-        cls.gold_snow = os.path.join(cls.gold_dir, 'snow.nc')
-
-        cls.output_path = cls.basin_dir.joinpath(
-            'output/lakes/wy2020/lakes_gold/run20191001_20191001'
-        )
+    def configure(cls):
 
         config = cls.base_config_copy()
         config.raw_cfg['awsm master']['run_smrf'] = False
@@ -159,9 +134,7 @@ class TestLakesInitSMRFiPysnobalThreaded(TestLakesInit):
         config.raw_cfg['files']['init_type'] = 'netcdf'
 
         config.apply_recipes()
-        config = cast_all_variables(config, config.mcfg)
-
-        run_awsm(config, testing=True)
+        cls.run_config = cast_all_variables(config, config.mcfg)
 
 
 class TestLakesInitSMRFiPysnobalThreadedHRRR(TestLakesInit):
@@ -174,18 +147,7 @@ class TestLakesInitSMRFiPysnobalThreadedHRRR(TestLakesInit):
     """
 
     @classmethod
-    def setUpClass(cls):
-        cls.load_base_config()
-        cls.create_output_dir()
-
-        cls.gold_dir = cls.basin_dir.joinpath('gold_hrrr')
-
-        cls.gold_em = os.path.join(cls.gold_dir, 'em.nc')
-        cls.gold_snow = os.path.join(cls.gold_dir, 'snow.nc')
-
-        cls.output_path = cls.basin_dir.joinpath(
-            'output/lakes/wy2020/lakes_gold/run20191001_20191001'
-        )
+    def configure(cls):
 
         config = cls.base_config_copy()
         config.raw_cfg['gridded']['hrrr_load_method'] = 'timestep'
@@ -196,6 +158,4 @@ class TestLakesInitSMRFiPysnobalThreadedHRRR(TestLakesInit):
         config.raw_cfg['files']['init_type'] = 'netcdf'
 
         config.apply_recipes()
-        config = cast_all_variables(config, config.mcfg)
-
-        run_awsm(config, testing=True)
+        cls.run_config = cast_all_variables(config, config.mcfg)

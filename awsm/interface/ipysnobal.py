@@ -143,12 +143,12 @@ class PySnobal():
             self.params, self.time_step_info, self.init)
 
         # create the output files
-        pysnobal_io.output_files(
-            self.options,
-            self.init,
-            self.awsm.start_date,
+        self.pysnobal_io = pysnobal_io.PysnobalIO(
+            self.awsm.config['ipysnobal']['output_file_name'],
+            self.options['output']['location'],
             self.awsm
         )
+        self.pysnobal_io.create_output_files()
 
         self.time_since_out = 0.0
         self.start_step = 0  # if restart then it would be higher
@@ -323,6 +323,7 @@ class PySnobal():
         data['T_a'] = data['T_a'] + FREEZE
         data['T_pp'] = data['T_pp'] + FREEZE
         data['T_g'] = data['T_g'] + FREEZE
+        data['time_step'] = self.time_step
 
         return data
 
@@ -429,11 +430,9 @@ class PySnobal():
         if out_freq or last_time_step:
 
             self._logger.info('iPysnobal outputting {}'.format(self.time_step))
-            pysnobal_io.output_timestep(
+            self.pysnobal_io.output_timestep(
                 self.output_rec,
-                self.time_step,
-                self.options,
-                self.awsm.pysnobal_output_vars
+                self.time_step
             )
 
             self.output_rec['time_since_out'] = self.init_zeros
@@ -467,7 +466,7 @@ class PySnobal():
 
         # close input files
         self.awsm.smrf_connector.close_netcdf_files()
-        self.options['output']['ipysnobal'].close()
+        self.pysnobal_io.output_file.close()
 
     def run_smrf_ipysnobal(self):
         """
@@ -502,7 +501,7 @@ class PySnobal():
             else:
                 self.run_smrf_ipysnobal_serial()
 
-        self.options['output']['ipysnobal'].close()
+        self.pysnobal_io.output_file.close()
         self._logger.debug('DONE!!!!')
 
     def run_smrf_ipysnobal_serial(self):

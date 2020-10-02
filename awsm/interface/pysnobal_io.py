@@ -1,6 +1,6 @@
-import glob
 import os
 from copy import copy
+import logging
 from datetime import datetime
 
 import netCDF4 as nc
@@ -8,228 +8,236 @@ import numpy as np
 import pandas as pd
 from spatialnc.proj import add_proj
 
-C_TO_K = 273.16
-FREEZE = C_TO_K
-# Kelvin to Celsius
-def K_TO_C(x): return x - FREEZE
+FREEZE = 273.16
 
 
-OUTPUT_VARIABLES = {
-    'net_rad': {
-        'units': 'W m-2',
-        'description': 'Average net all-wave radiation',
-        'ipysnobal_var': 'R_n_bar'
-    },
-    'sensible_heat': {
-        'units': 'W m-2',
-        'description': 'Average sensible heat transfer',
-        'ipysnobal_var': 'H_bar'
-    },
-    'latent_heat': {
-        'units': 'W m-2',
-        'description': 'Average latent heat exchange',
-        'ipysnobal_var': 'L_v_E_bar'
-    },
-    'snow_soil': {
-        'units': 'W m-2',
-        'description': 'Average snow/soil heat exchange',
-        'ipysnobal_var': 'G_bar'
-    },
-    'precip_advected': {
-        'units': 'W m-2',
-        'description': 'Average advected heat from precipitation',
-        'ipysnobal_var': 'M_bar'
-    },
-    'sum_EB': {
-        'units': 'W m-2',
-        'description': 'Average sum of EB terms for snowcover',
-        'ipysnobal_var': 'delta_Q_bar'
-    },
-    'evaporation': {
-        'units': 'kg m-2',
-        'description': 'Total evaporation',
-        'ipysnobal_var': 'E_s_sum'
-    },
-    'snowmelt': {
-        'units': 'kg m-2',
-        'description': 'Total snowmelt',
-        'ipysnobal_var': 'melt_sum'
-    },
-    'SWI': {
-        'units': 'kg or mm m-2',
-        'description': 'Total runoff',
-        'ipysnobal_var': 'ro_pred_sum'
-    },
-    'cold_content': {
-        'units': 'J m-2',
-        'description': 'Snowcover cold content',
-        'ipysnobal_var': 'cc_s'
-    },
-    'thickness': {
-        'units': 'm',
-        'description': 'Predicted thickness of the snowcover',
-        'ipysnobal_var': 'z_s'
-    },
-    'snow_density': {
-        'units': 'kg m-3',
-        'description': 'Predicted average snow density',
-        'ipysnobal_var': 'rho'
-    },
-    'specific_mass': {
-        'units': 'kg m-2',
-        'description': 'Predicted specific mass of the snowcover',
-        'ipysnobal_var': 'm_s'
-    },
-    'liquid_water': {
-        'units': 'kg m-2',
-        'description': 'Predicted mass of liquid water in the snowcover',
-        'ipysnobal_var': 'h2o'
-    },
-    'temp_surf': {
-        'units': 'C',
-        'description': 'Predicted temperature of the surface layer',
-        'ipysnobal_var': 'T_s_0'
-    },
-    'temp_lower': {
-        'units': 'C',
-        'description': 'Predicted temperature of the lower layer',
-        'ipysnobal_var': 'T_s_l'
-    },
-    'temp_snowcover': {
-        'units': 'C',
-        'description': 'Predicted temperature of the snowcover',
-        'ipysnobal_var': 'T_s'
-    },
-    'thickness_lower': {
-        'units': 'm',
-        'description': 'Predicted thickness of the lower layer',
-        'ipysnobal_var': 'z_s_l'
-    },
-    'water_saturation': {
-        'units': 'percent',
-        'description': 'Predicted percentage of liquid water saturation of the snowcover',
-        'ipysnobal_var': 'h2o_sat'
+class PysnobalIO():
+
+    OUTPUT_VARIABLES = {
+        'net_rad': {
+            'units': 'W m-2',
+            'description': 'Average net all-wave radiation',
+            'ipysnobal_var': 'R_n_bar'
+        },
+        'sensible_heat': {
+            'units': 'W m-2',
+            'description': 'Average sensible heat transfer',
+            'ipysnobal_var': 'H_bar'
+        },
+        'latent_heat': {
+            'units': 'W m-2',
+            'description': 'Average latent heat exchange',
+            'ipysnobal_var': 'L_v_E_bar'
+        },
+        'snow_soil': {
+            'units': 'W m-2',
+            'description': 'Average snow/soil heat exchange',
+            'ipysnobal_var': 'G_bar'
+        },
+        'precip_advected': {
+            'units': 'W m-2',
+            'description': 'Average advected heat from precipitation',
+            'ipysnobal_var': 'M_bar'
+        },
+        'sum_EB': {
+            'units': 'W m-2',
+            'description': 'Average sum of energy balance terms for snowcover',
+            'ipysnobal_var': 'delta_Q_bar'
+        },
+        'evaporation': {
+            'units': 'kg m-2 (or mm)',
+            'description': 'Total evaporation',
+            'ipysnobal_var': 'E_s_sum'
+        },
+        'snowmelt': {
+            'units': 'kg m-2 (or mm)',
+            'description': 'Total snowmelt',
+            'ipysnobal_var': 'melt_sum'
+        },
+        'SWI': {
+            'units': 'kg m-2 (or mm)',
+            'description': 'Surface water input is melt from bottom of snowpack or rain on bare gound',
+            'ipysnobal_var': 'ro_pred_sum'
+        },
+        'cold_content': {
+            'units': 'J m-2',
+            'description': 'Snowcover cold content',
+            'ipysnobal_var': 'cc_s'
+        },
+        'thickness': {
+            'units': 'm',
+            'description': 'Thickness of the snowcover',
+            'ipysnobal_var': 'z_s'
+        },
+        'snow_density': {
+            'units': 'kg m-3',
+            'description': 'Average snow density',
+            'ipysnobal_var': 'rho'
+        },
+        'specific_mass': {
+            'units': 'kg m-2 (or mm)',
+            'description': 'Specific mass of the snowcover',
+            'ipysnobal_var': 'm_s'
+        },
+        'liquid_water': {
+            'units': 'kg m-2 (or mm)',
+            'description': 'Predicted mass of liquid water in the snowcover',
+            'ipysnobal_var': 'h2o'
+        },
+        'temp_surf': {
+            'units': 'C',
+            'description': 'Predicted temperature of the surface layer',
+            'ipysnobal_var': 'T_s_0'
+        },
+        'temp_lower': {
+            'units': 'C',
+            'description': 'Predicted temperature of the lower layer',
+            'ipysnobal_var': 'T_s_l'
+        },
+        'temp_snowcover': {
+            'units': 'C',
+            'description': 'Predicted temperature of the snowcover',
+            'ipysnobal_var': 'T_s'
+        },
+        'thickness_lower': {
+            'units': 'm',
+            'description': 'Predicted thickness of the lower layer',
+            'ipysnobal_var': 'z_s_l'
+        },
+        'water_saturation': {
+            'units': 'percent',
+            'description': 'Predicted percentage of liquid water saturation of the snowcover',
+            'ipysnobal_var': 'h2o_sat'
+        }
     }
-}
 
+    def __init__(self, output_file_name, output_path, myawsm):
 
-def output_files(options, init, start_date, myawsm):
-    """
-    Create the snow and em output netCDF file
+        self._logger = logging.getLogger(__name__)
 
-    Args:
-        options:     dictionary of Snobal options
-        init:        dictionary of Snobal initialization images
-        start_date:  date for time units in files
-        myawsm:      awsm class
+        self.output_file_name = output_file_name + '.nc'
+        self.output_path = output_path
+        self.output_filename = os.path.join(
+            self.output_path, self.output_file_name)
 
-    """
-    fmt = '%Y-%m-%d %H:%M:%S'
-    # chunk size
-    cs = (6, 10, 10)
-    if myawsm.topo.nx < 10:
-        cs = (3, 3, 3)
+        self.start_date = myawsm.start_date
+        self.awsm = myawsm
 
-    filename = myawsm.config['ipysnobal']['output_file_name'] + '.nc'
+        self.output_variables = self.awsm.pysnobal_output_vars
 
-    netcdfFile = os.path.join(options['output']['location'], filename)
+        self._logger.info('PysnobalIO initialized')
 
-    if os.path.isfile(netcdfFile):
-        myawsm._logger.warning(
-            'Opening {}, data may be overwritten!'.format(netcdfFile))
-        em = nc.Dataset(netcdfFile, 'a')
-        h = '[{}] Data added or updated'.format(
-            datetime.now().strftime(fmt))
-        setattr(em, 'last_modified', h)
+    def create_output_files(self):
+        """
+        Create the ipysnobal output netCDF file
+        """
 
-        if 'projection' not in em.variables.keys():
-            em = add_proj(em, None, myawsm.topo.topoConfig['filename'])
+        self._logger.info('Creating output iPysnobal file at {}'.format(
+            self.output_file_name))
 
-    else:
-        em = nc.Dataset(netcdfFile, 'w')
+        fmt = '%Y-%m-%d %H:%M:%S'
+        # chunk size
+        cs = (6, 10, 10)
+        if self.awsm.topo.nx < 10:
+            cs = (3, 3, 3)
 
-        dimensions = ('time', 'y', 'x')
+        if os.path.isfile(self.output_file_name):
+            self._logger.warning(
+                'Opening {}, data may be overwritten!'.format(
+                    self.output_filename))
+            em = nc.Dataset(self.output_filename, 'a')
+            h = '[{}] Data added or updated'.format(
+                datetime.now().strftime(fmt))
+            setattr(em, 'last_modified', h)
 
-        # create the dimensions
-        em.createDimension('time', None)
-        em.createDimension('y', len(init['y']))
-        em.createDimension('x', len(init['x']))
+            if 'projection' not in em.variables.keys():
+                em = add_proj(em, None, self.awsm.topo.topoConfig['filename'])
 
-        # create some variables
-        em.createVariable('time', 'f', dimensions[0])
-        em.createVariable('y', 'f', dimensions[1])
-        em.createVariable('x', 'f', dimensions[2])
-
-        # setattr(em.variables['time'], 'units', 'hours since %s' % options['time']['start_date'])
-        setattr(em.variables['time'], 'units',
-                'hours since %s' % start_date.tz_localize(None))
-        setattr(em.variables['time'], 'time_zone', str(myawsm.tzinfo).lower())
-        setattr(em.variables['time'], 'calendar', 'standard')
-        #     setattr(em.variables['time'], 'time_zone', time_zone)
-        em.variables['x'][:] = init['x']
-        em.variables['y'][:] = init['y']
-
-        for var_name, att in OUTPUT_VARIABLES.items():
-            # check to see if in output variables
-            if var_name.lower() in myawsm.pysnobal_output_vars:
-                # em.createVariable(v, 'f', dimensions[:3], chunksizes=(6,10,10))
-                em.createVariable(var_name, 'f', dimensions[:3], chunksizes=cs)
-                setattr(em.variables[var_name], 'units', att['units'])
-                setattr(em.variables[var_name],
-                        'description', att['description'])
-
-        # add projection info
-        em = add_proj(em, None, myawsm.topo.topoConfig['filename'])
-
-    options['output']['ipysnobal'] = em
-
-
-def output_timestep(s, tstep, options, output_vars):
-    """
-    Output the model results for the current time step
-
-    Args:
-        s:       dictionary of output variable numpy arrays
-        tstep:   datetime time step
-        options: dictionary of Snobal options
-
-    """
-
-    # preallocate
-    output = {}
-
-    # gather all the data together
-    for key, att in OUTPUT_VARIABLES.items():
-        output[key] = copy(s[att['ipysnobal_var']])
-
-    # convert from K to C
-    output['temp_snowcover'] -= FREEZE
-    output['temp_surf'] -= FREEZE
-    output['temp_lower'] -= FREEZE
-
-    # now find the correct index
-    # the current time integer
-    times = options['output']['ipysnobal'].variables['time']
-    # offset to match same convention as iSnobal
-    tstep -= pd.to_timedelta(1, unit='h')
-    t = nc.date2num(tstep.replace(tzinfo=None), times.units, times.calendar)
-
-    if len(times) != 0:
-        index = np.where(times[:] == t)[0]
-        if index.size == 0:
-            index = len(times)
         else:
-            index = index[0]
-    else:
-        index = len(times)
+            em = nc.Dataset(self.output_filename, 'w')
 
-    # insert the time
-    options['output']['ipysnobal'].variables['time'][index] = t
+            dimensions = ('time', 'y', 'x')
 
-    # insert the data
-    for key in OUTPUT_VARIABLES.keys():
-        if key.lower() in output_vars:
-            options['output']['ipysnobal'].variables[key][index, :] = output[key]
+            # create the dimensions
+            em.createDimension('time', None)
+            em.createDimension('y', len(self.awsm.topo.y))
+            em.createDimension('x', len(self.awsm.topo.x))
 
-    # sync to disk
-    options['output']['ipysnobal'].sync()
+            # create some variables
+            em.createVariable('time', 'f', dimensions[0])
+            em.createVariable('y', 'f', dimensions[1])
+            em.createVariable('x', 'f', dimensions[2])
+
+            setattr(em.variables['time'], 'units',
+                    'hours since %s' % self.start_date.tz_localize(None))
+            setattr(em.variables['time'], 'time_zone',
+                    str(self.awsm.tzinfo).lower())
+            setattr(em.variables['time'], 'calendar', 'standard')
+
+            em.variables['x'][:] = self.awsm.topo.x
+            em.variables['y'][:] = self.awsm.topo.y
+
+            for var_name, att in self.OUTPUT_VARIABLES.items():
+                # check to see if in output variables
+                if var_name.lower() in self.awsm.pysnobal_output_vars:
+
+                    em.createVariable(
+                        var_name, 'f', dimensions[:3], chunksizes=cs)
+                    setattr(em.variables[var_name], 'units', att['units'])
+                    setattr(em.variables[var_name],
+                            'description', att['description'])
+
+            # add projection info
+            em = add_proj(em, None, self.awsm.topo.topoConfig['filename'])
+
+        self.output_file = em
+
+    def output_timestep(self, smrf_data, tstep):
+        """
+        Output the model results for the current time step
+
+        Args:
+            s:       dictionary of output variable numpy arrays
+            tstep:   datetime time step
+
+        """
+
+        # preallocate
+        output = {}
+
+        # gather all the data together
+        for key, att in self.OUTPUT_VARIABLES.items():
+            output[key] = copy(smrf_data[att['ipysnobal_var']])
+
+        # convert from K to C
+        output['temp_snowcover'] -= FREEZE
+        output['temp_surf'] -= FREEZE
+        output['temp_lower'] -= FREEZE
+
+        # now find the correct index
+        # the current time integer
+        times = self.output_file.variables['time']
+        # offset to match same convention as iSnobal
+        tstep -= pd.to_timedelta(1, unit='h')
+        t = nc.date2num(tstep.replace(tzinfo=None),
+                        times.units, times.calendar)
+
+        if len(times) != 0:
+            index = np.where(times[:] == t)[0]
+            if index.size == 0:
+                index = len(times)
+            else:
+                index = index[0]
+        else:
+            index = len(times)
+
+        # insert the time
+        self.output_file.variables['time'][index] = t
+
+        # insert the data
+        for key in self.OUTPUT_VARIABLES.keys():
+            if key.lower() in self.output_variables:
+                self.output_file.variables[key][index, :] = output[key]
+
+        # sync to disk
+        self.output_file.sync()

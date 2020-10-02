@@ -9,7 +9,7 @@ from pysnobal import ipysnobal
 import pandas as pd
 
 import threading
-from awsm.interface import pysnobal_io
+from awsm.models.pysnobal import PysnobalIO
 from awsm.interface.ingest_data import StateUpdater
 
 
@@ -143,7 +143,7 @@ class PySnobal():
             self.params, self.time_step_info, self.init)
 
         # create the output files
-        self.pysnobal_io = pysnobal_io.PysnobalIO(
+        self.pysnobal_io = PysnobalIO(
             self.awsm.config['ipysnobal']['output_file_name'],
             self.options['output']['location'],
             self.awsm

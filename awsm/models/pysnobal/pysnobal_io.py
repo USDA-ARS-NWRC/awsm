@@ -164,6 +164,7 @@ class PysnobalIO():
             em.createDimension('x', len(self.awsm.topo.x))
 
             # create some variables
+            # TODO what is the cell references, LL or center? #41
             em.createVariable('time', 'f', dimensions[0])
             em.createVariable('y', 'f', dimensions[1])
             em.createVariable('x', 'f', dimensions[2])

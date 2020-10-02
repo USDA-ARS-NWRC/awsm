@@ -17,10 +17,9 @@ import smrf
 
 import smrf.framework.logger as logger
 
-from awsm.data.init_model import ModelInit
 from awsm.framework import ascii_art
-from awsm.interface.smrf_connector import SMRFConnector
-from awsm.interface.ipysnobal import PySnobal
+from awsm.models.smrf_connector import SMRFConnector
+from awsm.models.pysnobal import PySnobal, ModelInit
 
 
 class AWSM():

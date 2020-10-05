@@ -18,7 +18,12 @@ then
     awsm awsm/tests/basins/RME/gold/gold_config.ini
 
     echo "Cleaning up"
+<<<<<<< HEAD
     mv awsm/tests/basins/RME/gold/rme/wy1986/rme_test/run19860217_19860217/ipysnobal.nc awsm/tests/basins/RME/gold/
+=======
+    mv awsm/tests/basins/RME/gold/rme/wy1986/rme_test/run19860217_19860217/snow.nc awsm/tests/basins/RME/gold/
+    mv awsm/tests/basins/RME/gold/rme/wy1986/rme_test/run19860217_19860217/em.nc awsm/tests/basins/RME/gold/
+>>>>>>> smrf_64bit
     rm -r awsm/tests/basins/RME/gold/rme/
 else
     echo "RME station gold files not updated"

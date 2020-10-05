@@ -45,7 +45,7 @@ class TestLakesLidarUpdate(AWSMTestCaseLakes):
             'output/lakes/wy2020/lakes_gold/run20191001_20191001'
         )
 
-        run_awsm(cls.run_config, testing=True)
+        run_awsm(cls.run_config)
 
     def test_thickness(self):
         self.compare_netcdf_files('ipysnobal.nc', 'thickness')

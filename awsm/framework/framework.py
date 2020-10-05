@@ -33,7 +33,7 @@ class AWSM():
     Attributes:
     """
 
-    def __init__(self, config, testing=False):
+    def __init__(self, config):
         """
         Initialize the model, read config file, start and end date, and logging
         Args:
@@ -42,7 +42,6 @@ class AWSM():
         """
 
         self.read_config(config)
-        self.testing = testing
 
         # create blank log and error log because logger is not initialized yet
         self.tmp_log = []
@@ -551,17 +550,15 @@ def run_awsm_daily_ops(config_file):
         run_awsm(new_config)
 
 
-def run_awsm(config, testing=False):
+def run_awsm(config):
     """
     Function that runs awsm how it should be operate for full runs.
 
     Args:
         config: string path to the config file or inicheck UserConfig instance
-        testing: only to be used with unittests, if True will convert SMRF data
-            from to 32-bit then 64-bit to mimic writing the data to a
-            netcdf. This enables a single set of gold files.
     """
-    with AWSM(config, testing) as a:
+    
+    with AWSM(config) as a:
         if a.do_forecast:
             runtype = 'forecast'
         else:

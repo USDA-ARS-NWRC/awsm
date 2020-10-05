@@ -79,30 +79,6 @@ class PySnobal():
     def init_ones(self):
         return np.ones_like(self.awsm.topo.dem)
 
-    def _only_for_testing(self, data):
-        """Only apply this in testing. This is to ensure that run_ipysnobal
-        and run_smrf_ipysnobal are producing the same results. The issues
-        stems from netcdf files storing 32-bit floats but smrf_ipysnobal
-        uses 64-bit floats from SMRF.
-
-        Not intendend for use outside testing!
-
-        Args:
-            data (dict): data dictionary
-
-        Returns:
-            dict: data dictionary that has be "written and extracted" from
-                a netcdf file
-        """
-
-        if self.awsm.testing:
-            for key, value in data.items():
-                value = value.astype(np.float32)
-                value = value.astype(np.float64)
-                data[key] = value
-
-        return data
-
     def initialize_updater(self):
         """Initialize the StateUpdater for the simulation
         """
@@ -115,8 +91,8 @@ class PySnobal():
     def initialize_ipysnobal(self):
         """Initialize iPysnobal. Performs the following:
 
-        1. Create a configuration to pass to iPysnobal based on the configuration
-        file.
+        1. Create a configuration to pass to iPysnobal based on the
+        configuration file.
         2. Create the time step info for mass and time thresholds.
         3. Initialize the output record dictionary for storing results
         4. Create the output files
@@ -325,8 +301,6 @@ class PySnobal():
 
                 data[self.awsm.smrf_connector.MAP_INPUTS[var]] = smrf_data
 
-            data = self._only_for_testing(data)
-
         data['T_a'] = data['T_a'] + FREEZE
         data['T_pp'] = data['T_pp'] + FREEZE
         data['T_g'] = data['T_g'] + FREEZE
@@ -371,8 +345,8 @@ class PySnobal():
                     self.time_step, rt))
 
     def run_full_timestep(self):
-        """Run the full timestep for iPysnobal. Includes getting the input, 
-        running iPysnobal for the timestep, copying the input data and 
+        """Run the full timestep for iPysnobal. Includes getting the input,
+        running iPysnobal for the timestep, copying the input data and
         outputing the results if needed.
         """
 

@@ -1,4 +1,3 @@
-import os
 from inicheck.tools import cast_all_variables
 
 from awsm.framework.framework import run_awsm
@@ -23,7 +22,7 @@ class TestStandardRME(AWSMTestCase):
             'output/rme/wy1986/rme_test/run19860217_19860217'
         )
 
-        run_awsm(cls.run_config, testing=True)
+        run_awsm(cls.run_config)
 
     def test_thickness(self):
         self.compare_netcdf_files('snow.nc', 'thickness')

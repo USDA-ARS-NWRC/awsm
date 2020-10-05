@@ -67,9 +67,6 @@ class AWSM():
             # change here requires a change there
             self.n_forecast_hours = 18
 
-        # options for masking isnobal
-        self.mask_isnobal = self.config['awsm master']['mask_isnobal']
-
         # store smrf version if running smrf
         self.smrf_version = smrf.__version__
 
@@ -208,7 +205,7 @@ class AWSM():
 
         self.topo = smrf.data.load_topo.Topo(self.config['topo'])
 
-        if not self.mask_isnobal:
+        if not self.config['ipysnobal']['mask_isnobal']:
             self.topo.mask = np.ones_like(self.topo.dem)
 
         # see if roughness is in the topo
@@ -398,18 +395,11 @@ class AWSM():
         fp_desc = os.path.join(self.path_wy, 'projectDescription.txt')
 
         if not os.path.isfile(fp_desc):
-            # look for description or prompt for one
-            if self.project_description is not None:
-                pass
-            else:
-                self.project_description = input('\nNo description for project. '
-                                                 'Enter one now, but do not use '
-                                                 'any punctuation:\n')
             with open(fp_desc, 'w') as f:
                 f.write(self.project_description)
 
         else:
-            self.tmp_log.append('Description file already exists\n')
+            self.tmp_log.append('Description file already exists')
 
     def make_rigid_directories(self, path_name):
         """
@@ -425,7 +415,7 @@ class AWSM():
                 os.makedirs(path)
             else:
                 self.tmp_log.append(
-                    'Directory --{}-- exists, not creating.\n'.format(path))
+                    'Directory --{}-- exists, not creating.'.format(path))
 
     def __enter__(self):
         self.start_time = datetime.now()

@@ -557,7 +557,7 @@ def run_awsm(config):
     Args:
         config: string path to the config file or inicheck UserConfig instance
     """
-    
+
     with AWSM(config) as a:
         if a.do_forecast:
             runtype = 'forecast'

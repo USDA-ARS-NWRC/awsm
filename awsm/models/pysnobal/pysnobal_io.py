@@ -136,11 +136,6 @@ class PysnobalIO():
             self.output_file_name))
 
         fmt = '%Y-%m-%d %H:%M:%S'
-        # chunk size
-        cs = (6, 10, 10)
-        if self.awsm.topo.nx < 10:
-            cs = (3, 3, 3)
-
         if os.path.isfile(self.output_file_name):
             self._logger.warning(
                 'Opening {}, data may be overwritten!'.format(
@@ -178,15 +173,19 @@ class PysnobalIO():
             em.variables['x'][:] = self.awsm.topo.x
             em.variables['y'][:] = self.awsm.topo.y
 
-            for var_name, att in self.OUTPUT_VARIABLES.items():
-                # check to see if in output variables
-                if var_name.lower() in self.awsm.pysnobal_output_vars:
+            for var_name in self.output_variables:
 
-                    em.createVariable(
-                        var_name, 'f', dimensions[:3], chunksizes=cs)
-                    setattr(em.variables[var_name], 'units', att['units'])
-                    setattr(em.variables[var_name],
-                            'description', att['description'])
+                em.createVariable(
+                    var_name,
+                    'f',
+                    dimensions[:3],
+                    chunksizes=(6, 10, 10))
+                setattr(em.variables[var_name],
+                        'units',
+                        self.OUTPUT_VARIABLES[var_name]['units'])
+                setattr(em.variables[var_name],
+                        'description',
+                        self.OUTPUT_VARIABLES[var_name]['description'])
 
             # add projection info
             em = add_proj(em, None, self.awsm.topo.topoConfig['filename'])
@@ -218,27 +217,24 @@ class PysnobalIO():
         # now find the correct index
         # the current time integer
         times = self.output_file.variables['time']
+
         # offset to match same convention as iSnobal
         tstep -= pd.to_timedelta(1, unit='h')
         t = nc.date2num(tstep.replace(tzinfo=None),
-                        times.units, times.calendar)
+                        times.units,
+                        times.calendar)
 
-        if len(times) != 0:
-            index = np.where(times[:] == t)[0]
-            if index.size == 0:
-                index = len(times)
-            else:
-                index = index[0]
-        else:
+        try:
+            index = nc.date2index(tstep, times, select='exact')
+        except Exception:
             index = len(times)
 
         # insert the time
         self.output_file.variables['time'][index] = t
 
         # insert the data
-        for key in self.OUTPUT_VARIABLES.keys():
-            if key.lower() in self.output_variables:
-                self.output_file.variables[key][index, :] = output[key]
+        for key in self.output_variables:
+            self.output_file.variables[key][index, :] = output[key]
 
         # sync to disk
         self.output_file.sync()

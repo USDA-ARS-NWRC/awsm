@@ -175,11 +175,11 @@ class AWSMTestCase(unittest.TestCase):
         variables = ['time', 'x', 'y', variable]
         for var_name in variables:
 
-            # # compare the dimensions
-            # for att in gold.variables[var_name].ncattrs():
-            #     self.assertEqual(
-            #         getattr(gold.variables[var_name], att),
-            #         getattr(test.variables[var_name], att))
+            # compare the dimensions
+            for att in gold.variables[var_name].ncattrs():
+                self.assertEqual(
+                    getattr(gold.variables[var_name], att),
+                    getattr(test.variables[var_name], att))
 
             # only compare those that are floats
             if gold.variables[var_name].datatype != np.dtype('S1'):

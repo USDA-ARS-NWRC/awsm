@@ -14,7 +14,7 @@ FREEZE = 273.16
 class PysnobalIO():
 
     OUTPUT_VARIABLES = {
-        'net_rad': {
+        'net_radiation': {
             'units': 'W m-2',
             'description': 'Average net all-wave radiation',
             'ipysnobal_var': 'R_n_bar'
@@ -39,24 +39,24 @@ class PysnobalIO():
             'description': 'Average advected heat from precipitation',
             'ipysnobal_var': 'M_bar'
         },
-        'sum_EB': {
+        'sum_energy_balance': {
             'units': 'W m-2',
             'description': 'Average sum of energy balance terms for snowcover',
             'ipysnobal_var': 'delta_Q_bar'
         },
         'evaporation': {
-            'units': 'kg m-2 (or mm)',
-            'description': 'Total evaporation',
+            'units': 'kg m-2 (equivalent to mm of water)',
+            'description': 'Total evaporation and sublimation per unit area from surface of snowpack',
             'ipysnobal_var': 'E_s_sum'
         },
         'snowmelt': {
-            'units': 'kg m-2 (or mm)',
-            'description': 'Total snowmelt',
+            'units': 'kg m-2 (equivalent to mm of water )',
+            'description': 'Total snowmelt per unit area occurring within the snowpack',
             'ipysnobal_var': 'melt_sum'
         },
-        'SWI': {
-            'units': 'kg m-2 (or mm)',
-            'description': 'Surface water input is melt from bottom of snowpack or rain on bare gound',
+        'surface_water_input': {
+            'units': 'kg m-2 (equivalent to mm of water)',
+            'description': 'Surface water input is liquid water output from bottom of snowpack or rain on bare ground per unit area',
             'ipysnobal_var': 'ro_pred_sum'
         },
         'cold_content': {
@@ -71,42 +71,42 @@ class PysnobalIO():
         },
         'snow_density': {
             'units': 'kg m-3',
-            'description': 'Average snow density',
+            'description': 'Average snow density of the snowcover',
             'ipysnobal_var': 'rho'
         },
         'specific_mass': {
-            'units': 'kg m-2 (or mm)',
-            'description': 'Specific mass of the snowcover',
+            'units': 'kg m-2 (equivalent to mm of water)',
+            'description': 'Specific mass per unit area of the snowcover or snow water equivalent',
             'ipysnobal_var': 'm_s'
         },
         'liquid_water': {
-            'units': 'kg m-2 (or mm)',
-            'description': 'Predicted mass of liquid water in the snowcover',
+            'units': 'kg m-2 (equivalent to mm of water)',
+            'description': 'Mass per unit area of liquid water in the snowcover',
             'ipysnobal_var': 'h2o'
         },
-        'temp_surf': {
+        'temperature_surface': {
             'units': 'C',
-            'description': 'Predicted temperature of the surface layer',
+            'description': 'Temperature of the surface layer',
             'ipysnobal_var': 'T_s_0'
         },
-        'temp_lower': {
+        'temperature_lower': {
             'units': 'C',
-            'description': 'Predicted temperature of the lower layer',
+            'description': 'Temperature of the lower layer',
             'ipysnobal_var': 'T_s_l'
         },
-        'temp_snowcover': {
+        'temperature_snowcover': {
             'units': 'C',
-            'description': 'Predicted temperature of the snowcover',
+            'description': 'Temperature of the snowcover',
             'ipysnobal_var': 'T_s'
         },
         'thickness_lower': {
             'units': 'm',
-            'description': 'Predicted thickness of the lower layer',
+            'description': 'Thickness of the lower layer',
             'ipysnobal_var': 'z_s_l'
         },
         'water_saturation': {
             'units': 'percent',
-            'description': 'Predicted percentage of liquid water saturation of the snowcover',
+            'description': 'Percentage of liquid water saturation of the snowcover',
             'ipysnobal_var': 'h2o_sat'
         }
     }
@@ -211,9 +211,9 @@ class PysnobalIO():
             output[key] = copy(smrf_data[att['ipysnobal_var']])
 
         # convert from K to C
-        output['temp_snowcover'] -= FREEZE
-        output['temp_surf'] -= FREEZE
-        output['temp_lower'] -= FREEZE
+        output['temperature_snowcover'] -= FREEZE
+        output['temperature_surface'] -= FREEZE
+        output['temperature_lower'] -= FREEZE
 
         # now find the correct index
         # the current time integer

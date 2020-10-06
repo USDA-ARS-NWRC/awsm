@@ -15,7 +15,7 @@ Outline
 
 -get_init_file:
     --reads in the specific init file and stores init fields in dictionary
-    --checks if restarting from a crash, in which casse init file is not used
+    --checks if restarting from a crash, in which case init file is not used
     --if no file then make the necessary 0 start file
 
 -write_init:
@@ -213,9 +213,9 @@ class ModelInit():
 
         self.init['z_s'] = init_data.thickness.values
         self.init['rho'] = init_data.snow_density.values
-        self.init['T_s_0'] = init_data.temp_surf.values
-        self.init['T_s'] = init_data.temp_snowcover.values
-        self.init['T_s_l'] = init_data.temp_lower.values
+        self.init['T_s_0'] = init_data.temperature_surface.values
+        self.init['T_s'] = init_data.temperature_snowcover.values
+        self.init['T_s_l'] = init_data.temperature_lower.values
         self.init['h2o_sat'] = init_data.water_saturation.values
 
         ds.close()

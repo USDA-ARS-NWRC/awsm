@@ -36,14 +36,14 @@ class TestStandardRME(AWSMTestCase):
     def test_liquid_water(self):
         self.compare_netcdf_files('ipysnobal.nc', 'liquid_water')
 
-    def test_temp_surf(self):
-        self.compare_netcdf_files('ipysnobal.nc', 'temp_surf')
+    def test_temperature_surface(self):
+        self.compare_netcdf_files('ipysnobal.nc', 'temperature_surface')
 
-    def test_temp_lower(self):
-        self.compare_netcdf_files('ipysnobal.nc', 'temp_lower')
+    def test_temperature_lower(self):
+        self.compare_netcdf_files('ipysnobal.nc', 'temperature_lower')
 
-    def test_temp_snowcover(self):
-        self.compare_netcdf_files('ipysnobal.nc', 'temp_snowcover')
+    def test_temperature_snowcover(self):
+        self.compare_netcdf_files('ipysnobal.nc', 'temperature_snowcover')
 
     def test_thickness_lower(self):
         self.compare_netcdf_files('ipysnobal.nc', 'thickness_lower')
@@ -51,8 +51,8 @@ class TestStandardRME(AWSMTestCase):
     def test_water_saturation(self):
         self.compare_netcdf_files('ipysnobal.nc', 'water_saturation')
 
-    def test_net_rad(self):
-        self.compare_netcdf_files('ipysnobal.nc', 'net_rad')
+    def test_net_radiation(self):
+        self.compare_netcdf_files('ipysnobal.nc', 'net_radiation')
 
     def test_sensible_heat(self):
         self.compare_netcdf_files('ipysnobal.nc', 'sensible_heat')
@@ -66,8 +66,8 @@ class TestStandardRME(AWSMTestCase):
     def test_precip_advected(self):
         self.compare_netcdf_files('ipysnobal.nc', 'precip_advected')
 
-    def test_sum_EB(self):
-        self.compare_netcdf_files('ipysnobal.nc', 'sum_EB')
+    def test_sum_energy_balance(self):
+        self.compare_netcdf_files('ipysnobal.nc', 'sum_energy_balance')
 
     def test_evaporation(self):
         self.compare_netcdf_files('ipysnobal.nc', 'evaporation')
@@ -75,8 +75,8 @@ class TestStandardRME(AWSMTestCase):
     def test_snowmelt(self):
         self.compare_netcdf_files('ipysnobal.nc', 'snowmelt')
 
-    def test_SWI(self):
-        self.compare_netcdf_files('ipysnobal.nc', 'SWI')
+    def test_surface_water_input(self):
+        self.compare_netcdf_files('ipysnobal.nc', 'surface_water_input')
 
     def test_cold_content(self):
         self.compare_netcdf_files('ipysnobal.nc', 'cold_content')

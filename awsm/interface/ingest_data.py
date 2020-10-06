@@ -59,7 +59,7 @@ class StateUpdater():
                                  for k in self.update_info.keys()]
 
         # get necessary variables from awsm class
-        self.active_layer = myawsm.active_layer
+        self.active_layer = myawsm.config['ipysnobal']['active_layer']
         # Buffer size (in cells) for the interpolation to search overself.
         self.update_buffer = myawsm.update_buffer
 

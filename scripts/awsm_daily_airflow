@@ -64,18 +64,18 @@ def mod_config(config_file, start_date, no_previous):
 
     # if no need for
     if no_previous:
-        new_config.raw_cfg['files']['init_type'] = None
-        new_config.raw_cfg['files']['init_file'] = None
+        new_config.raw_cfg['ipysnobal']['init_type'] = None
+        new_config.raw_cfg['ipysnobal']['init_file'] = None
     # find previous output file
     else:
         prev_day = sd - pd.to_timedelta(1, unit='D')
         prev_out = os.path.join(prev_out_base,
                                 'run{}'.format(prev_day.strftime(fmt_day)),
-                                'snow.nc')
+                                'ipysnobal.nc')
         # reset if running the model
         if new_config.cfg['awsm master']['model_type'] is not None:
-            new_config.raw_cfg['files']['init_type'] = 'netcdf_out'
-            new_config.raw_cfg['files']['init_file'] = prev_out
+            new_config.raw_cfg['ipysnobal']['init_type'] = 'netcdf_out'
+            new_config.raw_cfg['ipysnobal']['init_file'] = prev_out
 
         # if we have a previous storm day file, use it
         prev_storm = os.path.join(prev_data_base,

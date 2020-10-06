@@ -17,10 +17,9 @@ import smrf
 
 import smrf.framework.logger as logger
 
-from awsm.data.init_model import ModelInit
 from awsm.framework import ascii_art
-from awsm.interface.smrf_connector import SMRFConnector
-from awsm.interface.ipysnobal import PySnobal
+from awsm.models.smrf_connector import SMRFConnector
+from awsm.models.pysnobal import PySnobal, ModelInit
 
 
 class AWSM():
@@ -34,7 +33,7 @@ class AWSM():
     Attributes:
     """
 
-    def __init__(self, config, testing=False):
+    def __init__(self, config):
         """
         Initialize the model, read config file, start and end date, and logging
         Args:
@@ -43,7 +42,6 @@ class AWSM():
         """
 
         self.read_config(config)
-        self.testing = testing
 
         # create blank log and error log because logger is not initialized yet
         self.tmp_log = []
@@ -69,9 +67,6 @@ class AWSM():
             # change here requires a change there
             self.n_forecast_hours = 18
 
-        # options for masking isnobal
-        self.mask_isnobal = self.config['awsm master']['mask_isnobal']
-
         # store smrf version if running smrf
         self.smrf_version = smrf.__version__
 
@@ -94,25 +89,14 @@ class AWSM():
                 print(self.tmp_err)
                 sys.exit()
 
-        # Time step mass thresholds for iSnobal
-        self.mass_thresh = []
-        self.mass_thresh.append(self.config['grid']['thresh_normal'])
-        self.mass_thresh.append(self.config['grid']['thresh_medium'])
-        self.mass_thresh.append(self.config['grid']['thresh_small'])
-
-        # threads for running iSnobal
-        self.ithreads = self.config['awsm system']['ithreads']
         # how often to output form iSnobal
         self.output_freq = self.config['awsm system']['output_frequency']
         # number of timesteps to run if ou don't want to run the whole thing
         self.run_for_nsteps = self.config['awsm system']['run_for_nsteps']
         # pysnobal output variables
-        self.pysnobal_output_vars = self.config['awsm system']['variables']
+        self.pysnobal_output_vars = self.config['ipysnobal']['variables']
         self.pysnobal_output_vars = [wrd.lower()
                                      for wrd in self.pysnobal_output_vars]
-        # snow and emname
-        self.snow_name = self.config['awsm system']['snow_name']
-        self.em_name = self.config['awsm system']['em_name']
 
         # options for restarting iSnobal
         self.restart_crash = False
@@ -123,17 +107,6 @@ class AWSM():
             self.restart_hr = \
                 int(self.config['isnobal restart']['wyh_restart_output'])
             self.restart_folder = self.config['isnobal restart']['output_folders']
-
-        # iSnobal active layer
-        self.active_layer = self.config['grid']['active_layer']
-
-        # if we are going to run ipysnobal with smrf
-        if self.model_type in ['ipysnobal', 'smrf_ipysnobal']:
-            self.ipy_threads = self.ithreads
-            self.ipy_init_type = \
-                self.config['files']['init_type']
-            self.forcing_data_type = \
-                self.config['ipysnobal']['forcing_data_type']
 
         # parameters needed for restart procedure
         self.restart_run = False
@@ -232,7 +205,7 @@ class AWSM():
 
         self.topo = smrf.data.load_topo.Topo(self.config['topo'])
 
-        if not self.mask_isnobal:
+        if not self.config['ipysnobal']['mask_isnobal']:
             self.topo.mask = np.ones_like(self.topo.dem)
 
         # see if roughness is in the topo
@@ -422,18 +395,11 @@ class AWSM():
         fp_desc = os.path.join(self.path_wy, 'projectDescription.txt')
 
         if not os.path.isfile(fp_desc):
-            # look for description or prompt for one
-            if self.project_description is not None:
-                pass
-            else:
-                self.project_description = input('\nNo description for project. '
-                                                 'Enter one now, but do not use '
-                                                 'any punctuation:\n')
             with open(fp_desc, 'w') as f:
                 f.write(self.project_description)
 
         else:
-            self.tmp_log.append('Description file already exists\n')
+            self.tmp_log.append('Description file already exists')
 
     def make_rigid_directories(self, path_name):
         """
@@ -449,7 +415,7 @@ class AWSM():
                 os.makedirs(path)
             else:
                 self.tmp_log.append(
-                    'Directory --{}-- exists, not creating.\n'.format(path))
+                    'Directory --{}-- exists, not creating.'.format(path))
 
     def __enter__(self):
         self.start_time = datetime.now()
@@ -530,9 +496,9 @@ def run_awsm_daily_ops(config_file):
         new_config = copy.deepcopy(config)
         if idd > 0:
             new_config.raw_cfg['isnobal restart']['restart_crash'] = False
-            new_config.raw_cfg['grid']['thresh_normal'] = 60
-            new_config.raw_cfg['grid']['thresh_medium'] = 10
-            new_config.raw_cfg['grid']['thresh_small'] = 1
+            new_config.raw_cfg['ipysnobal']['thresh_normal'] = 60
+            new_config.raw_cfg['ipysnobal']['thresh_medium'] = 10
+            new_config.raw_cfg['ipysnobal']['thresh_small'] = 1
         # get the end of the day
         ed = sd + add_day
 
@@ -552,11 +518,11 @@ def run_awsm_daily_ops(config_file):
             prev_day = sd - pd.to_timedelta(1, unit='D')
             prev_out = os.path.join(prev_out_base,
                                     'run{}'.format(prev_day.strftime(fmt_day)),
-                                    'snow.nc')
+                                    'ipysnobal.nc')
             # reset if running the model
             if new_config.cfg['awsm master']['model_type'] is not None:
-                new_config.raw_cfg['files']['init_type'] = 'netcdf_out'
-                new_config.raw_cfg['files']['init_file'] = prev_out
+                new_config.raw_cfg['ipysnobal']['init_type'] = 'netcdf_out'
+                new_config.raw_cfg['ipysnobal']['init_file'] = prev_out
 
             # if we have a previous storm day file, use it
             prev_storm = os.path.join(prev_data_base,
@@ -574,17 +540,15 @@ def run_awsm_daily_ops(config_file):
         run_awsm(new_config)
 
 
-def run_awsm(config, testing=False):
+def run_awsm(config):
     """
     Function that runs awsm how it should be operate for full runs.
 
     Args:
         config: string path to the config file or inicheck UserConfig instance
-        testing: only to be used with unittests, if True will convert SMRF data
-            from to 32-bit then 64-bit to mimic writing the data to a
-            netcdf. This enables a single set of gold files.
     """
-    with AWSM(config, testing) as a:
+
+    with AWSM(config) as a:
         if a.do_forecast:
             runtype = 'forecast'
         else:

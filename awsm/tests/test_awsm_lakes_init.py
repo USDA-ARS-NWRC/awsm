@@ -18,8 +18,8 @@ class TestLakesInit(AWSMTestCaseLakes):
 
         config = cls.base_config_copy()
 
-        config.raw_cfg['files']['init_file'] = './topo/init.nc'
-        config.raw_cfg['files']['init_type'] = 'netcdf'
+        config.raw_cfg['ipysnobal']['init_file'] = './topo/init.nc'
+        config.raw_cfg['ipysnobal']['init_type'] = 'netcdf'
 
         config.apply_recipes()
         cls.run_config = cast_all_variables(config, config.mcfg)
@@ -33,64 +33,64 @@ class TestLakesInit(AWSMTestCaseLakes):
             'output/lakes/wy2020/lakes_gold/run20191001_20191001'
         )
 
-        run_awsm(cls.run_config, testing=True)
+        run_awsm(cls.run_config)
 
     def test_thickness(self):
-        self.compare_netcdf_files('snow.nc', 'thickness')
+        self.compare_netcdf_files('ipysnobal.nc', 'thickness')
 
     def test_snow_density(self):
-        self.compare_netcdf_files('snow.nc', 'snow_density')
+        self.compare_netcdf_files('ipysnobal.nc', 'snow_density')
 
     def test_specific_mass(self):
-        self.compare_netcdf_files('snow.nc', 'specific_mass')
+        self.compare_netcdf_files('ipysnobal.nc', 'specific_mass')
 
     def test_liquid_water(self):
-        self.compare_netcdf_files('snow.nc', 'liquid_water')
+        self.compare_netcdf_files('ipysnobal.nc', 'liquid_water')
 
-    def test_temp_surf(self):
-        self.compare_netcdf_files('snow.nc', 'temp_surf')
+    def test_temperature_surface(self):
+        self.compare_netcdf_files('ipysnobal.nc', 'temperature_surface')
 
-    def test_temp_lower(self):
-        self.compare_netcdf_files('snow.nc', 'temp_lower')
+    def test_temperature_lower(self):
+        self.compare_netcdf_files('ipysnobal.nc', 'temperature_lower')
 
-    def test_temp_snowcover(self):
-        self.compare_netcdf_files('snow.nc', 'temp_snowcover')
+    def test_temperature_snowcover(self):
+        self.compare_netcdf_files('ipysnobal.nc', 'temperature_snowcover')
 
     def test_thickness_lower(self):
-        self.compare_netcdf_files('snow.nc', 'thickness_lower')
+        self.compare_netcdf_files('ipysnobal.nc', 'thickness_lower')
 
     def test_water_saturation(self):
-        self.compare_netcdf_files('snow.nc', 'water_saturation')
+        self.compare_netcdf_files('ipysnobal.nc', 'water_saturation')
 
-    def test_net_rad(self):
-        self.compare_netcdf_files('em.nc', 'net_rad')
+    def test_net_radiation(self):
+        self.compare_netcdf_files('ipysnobal.nc', 'net_radiation')
 
     def test_sensible_heat(self):
-        self.compare_netcdf_files('em.nc', 'sensible_heat')
+        self.compare_netcdf_files('ipysnobal.nc', 'sensible_heat')
 
     def test_latent_heat(self):
-        self.compare_netcdf_files('em.nc', 'latent_heat')
+        self.compare_netcdf_files('ipysnobal.nc', 'latent_heat')
 
     def test_snow_soil(self):
-        self.compare_netcdf_files('em.nc', 'snow_soil')
+        self.compare_netcdf_files('ipysnobal.nc', 'snow_soil')
 
     def test_precip_advected(self):
-        self.compare_netcdf_files('em.nc', 'precip_advected')
+        self.compare_netcdf_files('ipysnobal.nc', 'precip_advected')
 
-    def test_sum_EB(self):
-        self.compare_netcdf_files('em.nc', 'sum_EB')
+    def test_sum_energy_balance(self):
+        self.compare_netcdf_files('ipysnobal.nc', 'sum_energy_balance')
 
     def test_evaporation(self):
-        self.compare_netcdf_files('em.nc', 'evaporation')
+        self.compare_netcdf_files('ipysnobal.nc', 'evaporation')
 
     def test_snowmelt(self):
-        self.compare_netcdf_files('em.nc', 'snowmelt')
+        self.compare_netcdf_files('ipysnobal.nc', 'snowmelt')
 
-    def test_SWI(self):
-        self.compare_netcdf_files('em.nc', 'SWI')
+    def test_surface_water_input(self):
+        self.compare_netcdf_files('ipysnobal.nc', 'surface_water_input')
 
     def test_cold_content(self):
-        self.compare_netcdf_files('em.nc', 'cold_content')
+        self.compare_netcdf_files('ipysnobal.nc', 'cold_content')
 
 
 class TestLakesInitSMRFiPysnobal(TestLakesInit):
@@ -108,8 +108,8 @@ class TestLakesInitSMRFiPysnobal(TestLakesInit):
         config.raw_cfg['awsm master']['run_smrf'] = False
         config.raw_cfg['awsm master']['model_type'] = 'smrf_ipysnobal'
         config.raw_cfg['system']['threading'] = False
-        config.raw_cfg['files']['init_file'] = './topo/init.nc'
-        config.raw_cfg['files']['init_type'] = 'netcdf'
+        config.raw_cfg['ipysnobal']['init_file'] = './topo/init.nc'
+        config.raw_cfg['ipysnobal']['init_type'] = 'netcdf'
 
         config.apply_recipes()
         cls.run_config = cast_all_variables(config, config.mcfg)
@@ -130,8 +130,8 @@ class TestLakesInitSMRFiPysnobalThreaded(TestLakesInit):
         config.raw_cfg['awsm master']['run_smrf'] = False
         config.raw_cfg['awsm master']['model_type'] = 'smrf_ipysnobal'
         config.raw_cfg['system']['threading'] = True
-        config.raw_cfg['files']['init_file'] = './topo/init.nc'
-        config.raw_cfg['files']['init_type'] = 'netcdf'
+        config.raw_cfg['ipysnobal']['init_file'] = './topo/init.nc'
+        config.raw_cfg['ipysnobal']['init_type'] = 'netcdf'
 
         config.apply_recipes()
         cls.run_config = cast_all_variables(config, config.mcfg)
@@ -154,8 +154,8 @@ class TestLakesInitSMRFiPysnobalThreadedHRRR(TestLakesInit):
         config.raw_cfg['awsm master']['run_smrf'] = False
         config.raw_cfg['awsm master']['model_type'] = 'smrf_ipysnobal'
         config.raw_cfg['system']['threading'] = True
-        config.raw_cfg['files']['init_file'] = './topo/init.nc'
-        config.raw_cfg['files']['init_type'] = 'netcdf'
+        config.raw_cfg['ipysnobal']['init_file'] = './topo/init.nc'
+        config.raw_cfg['ipysnobal']['init_type'] = 'netcdf'
 
         config.apply_recipes()
         cls.run_config = cast_all_variables(config, config.mcfg)

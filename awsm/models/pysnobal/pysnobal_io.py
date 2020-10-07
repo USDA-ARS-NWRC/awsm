@@ -136,7 +136,7 @@ class PysnobalIO():
             self.output_file_name))
 
         fmt = '%Y-%m-%d %H:%M:%S'
-        if os.path.isfile(self.output_file_name):
+        if os.path.isfile(self.output_filename):
             self._logger.warning(
                 'Opening {}, data may be overwritten!'.format(
                     self.output_filename))

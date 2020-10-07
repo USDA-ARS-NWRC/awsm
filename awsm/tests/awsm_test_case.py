@@ -55,6 +55,10 @@ class AWSMTestCase(unittest.TestCase):
         return deepcopy(cls._base_config)
 
     @classmethod
+    def run_config_copy(cls):
+        return deepcopy(cls.run_config)
+
+    @classmethod
     def load_base_config(cls):
         cls._base_config = get_user_config(
             cls.config_file, modules=['smrf', 'awsm'])

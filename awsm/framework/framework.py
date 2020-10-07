@@ -98,30 +98,33 @@ class AWSM():
         self.pysnobal_output_vars = [wrd.lower()
                                      for wrd in self.pysnobal_output_vars]
 
-        # options for restarting iSnobal
-        self.restart_crash = False
-        if self.config['isnobal restart']['restart_crash']:
-            self.restart_crash = True
-            # self.new_init = self.config['isnobal restart']['new_init']
-            self.depth_thresh = self.config['isnobal restart']['depth_thresh']
-            self.restart_hr = \
-                int(self.config['isnobal restart']['wyh_restart_output'])
-            self.restart_folder = self.config['isnobal restart']['output_folders']
+        # # options for restarting iSnobal
+        # self.restart_crash = False
+        if self.config['ipysnobal']['restart_date_time'] is not None:
+            self.start_date = self.config['ipysnobal']['restart_date_time']
+            if self.model_type != 'ipysnobal':
+                self.start_date = self.start_date - \
+                    pd.Timedelta(minutes=self.config['time']['time_step'])
+        #     self.restart_crash = True
+        #     # self.new_init = self.config['isnobal restart']['new_init']
+        #     self.depth_thresh = self.config['isnobal restart']['depth_thresh']
+        #     self.restart_hr = \
+        #         int(self.config['isnobal restart']['wyh_restart_output'])
+        #     self.restart_folder = self.config['isnobal restart']['output_folders']
 
-        # parameters needed for restart procedure
+        # # parameters needed for restart procedure
         self.restart_run = False
-        if self.config['isnobal restart']['restart_crash']:
-            self.restart_run = True
-            # find restart hour datetime
-            reset_offset = pd.to_timedelta(self.restart_hr, unit='h')
-            # set a new start date for this run
-            self.tmp_log.append('Restart date is {}'.format(self.start_date))
+        # if self.config['isnobal restart']['restart_crash']:
+        #     self.restart_run = True
+        #     # find restart hour datetime
+        #     reset_offset = pd.to_timedelta(self.restart_hr, unit='h')
+        #     # set a new start date for this run
+        #     self.tmp_log.append('Restart date is {}'.format(self.start_date))
 
         # read in update depth parameters
         self.update_depth = False
         if 'update depth' in self.config:
             self.update_depth = self.config['update depth']['update']
-        if self.update_depth:
             self.update_file = self.config['update depth']['update_file']
             self.update_buffer = self.config['update depth']['buffer']
             self.flight_numbers = self.config['update depth']['flight_numbers']
@@ -237,6 +240,12 @@ class AWSM():
         # find water year hour of start and end date
         self.start_wyhr = int(utils.water_day(self.start_date)[0]*24)
         self.end_wyhr = int(utils.water_day(self.end_date)[0]*24)
+
+        # if there is a restart time
+        if self.config['ipysnobal']['restart_date_time'] is not None:
+            rs_dt = self.config['ipysnobal']['restart_date_time']
+            rs_dt = pd.to_datetime(rs_dt).tz_localize(tz=self.tzinfo)
+            self.config['ipysnobal']['restart_date_time'] = rs_dt
 
     def parse_folder_structure(self):
         """Parse the config to get the folder structure

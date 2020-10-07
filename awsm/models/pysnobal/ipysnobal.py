@@ -80,6 +80,29 @@ class PySnobal():
     def init_ones(self):
         return np.ones_like(self.awsm.topo.dem)
 
+    @property
+    def config_constants(self):
+        """Read the configuration and set the constants for iPysnobal.
+        These are similar to the arguments that are passed to iSnobal.
+
+        Returns:
+            dict: constant values for iSnobal
+        """
+
+        return {
+            'time_step': 60,
+            'max-h2o': self.config['max_h2o'],
+            'c': True,
+            'K': True,
+            'mass_threshold': self.config['thresh_normal'],
+            'time_z': 0,
+            'max_z_s_0': self.config['active_layer'],
+            'z_u': self.config['z_u'],
+            'z_t': self.config['z_t'],
+            'z_g': self.config['z_g'],
+            'relative_heights': True,
+        }
+
     def initialize_updater(self):
         """Initialize the StateUpdater for the simulation
         """
@@ -168,7 +191,7 @@ class PySnobal():
             'out_filename': None
         }
 
-        config['constants'] = self.read_config_constants()
+        config['constants'] = self.config_constants
 
         # ------------------------------------------------------------------------
         # read in the time and ensure a few things
@@ -178,10 +201,7 @@ class PySnobal():
                              """of 60 min (whole hours)""")
 
         # read in the start date and end date
-        if self.awsm.restart_run:
-            start_date = self.awsm.restart_date
-        else:
-            start_date = self.awsm.start_date
+        start_date = self.awsm.start_date
 
         # create a date time vector
         date_time = list(pd.date_range(
@@ -208,28 +228,6 @@ class PySnobal():
 
         self.options = config
         self.point_run = False
-
-    def read_config_constants(self):
-        """Read the configuration and set the constants for iPysnobal.
-        These are similar to the arguments that are passed to iSnobal.
-
-        Returns:
-            dict: constant values for iSnobal
-        """
-
-        return {
-            'time_step': 60,
-            'max-h2o': self.config['max_h2o'],
-            'c': True,
-            'K': True,
-            'mass_threshold': self.config['thresh_normal'],
-            'time_z': 0,
-            'max_z_s_0': self.config['active_layer'],
-            'z_u': self.config['z_u'],
-            'z_t': self.config['z_t'],
-            'z_g': self.config['z_g'],
-            'relative_heights': True,
-        }
 
     def do_update(self, first_step):
         """If there is an update the the give time step, update the model state
@@ -312,15 +310,19 @@ class PySnobal():
         self.output_rec['current_time'] = step_time * self.init_ones
         self.output_rec['time_since_out'] = time_since_out * self.init_ones
 
-    def do_data_tstep(self, first_step):
-        """Run iSnobal over the grid
-
-        Args:
-            first_step (int): flag if first step or not
-
-        Raises:
-            ValueError: catch error in iSnobal
+    def run_full_timestep(self):
+        """Run the full timestep for iPysnobal. Includes getting the input,
+        running iPysnobal for the timestep, copying the input data and
+        outputing the results if needed.
         """
+
+        self._logger.info(
+            'running iPysnobal for timestep: {}'.format(self.time_step))
+
+        self.input2 = self.get_timestep_inputs()
+
+        first_step = self.step_index
+        first_step = self.do_update(first_step)
 
         rt = snobal.do_tstep_grid(
             self.input1,
@@ -337,22 +339,6 @@ class PySnobal():
             raise ValueError(
                 'ipysnobal error on time step {}, pixel {}'.format(
                     self.time_step, rt))
-
-    def run_full_timestep(self):
-        """Run the full timestep for iPysnobal. Includes getting the input,
-        running iPysnobal for the timestep, copying the input data and
-        outputing the results if needed.
-        """
-
-        self._logger.info(
-            'running iPysnobal for timestep: {}'.format(self.time_step))
-
-        self.input2 = self.get_timestep_inputs()
-
-        first_step = self.step_index
-        first_step = self.do_update(first_step)
-
-        self.do_data_tstep(first_step)
 
         self.input1 = self.input2.copy()
 

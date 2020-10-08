@@ -44,34 +44,33 @@ class TestRestart(CheckPysnobalOutputs, AWSMTestCase):
         run_awsm(cls.run_config)
 
 
-# class TestSMRFiPysnobalRestart(TestRMESMRFiPysnobal):
-#     """
-#     Testing using RME:
-#         - smrf_ipysnobal
-#         - initialize with all zeros
-#         - loading from netcdf
-#         - restart simulation
-#     """
+class TestSMRFiPysnobalRestart(TestRestart):
+    """
+    Testing using RME:
+        - smrf_ipysnobal
+        - initialize with all zeros
+        - loading from netcdf
+        - restart simulation
+    """
 
-#     @classmethod
-#     def restart_configure(cls):
-#         config = cls.base_config_copy()
-#         config.raw_cfg['awsm master']['run_smrf'] = False
-#         config.raw_cfg['awsm master']['model_type'] = 'smrf_ipysnobal'
-#         config.raw_cfg['ipysnobal']['restart_date_time'] = '1986-02-17 05:00:00'  # noqa
-#         config.raw_cfg['system']['threading'] = False
+    @classmethod
+    def configure(cls):
+        config = cls.base_config_copy()
+        config.raw_cfg['awsm master']['run_smrf'] = False
+        config.raw_cfg['awsm master']['model_type'] = 'smrf_ipysnobal'
+        config.raw_cfg['system']['threading'] = False
+        config.raw_cfg['awsm system']['netcdf_output_precision'] = 'double'
 
-#         config.apply_recipes()
-#         cls.run_config = cast_all_variables(config, config.mcfg)
+        config.apply_recipes()
+        cls.run_config = cast_all_variables(config, config.mcfg)
 
-#     @classmethod
-#     def setUpClass(cls):
-#         # run the model as normal
-#         super().setUpClass()
+    @classmethod
+    def restart_configure(cls):
+        config = cls.run_config_copy()
+        config.raw_cfg['ipysnobal']['restart_date_time'] = '1986-02-17 02:00:00'  # noqa
 
-#         # restart the run from a different point
-#         cls.restart_configure()
-#         run_awsm(cls.run_config)
+        config.apply_recipes()
+        cls.run_config = cast_all_variables(config, config.mcfg)
 
 
 # # class TestRMESMRFiPysnobalThread(TestStandardRME):

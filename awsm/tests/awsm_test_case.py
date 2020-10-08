@@ -187,13 +187,23 @@ class AWSMTestCase(unittest.TestCase):
 
             # only compare those that are floats
             if gold.variables[var_name].datatype != np.dtype('S1'):
+
+                # If the variable is a double in the netcdf, convert to
+                # float32 for equal comparison
+                test_data = test.variables[var_name][:]
+                if test_data.dtype == np.float64:
+                    test_data = test_data.astype(np.float32)
+
                 error_msg = "Variable: {0} did not match gold standard". \
                     format(var_name)
                 self.assert_gold_equal(
                     gold.variables[var_name][:],
-                    test.variables[var_name][:],
+                    test_data,
                     error_msg
                 )
 
         gold.close()
         test.close()
+
+
+

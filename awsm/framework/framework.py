@@ -102,9 +102,9 @@ class AWSM():
         # self.restart_crash = False
         if self.config['ipysnobal']['restart_date_time'] is not None:
             self.start_date = self.config['ipysnobal']['restart_date_time']
-            if self.model_type != 'ipysnobal':
-                self.start_date = self.start_date - \
-                    pd.Timedelta(minutes=self.config['time']['time_step'])
+            # if self.model_type != 'ipysnobal':
+            self.start_date = self.start_date - \
+                pd.Timedelta(minutes=self.config['time']['time_step'])
         #     self.restart_crash = True
         #     # self.new_init = self.config['isnobal restart']['new_init']
         #     self.depth_thresh = self.config['isnobal restart']['depth_thresh']

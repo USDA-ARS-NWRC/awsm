@@ -69,7 +69,7 @@ class ModelInit():
 
         # when restarting, just reset the start date to grab the right init time step
         if self.config['ipysnobal']['restart_date_time'] is not None:
-            self.start_date = self.config['ipysnobal']['restart_date_time'] - \
+            self.start_date = self.start_date - \
                 pd.Timedelta(minutes=self.config['time']['time_step'])
             self.init_type = 'netcdf_out'
             self.init_file = os.path.join(self.path_output, 'ipysnobal.nc')

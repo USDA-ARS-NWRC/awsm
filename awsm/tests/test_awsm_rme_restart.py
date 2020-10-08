@@ -1,35 +1,47 @@
-# from inicheck.tools import cast_all_variables
-# import logging
+from inicheck.tools import cast_all_variables
 
-# from awsm.framework.framework import run_awsm
-# from awsm.tests.test_awsm_rme import TestStandardRME, TestRMESMRFiPysnobal
+from awsm.framework.framework import run_awsm
+from awsm.tests.awsm_test_case import AWSMTestCase
+from awsm.tests.check_mixin import CheckPysnobalOutputs
 
 
-# class TestRestart(TestStandardRME):
-#     """
-#     Testing using RME:
-#         - ipysnobal
-#         - initialize with all zeros
-#         - loading from netcdf
-#         - restart simulation
-#     """
+class TestRestart(CheckPysnobalOutputs, AWSMTestCase):
+    """CheckPysnobalOutputs
+    Testing using RME:
+        - ipysnobal
+        - initialize with all zeros
+        - loading from netcdf
+        - restart simulation
+    """
 
-#     @classmethod
-#     def restart_configure(cls):
-#         config = cls.run_config_copy()
-#         config.raw_cfg['awsm master']['run_smrf'] = False
-#         config.raw_cfg['ipysnobal']['restart_date_time'] = '1986-02-17 05:00:00'  # noqa
-#         config.apply_recipes()
-#         cls.run_config = cast_all_variables(config, config.mcfg)
+    @classmethod
+    def configure(cls):
+        config = cls.base_config_copy()
+        config.raw_cfg['awsm system']['netcdf_output_precision'] = 'double'
 
-#     @classmethod
-#     def setUpClass(cls):
-#         # run the model as normal
-#         super().setUpClass()
+        config.apply_recipes()
+        cls.run_config = cast_all_variables(config, config.mcfg)
 
-#         # restart the run from a different point
-#         cls.restart_configure()
-#         run_awsm(cls.run_config)
+    @classmethod
+    def restart_configure(cls):
+        config = cls.run_config_copy()
+        config.raw_cfg['awsm master']['run_smrf'] = False
+        config.raw_cfg['ipysnobal']['restart_date_time'] = '1986-02-17 05:00:00'  # noqa
+        config.apply_recipes()
+        cls.run_config = cast_all_variables(config, config.mcfg)
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.gold_dir = cls.basin_dir.joinpath('gold')
+        cls.output_path = cls.basin_dir.joinpath(
+            'output/rme/wy1986/rme_test/run19860217_19860217'
+        )
+        run_awsm(cls.run_config)
+
+        # restart the run from a different point
+        cls.restart_configure()
+        run_awsm(cls.run_config)
 
 
 # class TestSMRFiPysnobalRestart(TestRMESMRFiPysnobal):

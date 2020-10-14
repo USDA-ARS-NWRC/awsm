@@ -64,31 +64,40 @@ class TestSMRFiPysnobalRestart(TestRestart):
         config.apply_recipes()
         cls.run_config = cast_all_variables(config, config.mcfg)
 
-    # @classmethod
-    # def restart_configure(cls):
-    #     config = cls.run_config_copy()
-    #     config.raw_cfg['ipysnobal']['restart_date_time'] = '1986-02-17 02:00:00'  # noqa
+    @classmethod
+    def restart_configure(cls):
+        config = cls.run_config_copy()
+        config.raw_cfg['ipysnobal']['restart_date_time'] = '1986-02-17 05:00:00'  # noqa
 
-    #     config.apply_recipes()
-    #     cls.run_config = cast_all_variables(config, config.mcfg)
+        config.apply_recipes()
+        cls.run_config = cast_all_variables(config, config.mcfg)
 
 
-# class TestSMRFiPysnobalThreadRestart(TestRestart):
-#     """
-#     Testing using RME:
-#         - smrf_ipysnobal
-#         - SMRF threading
-#         - initialize with all zeros
-#         - loading from netcdf
-#     """
+class TestSMRFiPysnobalThreadRestart(TestRestart):
+    """
+    Testing using RME:
+        - smrf_ipysnobal
+        - SMRF threading
+        - initialize with all zeros
+        - loading from netcdf
+        - restart simulation
+    """
 
-#     @classmethod
-#     def configure(cls):
-#         config = cls.base_config_copy()
-#         config.raw_cfg['awsm master']['run_smrf'] = False
-#         config.raw_cfg['awsm master']['model_type'] = 'smrf_ipysnobal'
-#         config.raw_cfg['system']['threading'] = True
-#         config.raw_cfg['awsm system']['netcdf_output_precision'] = 'double'
+    @classmethod
+    def configure(cls):
+        config = cls.base_config_copy()
+        config.raw_cfg['awsm master']['run_smrf'] = False
+        config.raw_cfg['awsm master']['model_type'] = 'smrf_ipysnobal'
+        config.raw_cfg['system']['threading'] = True
+        config.raw_cfg['awsm system']['netcdf_output_precision'] = 'double'
 
-#         config.apply_recipes()
-#         cls.run_config = cast_all_variables(config, config.mcfg)
+        config.apply_recipes()
+        cls.run_config = cast_all_variables(config, config.mcfg)
+
+    @classmethod
+    def restart_configure(cls):
+        config = cls.run_config_copy()
+        config.raw_cfg['ipysnobal']['restart_date_time'] = '1986-02-17 05:00:00'  # noqa
+
+        config.apply_recipes()
+        cls.run_config = cast_all_variables(config, config.mcfg)

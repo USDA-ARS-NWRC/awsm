@@ -90,6 +90,7 @@ class SMRFConnector():
                 self.force[variable] = nc.Dataset(
                     os.path.join(self.output_path, '{}.nc'.format(variable)),
                     'r')
+                self.force[variable].set_always_mask(False)
 
             except FileNotFoundError:
                 self.force['soil_temp'] = float(self.myawsm.soil_temp) * \

@@ -84,6 +84,7 @@ class ModelInit():
         self.init['mask'] = self.topo.mask
         self.init['z_0'] = self.topo.roughness
         self.init['elevation'] = self.topo.dem
+
         # read in the init file
         self.get_init_file()
 

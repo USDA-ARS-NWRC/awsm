@@ -419,11 +419,6 @@ class PySnobal():
         for self.step_index, self.time_step in enumerate(self.date_time[1:], 1):  # noqa
             self.run_full_timestep()
 
-            # if input has run_for_nsteps, make sure not to go past it
-            if self.awsm.run_for_nsteps is not None:
-                if self.step_index > self.awsm.run_for_nsteps:
-                    break
-
         # close input files
         self.awsm.smrf_connector.close_netcdf_files()
         self.pysnobal_io.output_file.close()
@@ -470,7 +465,7 @@ class PySnobal():
 
         self.initialize_updater()
 
-        for self.step_index, self.time_step in enumerate(self.date_time, 0):
+        for self.step_index, self.time_step in enumerate(self.date_time):
             startTime = datetime.now()
 
             self.smrf.distribute_single_timestep(self.time_step)

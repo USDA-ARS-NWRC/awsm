@@ -18,7 +18,6 @@ class TestStandardLakes(CheckPysnobalOutputs, AWSMTestCaseLakes):
         super().setUpClass()
 
         cls.gold_dir = cls.basin_dir.joinpath('gold_hrrr')
-
         cls.output_path = cls.basin_dir.joinpath(
             'output/lakes/wy2020/lakes_gold/run20191001_20191001'
         )

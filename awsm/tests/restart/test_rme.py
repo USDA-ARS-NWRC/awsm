@@ -17,6 +17,7 @@ class TestRestart(CheckPysnobalOutputs, AWSMTestCase):
     @classmethod
     def configure(cls):
         config = cls.base_config_copy()
+        config.raw_cfg['system']['threading'] = False
         config.raw_cfg['awsm system']['netcdf_output_precision'] = 'double'
 
         config.apply_recipes()

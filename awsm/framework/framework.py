@@ -98,28 +98,15 @@ class AWSM():
         self.pysnobal_output_vars = [wrd.lower()
                                      for wrd in self.pysnobal_output_vars]
 
-        # # options for restarting iSnobal
-        # self.restart_crash = False
+        # options for restarting iSnobal
+        # TODO move to own function. Raise error if storm days file is not there
         if self.config['ipysnobal']['restart_date_time'] is not None:
             self.start_date = self.config['ipysnobal']['restart_date_time']
-            # if self.model_type != 'ipysnobal':
             self.start_date = self.start_date - \
                 pd.Timedelta(minutes=self.config['time']['time_step'])
-        #     self.restart_crash = True
-        #     # self.new_init = self.config['isnobal restart']['new_init']
-        #     self.depth_thresh = self.config['isnobal restart']['depth_thresh']
-        #     self.restart_hr = \
-        #         int(self.config['isnobal restart']['wyh_restart_output'])
-        #     self.restart_folder = self.config['isnobal restart']['output_folders']
 
-        # # parameters needed for restart procedure
-        self.restart_run = False
-        # if self.config['isnobal restart']['restart_crash']:
-        #     self.restart_run = True
-        #     # find restart hour datetime
-        #     reset_offset = pd.to_timedelta(self.restart_hr, unit='h')
-        #     # set a new start date for this run
-        #     self.tmp_log.append('Restart date is {}'.format(self.start_date))
+            # has to have the storm day file, else the albedo will be
+            # set to fresh snow
 
         # read in update depth parameters
         self.update_depth = False

@@ -10,7 +10,7 @@ class TestRestart(CheckPysnobalOutputs, AWSMTestCaseLakes):
     Testing using Lakes:
         - ipysnobal
         - initialize from snow.nc file
-        - loading from netcdf
+        - SMRF from netcdf
         - restart simulation
     """
 
@@ -45,34 +45,34 @@ class TestRestart(CheckPysnobalOutputs, AWSMTestCaseLakes):
         run_awsm(cls.run_config)
 
 
-class TestSMRFiPysnobalRestart(TestRestart):
-    """
-    Testing using RME:
-        - smrf_ipysnobal
-        - initialize with all zeros
-        - loading from netcdf
-        - restart simulation
-    """
+# class TestSMRFiPysnobalRestart(TestRestart):
+#     """
+#     Testing using RME:
+#         - smrf_ipysnobal
+#         - initialize from snow.nc file
+#         - load HRRR first
+#         - restart simulation
+#     """
 
-    @classmethod
-    def configure(cls):
-        config = cls.base_config_copy()
-        config.raw_cfg['awsm master']['run_smrf'] = False
-        config.raw_cfg['awsm master']['model_type'] = 'smrf_ipysnobal'
-        config.raw_cfg['system']['threading'] = False
-        config.raw_cfg['awsm system']['netcdf_output_precision'] = 'double'
+#     @classmethod
+#     def configure(cls):
+#         config = cls.base_config_copy()
+#         config.raw_cfg['awsm master']['run_smrf'] = False
+#         config.raw_cfg['awsm master']['model_type'] = 'smrf_ipysnobal'
+#         config.raw_cfg['system']['threading'] = False
+#         config.raw_cfg['awsm system']['netcdf_output_precision'] = 'double'
 
-        config.apply_recipes()
-        cls.run_config = cast_all_variables(config, config.mcfg)
+#         config.apply_recipes()
+#         cls.run_config = cast_all_variables(config, config.mcfg)
 
-    @classmethod
-    def restart_configure(cls):
-        config = cls.run_config_copy()
-        # reoutput the last timestep
-        config.raw_cfg['ipysnobal']['restart_date_time'] = '2019-10-01 17:00'  # noqa
+#     @classmethod
+#     def restart_configure(cls):
+#         config = cls.run_config_copy()
+#         # reoutput the last timestep
+#         config.raw_cfg['ipysnobal']['restart_date_time'] = '2019-10-01 17:00'  # noqa
 
-        config.apply_recipes()
-        cls.run_config = cast_all_variables(config, config.mcfg)
+#         config.apply_recipes()
+#         cls.run_config = cast_all_variables(config, config.mcfg)
 
 
 # class TestSMRFiPysnobalThreadRestart(TestRestart):

@@ -278,6 +278,10 @@ class AWSM():
         saved logging statements.
         '''
 
+        # clear the logger
+        # for handler in logging.root.handlers:
+        #     logging.root.removeHandler(handler)
+
         # setup the logging
         logfile = None
         if self.config['awsm system']['log_to_file']:
@@ -439,6 +443,7 @@ class AWSM():
             'AWSM finished in: {}'.format(datetime.now() - self.start_time)
         )
         self._logger.info('AWSM closed --> %s' % datetime.now())
+        logging.shutdown()
 
 
 def run_awsm_daily_ops(config_file):

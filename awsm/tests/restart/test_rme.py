@@ -57,6 +57,7 @@ class TestSMRFiPysnobalRestart(TestRestart):
     @classmethod
     def configure(cls):
         config = cls.base_config_copy()
+        config.raw_cfg['output']['variables'] = ['storm_days']
         config.raw_cfg['awsm master']['run_smrf'] = False
         config.raw_cfg['awsm master']['model_type'] = 'smrf_ipysnobal'
         config.raw_cfg['system']['threading'] = False
@@ -87,6 +88,7 @@ class TestSMRFiPysnobalThreadRestart(TestRestart):
     @classmethod
     def configure(cls):
         config = cls.base_config_copy()
+        config.raw_cfg['output']['variables'] = ['storm_days']
         config.raw_cfg['awsm master']['run_smrf'] = False
         config.raw_cfg['awsm master']['model_type'] = 'smrf_ipysnobal'
         config.raw_cfg['system']['threading'] = True

@@ -98,15 +98,7 @@ class AWSM():
         self.pysnobal_output_vars = [wrd.lower()
                                      for wrd in self.pysnobal_output_vars]
 
-        # options for restarting iSnobal
-        # TODO move to own function. Raise error if storm days file is not there
-        if self.config['ipysnobal']['restart_date_time'] is not None:
-            self.start_date = self.config['ipysnobal']['restart_date_time']
-            self.start_date = self.start_date - \
-                pd.Timedelta(minutes=self.config['time']['time_step'])
-
-            # has to have the storm day file, else the albedo will be
-            # set to fresh snow
+        self.model_restart()
 
         # read in update depth parameters
         self.update_depth = False
@@ -130,9 +122,6 @@ class AWSM():
         config_backup_location = \
             os.path.join(self.path_output, 'awsm_config_backup.ini')
         generate_config(self.ucfg, config_backup_location)
-
-        # create log now that directory structure is done
-        # self.create_log()
 
         self.smrf_connector = SMRFConnector(self)
 
@@ -260,28 +249,14 @@ class AWSM():
                              ' than run_smrf_ipysnobal')
 
     def create_log(self):
-        '''
+        """
         Now that the directory structure is done, create log file and print out
         saved logging statements.
-        '''
-
-        # clear the logger
-        # for handler in logging.root.handlers:
-        #     logging.root.removeHandler(handler)
+        """
 
         # setup the logging
         logfile = None
         if self.config['awsm system']['log_to_file']:
-            # if self.config['isnobal restart']['restart_crash']:
-            #     logfile = \
-            #         os.path.join(self.path_log,
-            #                      'log_restart_{}.out'.format(self.restart_hr))
-            # elif self.do_forecast:
-            #     logfile = \
-            #         os.path.join(self.path_log,
-            #                      'log_forecast_'
-            #                      '{}.out'.format(self.folder_date_stamp))
-            # else:
             logfile = \
                 os.path.join(self.path_log,
                              'log_{}.out'.format(self.folder_date_stamp))
@@ -303,6 +278,30 @@ class AWSM():
             self._logger.warning(line)
         for line in self.tmp_err:
             self._logger.error(line)
+
+    def model_restart(self):
+        """Check if AWSM is being restarted, must have certain outputs
+        like storm days for certrain models
+        """
+
+        if self.config['ipysnobal']['restart_date_time'] is not None:
+            self.start_date = self.config['ipysnobal']['restart_date_time']
+            self.start_date = self.start_date - \
+                pd.Timedelta(minutes=self.config['time']['time_step'])
+
+            # has to have the storm day file, else the albedo will be
+            # set to fresh snow
+            if 'storm_days' not in self.config['output']['variables'] and \
+                    self.model_type != 'ipysnobal':
+                raise FileNotFoundError("""Restarting with smrf_ipysnobal requires the
+                    storm_days to be output as this restarts the albedo.
+                    Add 'storm_days' to the ouput variables and rerun
+                    from the beginning if the simulation.""")
+            else:
+                self.config['precip']['storm_days_restart'] = os.path.join(
+                    self.path_output,
+                    'storm_days.nc'
+                )
 
     def run_smrf(self):
         """

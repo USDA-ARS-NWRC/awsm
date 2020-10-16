@@ -56,10 +56,6 @@ class SMRFConnector():
         smrf_config.cfg['time']['start_date'] = self.myawsm.start_date
         smrf_config.cfg['time']['end_date'] = self.myawsm.end_date
 
-        # change start date if using smrf_ipysnobal and restarting
-        if self.myawsm.restart_run and self.myawsm.run_smrf_ipysnobal:
-            smrf_config.cfg['time']['start_date'] = self.myawsm.restart_date
-
         # set output location in smrf config
         smrf_config.cfg['output']['out_location'] = self.myawsm.path_output
         self.output_path = self.myawsm.path_output
@@ -90,6 +86,7 @@ class SMRFConnector():
                 self.force[variable] = nc.Dataset(
                     os.path.join(self.output_path, '{}.nc'.format(variable)),
                     'r')
+                self.force[variable].set_always_mask(False)
 
             except FileNotFoundError:
                 self.force['soil_temp'] = float(self.myawsm.soil_temp) * \

@@ -88,3 +88,29 @@ class TestOutput(AWSMTestCase):
 
         run_awsm(config)
         self.assert_file_number(3)
+
+    def test_ouput_smrf_ipysnobal_1_file(self):
+        config = self.base_config_copy()
+        config.raw_cfg['output']['variables'] = []
+        config.raw_cfg['awsm master']['run_smrf'] = False
+        config.raw_cfg['awsm master']['model_type'] = 'smrf_ipysnobal'
+        config.raw_cfg['system']['threading'] = False
+
+        config.apply_recipes()
+        config = cast_all_variables(config, config.mcfg)
+
+        run_awsm(config)
+        self.assert_file_number(1)
+
+    def test_ouput_smrf_ipysnobal_threaded_1_file(self):
+        config = self.base_config_copy()
+        config.raw_cfg['output']['variables'] = []
+        config.raw_cfg['awsm master']['run_smrf'] = False
+        config.raw_cfg['awsm master']['model_type'] = 'smrf_ipysnobal'
+        config.raw_cfg['system']['threading'] = True
+
+        config.apply_recipes()
+        config = cast_all_variables(config, config.mcfg)
+
+        run_awsm(config)
+        self.assert_file_number(1)

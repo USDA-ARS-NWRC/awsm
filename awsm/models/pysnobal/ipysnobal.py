@@ -431,13 +431,9 @@ class PySnobal():
 
         with SMRF(self.awsm.smrf_connector.smrf_config, self._logger) as self.smrf:
 
-            # load topo data
             self.smrf.loadTopo()
-
-            # 3. initialize the distribution
             self.smrf.create_distribution()
-
-            # load weather data  and station metadata
+            self.smrf.initializeOutput()
             self.smrf.loadData()
 
             # run threaded or not
@@ -469,7 +465,7 @@ class PySnobal():
             startTime = datetime.now()
 
             self.smrf.distribute_single_timestep(self.time_step)
-            # perhaps put s.output() here to get SMRF output?
+            self.smrf.output(self.time_step)
 
             self.smrf_ipysnobal_time_step()
 
@@ -492,17 +488,27 @@ class PySnobal():
         self.variable_list = self.smrf.create_output_variable_dict(
             self.FORCING_VARIABLES, '.')
 
+        self.initialize_updater()
+
         self.smrf.create_data_queue()
         self.smrf.set_queue_variables()
         self.smrf.create_distributed_threads()
+
+        # output thread
+        self.smrf.threads.append(
+            queue.QueueOutput(
+                self.smrf.smrf_queue,
+                self.date_time,
+                self.smrf.out_func,
+                self.smrf.config['output']['frequency'],
+                self.smrf.topo.nx,
+                self.smrf.topo.ny))
+
+        # ipysnobal queue and thread
         self.smrf.smrf_queue['ipysnobal'] = queue.DateQueueThreading(
             self.smrf.queue_max_values,
             self.smrf.time_out,
             name='ipysnobal')
-
-        del self.smrf.smrf_queue['output']
-
-        self.initialize_updater()
 
         self.smrf.threads.append(
             threading.Thread(

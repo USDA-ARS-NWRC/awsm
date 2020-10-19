@@ -1,106 +1,37 @@
 # Automated Water Supply Model
 
-[![GitHub version](https://badge.fury.io/gh/USDA-ARS-NWRC%2Fawsm.svg)](https://badge.fury.io/gh/USDA-ARS-NWRC%2Fawsm)
+[![Stable version](https://img.shields.io/badge/stable%20version-v0.10-blue)](https://img.shields.io/badge/stable%20version-v0.10-blue)
+[![Pypi version](https://img.shields.io/pypi/v/awsm)](https://img.shields.io/pypi/v/awsm)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.898158.svg)](https://doi.org/10.5281/zenodo.898158)
-[![DOI](https://readthedocs.org/projects/awsm/badge/)](https://awsm.readthedocs.io)
-[![Docker Build Status](https://img.shields.io/docker/build/usdaarsnwrc/awsm.svg)](https://hub.docker.com/r/usdaarsnwrc/awsm/)
-[![Docker Automated build](https://img.shields.io/docker/automated/usdaarsnwrc/awsm.svg)](https://hub.docker.com/r/usdaarsnwrc/awsm/)
-[![Coverage Status](https://coveralls.io/repos/github/USDA-ARS-NWRC/awsm/badge.svg?branch=HEAD)](https://coveralls.io/github/USDA-ARS-NWRC/awsm?branch=HEAD)
-[![Build Status](https://travis-ci.org/USDA-ARS-NWRC/awsm.svg?branch=devel)](https://travis-ci.org/USDA-ARS-NWRC/awsm)
+[![Build Status](https://travis-ci.org/USDA-ARS-NWRC/awsm.svg?branch=main)](https://travis-ci.org/USDA-ARS-NWRC/awsm)
+[![Coverage Status](https://coveralls.io/repos/github/USDA-ARS-NWRC/awsm/badge.svg?branch=main)](https://coveralls.io/github/USDA-ARS-NWRC/awsm?branch=main)
+[![Maintainability](https://api.codeclimate.com/v1/badges/be953173a19947044e96/maintainability)](https://codeclimate.com/github/USDA-ARS-NWRC/awsm/maintainability)
 
 
-Automated Water Supply Model (AWSM) was developed at the USDA Agricultural
-Research Service (ARS) in Boise, ID. AWSM was designed to streamline the work
-flow used by the ARS to forecast the water supply of multiple water basins.
-AWSM standardizes the steps needed to distribute weather station data with SMRF,
-run an energy and mass balance with iSnobal, and process the results, while
-maintaining the flexibility of each program.
+Automated Water Supply Model (AWSM) was developed at the USDA Agricultural Research Service (ARS) in Boise, ID. AWSM was designed to streamline the work flow used by the ARS to forecast the water supply of multiple water basins. AWSM standardizes the steps needed to distribute weather station data with SMRF, run an energy and mass balance with iSnobal, and process the results, while maintaining the flexibility of each program.
 
 ![image](https://raw.githubusercontent.com/USDA-ARS-NWRC/awsm/master/docs/_static/ModelSystemOverview_new.png)
 
-## Quick Start
+## Which version to use?
 
-The fastest way to get up and running with AWSM is to use the docker images that
-are pre-built and can deployed cross platform.
+### Stable
 
-To build AWSM natively from source checkout the install instructions [here].
+The stable version of AWSM is currently `v0.10`. The code can be downloaded from the [releases](https://github.com/USDA-ARS-NWRC/awsm/releases) or can be found on the `release-0.10` [branch](https://github.com/USDA-ARS-NWRC/awsm/tree/release-0.10).
 
-[here]: https://awsm.readthedocs.io/en/latest/installation.html
+Best for:
 
-### Docker
+- Applying the model in near real time
+- Researchers wanting a ready to use model
+- Those wanting the most stable and tested code
 
-Docker images are containers that allow us to ship the software to our users
-seamlessly and without a headache. It is by far the easiest way to use AWSM. If
-you are curious to read more about them, visit [Whats a container] on docker's
-website.
+### Experimental
 
-[Whats a container]: https://www.docker.com/what-container
+> :warning: **Use at your own risk!** While this contains the latest code, it is not guaranteed to work with the whole modeling framework.
 
-Using docker images comes with very minor quirks though, such as requiring you to
-mount a volume to access the data when you are done with your run. To mount a
-data volume, so that you can share data between the local file system and the
-docker, the `-v` option must be used. For a more in depth discussion and
-tutorial, read about [docker volumes]. The container has a shared data volume
-at `/data` where the container can access the local file system.
+The latest code on `main` contains all the latest development to AWSM. However, this must be used with caution as it can be under active development, may change at any time and is not guaranteed to work with the rest of the modeling framework at that moment. Once the code has been fully tested within the modeling framework, a new release will be created to signal a move to a stable version.
 
-[docker volumes]: https://docs.docker.com/storage/volumes/
+Best for:
 
-
-**NOTE: On the host paths to the volume to mount, you must use full absolute paths!**
-
-### Running the Demo
-
-To simply run the AWSM demo; mount the desired directory as a volume and run
-the image, using the following command:
-
-**For Linux:**
-
-```
-  docker run -v <path>:/data -it usdaarsnwrc/awsm:develop
-```
-
-**For MacOSX:**
-
-```
-  docker run -v /Users/<path>:/data -it usdaarsnwrc/awsm:develop
-```
-
-**For Windows:**
-
-```
-  docker run -v /c/Users/<path>:/data -it usdaarsnwrc/awsm:develop
-```
-
-The output netCDF files will be placed in the location you mounted (using the
--v option). We like to use [ncview] to view our netcdf files quickly.
-
-[ncview]: http://meteora.ucsd.edu/~pierce/ncview_home_page.html
-
-### Setting Up Your Run
-
-To use the AWSM docker image to create your own runs, you need to setup a
-project folder containing all the files necessary to run the model. Then using
-the same command above, mount your project folder and provide a path to the
-configuration file. An example of a project folder might like:
-
-```
-My_Basin
-      ├── air_temp.csv
-      ├── cloud_factor.csv
-      ├── config.ini
-      ├── maxus.nc
-      ├── metadata.csv
-      ├── output
-      ├── precip.csv
-      ├── solar.csv
-      ├── topo.nc
-      ├── vapor_pressure.csv
-      ├── wind_direction.csv
-      └── wind_speed.csv
-```
-
-Then the command would be:
-
-```
-docker run -v <path>/My_Basin:/data -it usdaarsnwrc/awsm:develop <path>/My_Basin/config.ini
-```
+- Those planning on developing with AWSM
+- Model simulations require features only found in the latest code
+- Okay with the possibility that AWSM doesn't work with the rest of the modeling system

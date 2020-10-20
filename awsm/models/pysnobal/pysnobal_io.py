@@ -124,6 +124,7 @@ class PysnobalIO():
         self.awsm = myawsm
 
         self.output_variables = self.awsm.pysnobal_output_vars
+        self.precision = self.awsm.config['awsm system']['netcdf_output_precision'][0]
 
         self._logger.info('PysnobalIO initialized')
 
@@ -136,7 +137,7 @@ class PysnobalIO():
             self.output_file_name))
 
         fmt = '%Y-%m-%d %H:%M:%S'
-        if os.path.isfile(self.output_file_name):
+        if os.path.isfile(self.output_filename):
             self._logger.warning(
                 'Opening {}, data may be overwritten!'.format(
                     self.output_filename))
@@ -177,7 +178,7 @@ class PysnobalIO():
 
                 em.createVariable(
                     var_name,
-                    'f',
+                    self.precision,
                     dimensions[:3],
                     chunksizes=(6, 10, 10))
                 setattr(em.variables[var_name],

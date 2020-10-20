@@ -54,6 +54,7 @@ class ModelInit():
         self._logger = logging.getLogger(__name__)
         self.topo = topo
         self.start_date = start_date
+        self.config = cfg
 
         # get parameters from awsm
         self.init_file = cfg['ipysnobal']['init_file']
@@ -63,15 +64,18 @@ class ModelInit():
             self._logger.info(
                 'Using {} to build model init state.'.format(self.init_file))
 
-        # type of model run
         self.model_type = cfg['awsm master']['model_type']
-        # paths
         self.path_output = path_output
-        # restart parameters
-        self.restart_crash = cfg['isnobal restart']['restart_crash']
-        self.restart_hr = cfg['isnobal restart']['wyh_restart_output']
-        self.depth_thresh = cfg['isnobal restart']['depth_thresh']
-        self.restart_folder = cfg['isnobal restart']['output_folders']
+
+        # when restarting, just reset the start date to grab the right init time step
+        if self.config['ipysnobal']['restart_date_time'] is not None:
+            self.start_date = self.start_date - \
+                pd.Timedelta(minutes=self.config['time']['time_step'])
+            self.init_type = 'netcdf_out'
+            self.init_file = os.path.join(self.path_output, 'ipysnobal.nc')
+            self._logger.info("""Initializing ipysnobal at time {} from """
+                              """previous output file""".format(
+                                  self.start_date))
 
         # dictionary to store init data
         self.init = {}
@@ -80,6 +84,7 @@ class ModelInit():
         self.init['mask'] = self.topo.mask
         self.init['z_0'] = self.topo.roughness
         self.init['elevation'] = self.topo.dem
+
         # read in the init file
         self.get_init_file()
 
@@ -98,11 +103,9 @@ class ModelInit():
         Get the necessary data from the init.
         This will check the model type and the init file and act accordingly.
         """
-        # get crash restart if restart_crash
-        if self.restart_crash:
-            self.get_crash_init()
+
         # if we have no init info, make zero init
-        elif self.init_file is None:
+        if self.init_file is None:
             self.get_zero_init()
         # get init depending on file type
         elif self.init_type == 'netcdf':
@@ -219,49 +222,3 @@ class ModelInit():
         self.init['h2o_sat'] = init_data.water_saturation.values
 
         ds.close()
-
-    def zero_crash_depths(self, depth_thresh, z_s, rho, T_s_0, T_s_l, T_s, h2o_sat):
-        """
-        Zero snow depth under certain threshold and deal with associated variables.
-
-        Args:
-            depth_thresh: threshold in mm depth to zero
-            z_s:    snow depth (Numpy array)
-            rho:    snow density (Numpy array)
-            T_s_0:  surface layer temperature (Numpy array)
-            T_s_l:  lower layer temperature (Numpy array)
-            T_s:    average snow cover temperature (Numpy array)
-            h2o_sat: percent liquid h2o saturation (Numpy array)
-
-        Returns:
-            restart_var: dictionary of input variables after correction
-        """
-
-        # find pixels that need reset
-        idz = z_s < depth_thresh
-
-        # find number of pixels reset
-        num_pix = len(np.where(idz)[0])
-        num_pix_tot = z_s.size
-
-        self._logger.warning(
-            'Zeroing depth in pixels lower than {} [m]'.format(depth_thresh))
-        self._logger.warning(
-            'Zeroing depth in {} out of {} total pixels'.format(num_pix, num_pix_tot))
-
-        z_s[idz] = 0.0
-        rho[idz] = 0.0
-        T_s_0[idz] = -75.0
-        T_s_l[idz] = -75.0
-        T_s[idz] = -75.0
-        h2o_sat[idz] = 0.0
-
-        restrat_var = {}
-        restrat_var['z_s'] = z_s
-        restrat_var['rho'] = rho
-        restrat_var['T_s_0'] = T_s_0
-        restrat_var['T_s_l'] = T_s_l
-        restrat_var['T_s'] = T_s
-        restrat_var['h2o_sat'] = h2o_sat
-
-        return restrat_var

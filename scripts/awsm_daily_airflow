@@ -23,11 +23,11 @@ def mod_config(config_file, start_date, no_previous):
     # define some formats
     fmt_day = '%Y%m%d'
     fmt_cfg = '%Y-%m-%d %H:%M'
-    add_day = pd.to_timedelta(24, unit='h')
+    add_day = pd.to_timedelta(23, unit='h')
 
     # get config instance
     config = get_user_config(config_file,
-                             modules = ['smrf','awsm'])
+                             modules=['smrf', 'awsm'])
 
     # copy the config and get total start and end
     # config = deepcopy(base_config)
@@ -60,11 +60,11 @@ def mod_config(config_file, start_date, no_previous):
                                  'runs')
 
     prev_data_base = os.path.join(paths['path_dr'],
-                                 paths['basin'],
-                                 ops,
-                                 'wy{}'.format(wy),
-                                 paths['proj'],
-                                 'data')
+                                  paths['basin'],
+                                  ops,
+                                  'wy{}'.format(wy),
+                                  paths['proj'],
+                                  'data')
 
     new_config = copy.deepcopy(config)
 
@@ -104,13 +104,14 @@ def run():
     '''
 
     # Parse arguments
-    p = argparse.ArgumentParser(description='Run AWSM using Airflow scheduler.')
+    p = argparse.ArgumentParser(
+        description='Run AWSM using Airflow scheduler.')
 
     p.add_argument('-c', '--cfg', required=True,
                    help='Config file that will be modified for the current run date')
 
-    p.add_argument('-sd','--start_date', required=True,
-                    help="start date for run")
+    p.add_argument('-sd', '--start_date', required=True,
+                   help="start date for run")
 
     p.add_argument("-np", "--no_previous",
                    action="store_true", default=False,

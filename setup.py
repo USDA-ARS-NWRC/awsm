@@ -56,4 +56,12 @@ setup(
     setup_requires=[
         'setuptools_scm',
     ],
+    extras_require={
+        'docs': [
+            'Sphinx>=3.0,<=4.0',
+            'pydata-sphinx-theme',
+            'sphinxcontrib-bibtex>=1.0',
+            'sphinxcontrib-websupport>=1.0.1',
+        ]
+    },
 )

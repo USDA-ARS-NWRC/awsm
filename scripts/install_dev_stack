@@ -1,0 +1,178 @@
+#!/usr/bin/env bash
+
+# Install the full development stack of AWSM for all packages
+# The code will be installed in the current working directory in the following structure:
+#
+# code
+#  |____ weather_forecast_retrieval
+#  |____ smrf
+#  |____ awsm
+#  |____ pysnobal
+#  |____ katana
+#
+# NOTE: running this script may or may not work depending on the operating system
+# and user privledges. Mainly the use of sudo.
+
+set -x
+
+# clean up the directory and start fresh
+rm -r code/
+mkdir -p code/build
+cd code/build
+
+############################################
+# install dependancies
+############################################
+sudo apt-get install -y python3-dev \
+    python3-pip \
+    git \
+    gcc \
+    g++ \
+    cmake \
+    make \
+    ca-certificates \
+    libblas-dev \
+    liblapack-dev \
+    libatlas-base-dev \
+    libffi-dev \
+    libssl-dev \
+    gfortran \
+    libyaml-dev \
+    libfreetype6-dev \
+    libcurl4-gnutls-dev \
+    libfontconfig1-dev \
+    qt4-dev-tools \
+    libqtwebkit-dev \
+    libboost-program-options-dev \
+    libboost-date-time-dev \
+    libgeos-dev \
+    libboost-test-dev \
+    netcdf-bin \
+    libnetcdf-dev \
+    libpng-dev \
+    python3 \
+    python3-pip \
+    curl \
+    m4 \
+    libeccodes-dev \
+    libeccodes-tools \
+    wget
+
+
+# WGRIB2
+export CC=gcc
+export FC=gfortran
+curl -L ftp://ftp.cpc.ncep.noaa.gov/wd51we/wgrib2/wgrib2.tgz | tar xz
+
+cd grib2
+wget ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-c-4.7.3.tar.gz
+wget https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10/hdf5-1.10.4/src/hdf5-1.10.4.tar.gz
+sed -i "s/USE_NETCDF4=0/USE_NETCDF4=1/" makefile
+sed -i "s/USE_NETCDF3=1/USE_NETCDF3=0/" makefile
+make
+make lib
+sudo cp wgrib2/wgrib2 /usr/local/bin/wgrib2
+make deep-clean
+cd ..
+rm -rf grib2/
+
+# WindNinja dependancies
+PREFIX=/usr/local
+POPPLER="poppler-0.23.4"
+PROJ="proj-4.8.0"
+GDAL="gdal-2.2.2"
+
+# Get and build poppler for PDF support in GDAL
+wget http://poppler.freedesktop.org/$POPPLER.tar.xz
+tar -xvf $POPPLER.tar.xz 
+cd $POPPLER/
+./configure --prefix=$PREFIX --enable-xpdf-headers
+make
+sudo make install
+cd ..
+
+# Get and build proj
+wget http://download.osgeo.org/proj/$PROJ.tar.gz
+tar xvfz $PROJ.tar.gz
+cd $PROJ
+./configure --prefix=$PREFIX
+make clean
+make
+sudo make install
+sudo cp $PREFIX/include/proj_api.h $PREFIX/lib
+cd ..
+
+# Get and build GDAL with poppler support
+wget http://download.osgeo.org/gdal/2.2.2/$GDAL.tar.gz
+tar -xvf $GDAL.tar.gz 
+cd $GDAL/
+./configure --prefix=$PREFIX --with-poppler=$PREFIX
+make -j 8
+sudo make install
+cd ..
+
+# WindNinja
+mkdir -p windninja/build
+curl -L https://github.com/firelab/windninja/archive/3.5.0.tar.gz | tar xz
+mv windninja-3.5.0 windninja/windninja
+cmake -DNINJA_CLI=ON -DNINJAFOAM=OFF -DNINJA_QTGUI=OFF windninja/windninja
+make
+sudo make install
+sudo ldconfig
+rm -rf windninja/
+cd ..
+
+############################################
+# install repositories
+############################################
+
+# repositories to install
+declare -a repositories=(
+  "https://github.com/USDA-ARS-NWRC/awsm.git"
+  "https://github.com/USDA-ARS-NWRC/smrf.git"
+  "https://github.com/USDA-ARS-NWRC/pysnobal.git"
+  "https://github.com/USDA-ARS-NWRC/weather_forecast_retrieval.git"
+  "https://github.com/USDA-ARS-NWRC/katana.git"
+)
+
+for repository in "${repositories[@]}"
+do
+  git clone --depth 1 ${repository}
+done
+
+# Weather Forecast Retrevial
+cd weather_forecast_retrieval
+python3 -m pip install -r requirements.txt
+python3 -m pip install -e .
+
+# AWSM
+cd ../awsm
+python3 -m pip install -r requirements.txt
+python3 -m pip install -e .
+
+# SMRF
+cd ../smrf
+python3 -m pip install -r requirements.txt
+python3 -m pip install -e .[test]
+
+# pysnobal
+cd ../pysnobal
+python3 -m pip install -e .
+
+# katana
+cd ../katana
+python3 -m pip install -e .
+
+# Test all of the repos
+export NOT_ON_GOLD_HOST=YOU_BETCHA
+cd ../weather_forecast_retrieval
+python3 -m unittest -v
+
+cd ../smrf
+python3 -m unittest -v
+
+cd ../awsm
+python3 -m unittest -v
+
+cd ../katana
+python3 -m unittest -v

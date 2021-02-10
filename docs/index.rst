@@ -1,24 +1,18 @@
-Welcome to AWSM's Documentation!
+Automated Water Supply Model
 ======================================
 
-.. include:: readme.rst
+Blurb here
 
 .. toctree::
    :maxdepth: 2
+   :titlesonly:
 
-   readme
-   installation
-   usage
-   configuration
-   contributing
-   config_ref
-   api
-   authors
-   history
+   getting_started/index
+   user_guide/index
+   api/index
 
 Indices and tables
 ==================
 
 * :ref:`genindex`
 * :ref:`modindex`
-* :ref:`search`

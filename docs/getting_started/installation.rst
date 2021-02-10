@@ -34,10 +34,6 @@ source your smrfenv instead of step number 1.
     virtualenv awsmenv
     source awsmenv/bin/activate
 
-**Tip:** The developers recommend using an alias to quickly turn on
-and off your virtual environment.
-
-
 2. Clone AWSM source code from the ARS-NWRC github.
 
   .. code:: console
@@ -49,7 +45,7 @@ and off your virtual environment.
 
   .. code:: console
 
-    cd AWSM
+    cd awsm
     pip install -r requirements.txt
     python setup.py install
 

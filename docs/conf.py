@@ -50,8 +50,7 @@ class Mock(MagicMock):
         return Mock()
 
 
-MOCK_MODULES = ['netCDF4', 'pandas', 'smrf',
-                'smrf.utils', 'smrf.envphys']
+MOCK_MODULES = ['netCDF4', 'pandas', 'awsm', 'pysnobal']
 
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 

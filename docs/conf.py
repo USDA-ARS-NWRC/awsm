@@ -13,10 +13,10 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-from mock import Mock as MagicMock
 import sys
 import os
 from datetime import datetime
+from unittest.mock import Mock
 
 from inicheck.tools import config_documentation
 from pkg_resources import get_distribution
@@ -44,13 +44,13 @@ else:
 # -- Have to do a mock install of some modules that RTD doesn't have --------
 
 
-class Mock(MagicMock):
-    @classmethod
-    def __getattr__(cls, name):
-        return Mock()
+# class Mock(MagicMock):
+#     @classmethod
+#     def __getattr__(cls, name):
+#         return Mock()
 
 
-MOCK_MODULES = ['netCDF4', 'pandas', 'awsm', 'pysnobal']
+MOCK_MODULES = ['netCDF4', 'pandas', 'pysnobal']
 
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 

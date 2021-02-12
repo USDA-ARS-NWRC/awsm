@@ -58,6 +58,8 @@ setup(
     ],
     extras_require={
         'docs': [
+            'Cython',
+            'numpy<1.19',
             'Sphinx>=3.0,<=4.0',
             'pydata-sphinx-theme',
             'sphinxcontrib-bibtex>=1.0',

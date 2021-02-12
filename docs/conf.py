@@ -43,14 +43,7 @@ else:
     sys.path.insert(0, os.path.abspath('../'))
 # -- Have to do a mock install of some modules that RTD doesn't have --------
 
-
-# class Mock(MagicMock):
-#     @classmethod
-#     def __getattr__(cls, name):
-#         return Mock()
-
-
-MOCK_MODULES = ['netCDF4', 'pandas', 'pysnobal']
+MOCK_MODULES = ['netCDF4', 'pandas', 'pysnobal', 'pysnobal.c_snobal']
 
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 

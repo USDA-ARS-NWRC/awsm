@@ -1,6 +1,6 @@
-=======================
+=============================
 Full Development Installation
-=======================
+=============================
 
 The full stack installation will allow a user to run AWSM with the following enabled:
 
@@ -25,6 +25,27 @@ Setup a virtual environment and activate.
 
     python3 -m virtualenv .venv
     source .venv/bin/activate
+
+Build Folder Structure
+----------------------
+
+The basic folder structure for the full stack will be as follows. Everything
+under `windninja` will build the dependencies and windninja code.
+
+- awsm_project
+    - windninja (can be removed after install)
+        - grib2
+        - poppler-0.23.4
+        - proj-4.8.0
+        - gdal-2.2.2
+        - windninja
+        - build
+    - awsm
+    - smrf
+    - pysnobal
+    - katana
+    - weather_forecast_retrieval (if needed)
+
 
 System Dependencies
 -------------------
@@ -147,6 +168,9 @@ Weather Forecast Retrieval
 
 Weather Forecast Retrieval (WFR) loads gridded datasets like HRRR and formats the data into a
 format that SMRF can utilize.
+
+NOTE: Weather forecast retrieval is a dependency of SMRF and should not to be installed from source
+unless modifying the weather forecast retrieval code.
 
 .. code:: bash
 

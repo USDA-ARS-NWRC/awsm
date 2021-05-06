@@ -16,30 +16,20 @@ install all the necessary dependencies from source. This will install the follow
 * Katana (WindNinja)
 * AWSM
 
-Environment Setup
------------------
 
-Setup a virtual environment and activate.
-
-.. code:: bash
-
-    python3 -m virtualenv .venv
-    source .venv/bin/activate
-
-Build Folder Structure
+Basic Folder Structure
 ----------------------
 
 The basic folder structure for the full stack will be as follows. Everything
 under `windninja` will build the dependencies and windninja code.
 
 - awsm_project
+    - .venv
     - windninja (can be removed after install)
-        - grib2
-        - poppler-0.23.4
-        - proj-4.8.0
-        - gdal-2.2.2
         - windninja
         - build
+        - <other dependencies>
+    - grib2 (can be removed after install)
     - awsm
     - smrf
     - pysnobal
@@ -53,11 +43,18 @@ System Dependencies
 Ubuntu / Debain
 ~~~~~~~~~~~~~~~
 
+Python dependencies
+
+..code:: bash
+    sudo apt-get install -y python3 \
+        python3-dev \
+        python3-pip \
+
+System dependencies
+
 .. code:: bash
 
-    sudo apt-get install -y python3-dev \
-        python3-pip \
-        git \
+    sudo apt-get install -y git \
         gcc \
         g++ \
         cmake \
@@ -71,31 +68,83 @@ Ubuntu / Debain
         gfortran \
         libyaml-dev \
         libfreetype6-dev \
-        libcurl4-gnutls-dev \
         netcdf-bin \
-        libnetcdf-dev \
         libpng-dev \
-        python3 \
-        python3-pip \
+        m4 \
         curl \
         libeccodes-dev \
         libeccodes-tools \
         wget
 
+Environment Setup
+-----------------
+
+Setup a virtual environment and activate.
+
+.. code:: bash
+
+    python3 -m virtualenv .venv
+    source .venv/bin/activate
+
+
+WindNinja
+~~~~~~~~~
+
+WindNinja has many build dependencies and is well documented on their github `wiki`_. WindNinja relies
+on `poppler`, `gdal` and `proj` before it can be installed. WindNinja provides a handy `build_deps.sh`
+script that aids in the building of the dependencies.
+
+.. _wiki: https://github.com/firelab/windninja/wiki/Building-WindNinja-on-Linux
+
+Download WindNinja and move to the correct location.
+
+.. code:: bash
+
+    cd awsm_project
+    mkdir -p windninja/build
+    curl -L https://github.com/firelab/windninja/archive/3.5.0.tar.gz | tar xz
+    mv windninja-3.5.0 windninja/windninja
+
+Now build the dependencies for WindNinja with their `build_deps.sh` script. This
+will take a long time.
+
+.. code:: bash
+
+    cd awsm_project/windninja
+    sh windninja/scripts/build_deps.sh
+
+Build WindNinja
+
+..code:: bash
+
+    cd awsm_project/windninja
+    cmake -DNINJA_CLI=ON -DNINJAFOAM=OFF -DNINJA_QTGUI=OFF windninja
+    make
+    sudo make install
+    sudo ldconfig
+
+Clean up the WindNinja build folder.
+
+..code:: bash
+
+    rm -rf awsm_project/windninja/
+
 wgrib2
 ~~~~~~
 
-`wgrib2` allows for working with grib2 files and is maintained by NOAA_.
+`wgrib2` allows for working with grib2 files and is maintained by NOAA_. The install
+will take time as `wgrib2` will perform tests during installation.
 
 .. _NOAA: https://www.cpc.ncep.noaa.gov/products/wesley/wgrib2/compile_questions.html
 
 .. code:: bash
 
+    cd awsm_project
     export CC=gcc
     export FC=gfortran
     curl -L ftp://ftp.cpc.ncep.noaa.gov/wd51we/wgrib2/wgrib2.tgz | tar xz
 
-    cd grib2
+    cd awsm_project/grib2
     wget ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-c-4.7.3.tar.gz
     wget https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10/hdf5-1.10.4/src/hdf5-1.10.4.tar.gz
     sed -i "s/USE_NETCDF4=0/USE_NETCDF4=1/" makefile
@@ -105,60 +154,7 @@ wgrib2
     sudo cp wgrib2/wgrib2 /usr/local/bin/wgrib2
     make deep-clean
 
-WindNinja
-~~~~~~~~~
-
-WindNinja has many build dependencies and is well documented on their github wiki. WindNinja relies
-on `poppler`, `gdal` and `proj` before it can be installed.
-
-.. code:: bash
-
-    PREFIX=/usr/local
-    POPPLER="poppler-0.23.4"
-    PROJ="proj-4.8.0"
-    GDAL="gdal-2.2.2"
-
-    # Get and build poppler for PDF support in GDAL
-    wget http://poppler.freedesktop.org/$POPPLER.tar.xz
-    tar -xvf $POPPLER.tar.xz 
-    cd $POPPLER/
-    ./configure --prefix=$PREFIX --enable-xpdf-headers
-    make
-    sudo make install
-    cd ..
-
-    # Get and build proj
-    wget http://download.osgeo.org/proj/$PROJ.tar.gz
-    tar xvfz $PROJ.tar.gz
-    cd $PROJ
-    ./configure --prefix=$PREFIX
-    make clean
-    make
-    sudo make install
-    sudo cp $PREFIX/include/proj_api.h $PREFIX/lib
-    cd ..
-
-    # Get and build GDAL with poppler support
-    wget http://download.osgeo.org/gdal/2.2.2/$GDAL.tar.gz
-    tar -xvf $GDAL.tar.gz 
-    cd $GDAL/
-    ./configure --prefix=$PREFIX --with-poppler=$PREFIX
-    make -j 8
-    sudo make install
-    cd ..
-
-With the 3 dependencies installed, WindNinja can be installed.
-
-.. code:: bash
-
-    mkdir -p windninja/build
-    curl -L https://github.com/firelab/windninja/archive/3.5.0.tar.gz | tar xz
-    mv windninja-3.5.0 windninja/windninja
-    cmake -DNINJA_CLI=ON -DNINJAFOAM=OFF -DNINJA_QTGUI=OFF windninja/windninja
-    make
-    sudo make install
-    sudo ldconfig
-    rm -rf windninja/
+    rm -rf awsm_project/grib2
 
 Model Code
 ----------

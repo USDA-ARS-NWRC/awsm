@@ -35,3 +35,7 @@ For Windows, the install method is using Docker.
 
     installation
     full_stack_install
+    basin_setup
+    create_config
+    run_awsm
+    docker

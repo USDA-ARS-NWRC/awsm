@@ -1,4 +1,3 @@
-=============================
 Full Development Installation
 =============================
 
@@ -115,7 +114,7 @@ will take a long time.
 
 Build WindNinja
 
-..code:: bash
+.. code:: bash
 
     cd awsm_project/windninja
     cmake -DNINJA_CLI=ON -DNINJAFOAM=OFF -DNINJA_QTGUI=OFF windninja
@@ -125,7 +124,7 @@ Build WindNinja
 
 Clean up the WindNinja build folder.
 
-..code:: bash
+.. code:: bash
 
     rm -rf awsm_project/windninja/
 
@@ -165,8 +164,10 @@ Weather Forecast Retrieval
 Weather Forecast Retrieval (WFR) loads gridded datasets like HRRR and formats the data into a
 format that SMRF can utilize.
 
-NOTE: Weather forecast retrieval is a dependency of SMRF and should not to be installed from source
-unless modifying the weather forecast retrieval code.
+.. note::
+    
+    Weather forecast retrieval is a dependency of SMRF and should not to be installed from source 
+    unless modifying the weather forecast retrieval code.
 
 .. code:: bash
 

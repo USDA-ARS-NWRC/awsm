@@ -59,36 +59,9 @@ class AWSM():
         # self.do_smrf_ipysnobal = \
         #     self.config['awsm master']['run_smrf_ipysnobal']
         # self.do_ipysnobal = self.config['awsm master']['run_ipysnobal']
-        self.do_forecast = False
-        if 'gridded' in self.config and self.do_smrf:
-            self.do_forecast = self.config['gridded'].get(
-                'hrrr_forecast_flag', False)
-
-            # WARNING: The value here is inferred in SMRF.data.loadGrid. A
-            # change here requires a change there
-            self.n_forecast_hours = 18
 
         # store smrf version if running smrf
         self.smrf_version = smrf.__version__
-
-        if self.do_forecast:
-            self.tmp_log.append('Forecasting set to True')
-
-            # self.fp_forecastdata = self.config['gridded']['wrf_file']
-            # if self.fp_forecastdata is None:
-            #     self.tmp_err.append('Forecast set to true, '
-            #                         'but no grid file given')
-            #     print("Errors in the config file. See configuration "
-            #           "status report above.")
-            #     print(self.tmp_err)
-            #     sys.exit()
-
-            if self.config['system']['threading']:
-                # Can't run threaded smrf if running forecast_data
-                self.tmp_err.append('Cannot run SMRF threaded with'
-                                    ' gridded input data')
-                print(self.tmp_err)
-                sys.exit()
 
         # how often to output form iSnobal
         self.output_freq = self.config['awsm system']['output_frequency']
@@ -550,11 +523,6 @@ def run_awsm(config):
     """
 
     with AWSM(config) as a:
-        if a.do_forecast:
-            runtype = 'forecast'
-        else:
-            runtype = 'smrf'
-
         if not a.config['isnobal restart']['restart_crash']:
             if a.do_smrf:
                 a.run_smrf()

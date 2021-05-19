@@ -292,16 +292,6 @@ class AWSM():
         PySnobal(self).run_smrf_ipysnobal()
         # smrf_ipy.run_smrf_ipysnobal(self)
 
-    # def run_awsm_daily(self):
-    #     """
-    #     This function runs
-    #     :mod:`awsm.interface.smrf_ipysnobal.run_smrf_ipysnobal` on an
-    #     hourly output from Pysnobal, outputting to daily folders, similar
-    #     to the HRRR froecast.
-    #     """
-
-    #     smin.run_awsm_daily(self)
-
     def run_ipysnobal(self):
         """
         Run PySnobal from previously run smrf forcing data
@@ -537,7 +527,4 @@ def run_awsm(config):
 
         # Run iPySnobal from SMRF in memory
         if a.model_type == 'smrf_ipysnobal':
-            if a.daily_folders:
-                a.run_awsm_daily()
-            else:
-                a.run_smrf_ipysnobal()
+            a.run_smrf_ipysnobal()

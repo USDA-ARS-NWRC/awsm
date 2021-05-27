@@ -145,7 +145,8 @@ class AWSM():
 
         # Check the user config file for errors and report issues if any
         warnings, errors = check_config(self.ucfg)
-        print_config_report(warnings, errors)
+        if len(errors) > 0 or len(warnings) > 0:
+            print_config_report(warnings, errors)
 
         self.config = self.ucfg.cfg
 

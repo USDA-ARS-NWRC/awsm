@@ -61,7 +61,8 @@ class AWSM():
         # self.do_ipysnobal = self.config['awsm master']['run_ipysnobal']
         self.do_forecast = False
         if 'gridded' in self.config and self.do_smrf:
-            self.do_forecast = self.config['gridded']['hrrr_forecast_flag']
+            self.do_forecast = self.config['gridded'].get(
+                'hrrr_forecast_flag', False)
 
             # WARNING: The value here is inferred in SMRF.data.loadGrid. A
             # change here requires a change there

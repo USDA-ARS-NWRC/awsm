@@ -116,7 +116,6 @@ class AWSM():
         return MasterConfig(modules='smrf').cfg.keys()
 
     def read_config(self, config):
-
         if isinstance(config, str):
             if not os.path.isfile(config):
                 raise Exception('Configuration file does not exist --> {}'
@@ -137,23 +136,22 @@ class AWSM():
 
         elif isinstance(config, UserConfig):
             self.ucfg = config
-            configFile = ''
 
         else:
             raise Exception("""Config passed to AWSM is neither file """
                             """name nor UserConfig instance""")
 
-        # Check the user config file for errors and report issues if any
         warnings, errors = check_config(self.ucfg)
-        if len(errors) > 0 or len(warnings) > 0:
-            print_config_report(warnings, errors)
-
-        self.config = self.ucfg.cfg
 
         if len(errors) > 0:
+            print_config_report(warnings, errors)
             print("Errors in the config file. "
                   "See configuration status report above.")
             sys.exit()
+        elif len(warnings) > 0:
+            print_config_report(warnings, errors)
+
+        self.config = self.ucfg.cfg
 
     def load_topo(self):
 

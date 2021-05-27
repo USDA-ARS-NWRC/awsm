@@ -235,8 +235,6 @@ class AWSM():
             logfile = \
                 os.path.join(self.path_log,
                              'log_{}.out'.format(self.folder_date_stamp))
-            # let user know
-            print('Logging to file: {}'.format(logfile))
 
         self.config['awsm system']['log_file'] = logfile
         logger.SMRFLogger(self.config['awsm system'])

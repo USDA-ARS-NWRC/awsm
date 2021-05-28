@@ -1,7 +1,7 @@
 Full Development Installation
 =============================
 
-The full stack installation will allow a user to run AWSM with the following enabled:
+The full stack installation will allow a user to run AWSM from source with the following enabled:
 
 * High Resolution Rapid Refresh (HRRR) as inputs
 * WindNinja to downscale HRRR to the iSnobal domain
@@ -15,6 +15,15 @@ install all the necessary dependencies from source. This will install the follow
 * Katana (WindNinja)
 * AWSM
 
+.. note::
+
+    **Use at your own risk!** While this contains the latest code, it is not guaranteed
+    to work with the whole modeling framework. 
+
+    The latest code on contains all the latest developments. However, this must be used with caution
+    as it can be under active development, may change at any time and is not guaranteed to work with
+    the rest of the modeling framework at that moment. Once the code has been fully tested within the
+    modeling framework, a new release will be created to signal a move to a stable version.
 
 Basic Folder Structure
 ----------------------
@@ -44,7 +53,8 @@ Ubuntu / Debain
 
 Python dependencies
 
-..code:: bash
+.. code:: bash
+
     sudo apt-get install -y python3 \
         python3-dev \
         python3-pip \

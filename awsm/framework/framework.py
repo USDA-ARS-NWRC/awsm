@@ -239,6 +239,10 @@ class AWSM():
 
         self._logger = logging.getLogger(__name__)
 
+        if self._logger.level == logging.DEBUG and \
+                not os.getenv('SUPPRESS_AWSM_STDOUT'):
+            print('Logging to file: {}'.format(logfile))
+
         self._logger.info(ascii_art.MOUNTAIN)
         self._logger.info(ascii_art.TITLE)
 

@@ -59,35 +59,9 @@ class AWSM():
         # self.do_smrf_ipysnobal = \
         #     self.config['awsm master']['run_smrf_ipysnobal']
         # self.do_ipysnobal = self.config['awsm master']['run_ipysnobal']
-        self.do_forecast = False
-        if 'gridded' in self.config and self.do_smrf:
-            self.do_forecast = self.config['gridded']['hrrr_forecast_flag']
-
-            # WARNING: The value here is inferred in SMRF.data.loadGrid. A
-            # change here requires a change there
-            self.n_forecast_hours = 18
 
         # store smrf version if running smrf
         self.smrf_version = smrf.__version__
-
-        if self.do_forecast:
-            self.tmp_log.append('Forecasting set to True')
-
-            # self.fp_forecastdata = self.config['gridded']['wrf_file']
-            # if self.fp_forecastdata is None:
-            #     self.tmp_err.append('Forecast set to true, '
-            #                         'but no grid file given')
-            #     print("Errors in the config file. See configuration "
-            #           "status report above.")
-            #     print(self.tmp_err)
-            #     sys.exit()
-
-            if self.config['system']['threading']:
-                # Can't run threaded smrf if running forecast_data
-                self.tmp_err.append('Cannot run SMRF threaded with'
-                                    ' gridded input data')
-                print(self.tmp_err)
-                sys.exit()
 
         # how often to output form iSnobal
         self.output_freq = self.config['awsm system']['output_frequency']
@@ -318,16 +292,6 @@ class AWSM():
         PySnobal(self).run_smrf_ipysnobal()
         # smrf_ipy.run_smrf_ipysnobal(self)
 
-    # def run_awsm_daily(self):
-    #     """
-    #     This function runs
-    #     :mod:`awsm.interface.smrf_ipysnobal.run_smrf_ipysnobal` on an
-    #     hourly output from Pysnobal, outputting to daily folders, similar
-    #     to the HRRR froecast.
-    #     """
-
-    #     smin.run_awsm_daily(self)
-
     def run_ipysnobal(self):
         """
         Run PySnobal from previously run smrf forcing data
@@ -549,11 +513,6 @@ def run_awsm(config):
     """
 
     with AWSM(config) as a:
-        if a.do_forecast:
-            runtype = 'forecast'
-        else:
-            runtype = 'smrf'
-
         if not a.config['isnobal restart']['restart_crash']:
             if a.do_smrf:
                 a.run_smrf()
@@ -568,7 +527,4 @@ def run_awsm(config):
 
         # Run iPySnobal from SMRF in memory
         if a.model_type == 'smrf_ipysnobal':
-            if a.daily_folders:
-                a.run_awsm_daily()
-            else:
-                a.run_smrf_ipysnobal()
+            a.run_smrf_ipysnobal()

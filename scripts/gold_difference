@@ -6,13 +6,14 @@
 #
 
 import argparse
-import os
+from pathlib import PurePath
 
 from goldmeister.compare import GoldGitBranchCompare
 
+import awsm
+
 files = [
-    'snow',
-    'em'
+    'ipysnobal',
 ]
 
 
@@ -28,15 +29,25 @@ def argument_parser():
         metavar='GOLD_DIR',
         type=str,
         default='gold',
-        choices=['gold'],
+        choices=['gold', 'gold_hrrr'],
         help='Gold directory (gold)'
+    )
+
+    parser.add_argument(
+        '--basin', '-b',
+        metavar='BASIN',
+        type=str,
+        default='RME',
+        choices=['RME', 'Lakes'],
+        help='Test basin name (RME or Lakes)'
     )
 
     parser.add_argument(
         '--old_branch', '-o',
         metavar='OLD_BRANCH',
         type=str,
-        help='Old branch to compare against'
+        default='main',
+        help='Old branch to compare against. Default: main'
     )
 
     parser.add_argument(
@@ -46,23 +57,28 @@ def argument_parser():
         help='New branch to compare against'
     )
 
+    parser.add_argument(
+        '--show-plots',
+        action='store_true',
+        help='Show the plots before storing to the output folder'
+    )
+
     return parser
 
 
 def main(args):
-
-    repo_path = os.getcwd()
+    source_path = PurePath(awsm.__file__).parent
+    repo_path = source_path.parent
+    tests_dir = source_path.joinpath('tests', 'basins')
 
     gold_files = []
     for gf in files:
         gold_files.append(
-            os.path.join(
-                repo_path,
-                'tests',
-                'RME',
+            tests_dir.joinpath(
+                args.basin,
                 args.gold_dir,
                 "{}.nc".format(gf)
-            )
+            ).as_posix()
         )
 
     gc = GoldGitBranchCompare(
@@ -74,7 +90,12 @@ def main(args):
 
     results = gc.compare()
 
-    gc.plot_results(results, plot_original_data=False, include_hist=True)
+    gc.plot_results(
+        results,
+        plot_original_data=False,
+        include_hist=True,
+        show_plots=args.show_plots,
+    )
 
 
 if __name__ == '__main__':

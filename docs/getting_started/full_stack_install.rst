@@ -1,5 +1,5 @@
-Full Development Installation
-=============================
+EXPERIMENTAL: Full Development Installation
+===========================================
 
 The full stack installation will allow a user to run AWSM from source with the following enabled:
 
@@ -17,7 +17,7 @@ install all the necessary dependencies from source. This will install the follow
 
 .. note::
 
-    **Use at your own risk!** While this contains the latest code, it is not guaranteed
+    ⚠️ **Use at your own risk!** While this contains the latest code, it is not guaranteed
     to work with the whole modeling framework. 
 
     The latest code on contains all the latest developments. However, this must be used with caution
@@ -31,18 +31,20 @@ Basic Folder Structure
 The basic folder structure for the full stack will be as follows. Everything
 under `windninja` will build the dependencies and windninja code.
 
-- awsm_project
-    - .venv
-    - windninja (can be removed after install)
-        - windninja
-        - build
-        - <other dependencies>
-    - grib2 (can be removed after install)
-    - awsm
-    - smrf
-    - pysnobal
-    - katana
-    - weather_forecast_retrieval (if needed)
+::
+
+    awsm_project
+    ├── .venv
+    ├── windninja (can be removed after install)
+    │   ├── windninja
+    │   ├── build
+    │   ├── <other dependencies>
+    ├── grib2 (can be removed after install)
+    ├── awsm
+    ├── smrf
+    ├── pysnobal
+    ├── katana
+    ├── weather_forecast_retrieval (if needed)
 
 
 System Dependencies

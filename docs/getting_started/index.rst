@@ -46,8 +46,7 @@ The following will guide the installation and setup of AWSM.
 .. toctree::
     :maxdepth: 2
 
-    stable_install
-    full_stack_install
+    install/index
     basin_setup
     create_config
     run_awsm

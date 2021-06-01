@@ -1,5 +1,5 @@
-EXPERIMENTAL: Full Development Installation
-===========================================
+Full Development Installation
+=============================
 
 The full stack installation will allow a user to run AWSM from source with the following enabled:
 
@@ -35,16 +35,26 @@ under `windninja` will build the dependencies and windninja code.
 
     awsm_project
     ├── .venv
-    ├── windninja (can be removed after install)
-    │   ├── windninja
-    │   ├── build
-    │   ├── <other dependencies>
-    ├── grib2 (can be removed after install)
-    ├── awsm
-    ├── smrf
-    ├── pysnobal
-    ├── katana
-    ├── weather_forecast_retrieval (if needed)
+    ├── config          
+    │   ├── wy2021_awsm_config.ini
+    |   |── wy2021_awsm_config_v2.ini
+    ├── topo
+    |   |── topo.nc
+    |   |── lidar
+    |       |── wy2020_lidar_snow_depths.nc
+    ├── station_data
+    |   |── air_temp.csv
+    ├── code
+    |   ├── windninja (can be removed after install)
+    |   │   ├── windninja
+    |   │   ├── build
+    |   │   ├── <other dependencies>
+    |   ├── grib2 (can be removed after install)
+    |   ├── awsm
+    |   ├── smrf
+    |   ├── pysnobal
+    |   ├── katana
+    |   ├── weather_forecast_retrieval (if needed)
 
 
 System Dependencies

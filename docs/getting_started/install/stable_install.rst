@@ -1,5 +1,12 @@
-STABLE: Installation with Docker
-================================
+Installation with Docker
+========================
+
+Both the stable and experimental version of AWSM are built into Docker images. While
+the code and config files may be different, the way to run AWSM with Docker is the same
+between versions.
+
+Stable
+------
 
 The AWSM docker version for ``release-0.10`` is built on an Ubuntu 18.04 image and
 has all the necessary dependencies installed. To get the stable version of AWSM:
@@ -7,6 +14,19 @@ has all the necessary dependencies installed. To get the stable version of AWSM:
 .. code:: console
 
     docker pull usdaarsnwrc/awsm:0.10
+
+Experimental
+------------
+
+The experimental AWSM docker is built on a Python 3.6 image and
+has all the necessary dependencies installed. To get the latest version of AWSM
+or specify a specific release with the release version:
+
+.. code:: console
+
+    docker pull usdaarsnwrc/awsm:latest
+    docker pull usdaarsnwrc/awsm:0.11.3
+
 
 Basic Project Folder Structure
 ------------------------------

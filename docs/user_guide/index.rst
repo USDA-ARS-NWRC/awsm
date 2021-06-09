@@ -22,4 +22,7 @@ and/or models.
 .. toctree::
     :maxdepth: 2
     
+    configuration
+    config/index
+    debugging
     tk_lt_zero

@@ -84,7 +84,7 @@ Station Data
 
 
 Atmospheric Data
-~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~
 
 .. code:: console
 

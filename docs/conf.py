@@ -31,9 +31,18 @@ import awsm
 
 # Call auto documentation for our config files
 
-config_documentation('./auto_config.rst',
-                     paths=['../awsm/framework/CoreConfig.ini',
-                            '../awsm/framework/recipes.ini'])
+config_documentation(
+    './user_guide/config/awsm.rst',
+    paths=[
+        '../awsm/framework/CoreConfig.ini',
+        '../awsm/framework/recipes.ini'
+    ]
+)
+
+config_documentation(
+    './user_guide/config/smrf.rst',
+    modules='smrf'
+)
 
 
 # Get the project root dir, which is the parent dir of this

@@ -35,6 +35,13 @@ and stabilize the turbulent transfer calculations. This can be achieved by using
     The default value is ``thresh_medium: 10`` and a good start is to change to
     ``thresh_medium: 20``.
 
+.. code::
+
+    [ipysnobal]
+    thresh_normal:  60
+    thresh_medium:  20
+    thresh_small:    1
+
 Step 2
 ~~~~~~
 
@@ -42,7 +49,18 @@ After changing the configuration file, the model will need to be reran. Start th
 a day or few hours before the time step that crashed. Run for a few timesteps or until
 the cold and windy condition is complete.
 
+.. code::
+
+    awsm config.ini
+
 Step 3
 ~~~~~~
 
 After the model is through the period, change the thresholds back and continue running.
+
+.. code::
+
+    [ipysnobal]
+    thresh_normal:  60
+    thresh_medium:  10
+    thresh_small:    1

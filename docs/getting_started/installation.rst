@@ -11,6 +11,7 @@ AWSM was designed to run simulations with SMRF_ and PySnobal_. These are
 the two main dependencies for AWSM. To install the dependencies:
 
 .. code:: bash
+  
   python3 -m pip install -r requirements.txt
 
 .. _SMRF: https://github.com/USDA-ARS-NWRC/smrf

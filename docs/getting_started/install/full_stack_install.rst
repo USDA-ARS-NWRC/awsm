@@ -97,16 +97,6 @@ System dependencies
         libeccodes-tools \
         wget
 
-Environment Setup
------------------
-
-Setup a virtual environment and activate.
-
-.. code:: bash
-
-    python3 -m virtualenv .venv
-    source .venv/bin/activate
-
 
 WindNinja
 ~~~~~~~~~
@@ -180,6 +170,17 @@ will take time as `wgrib2` will perform tests during installation.
 Model Code
 ----------
 
+Environment Setup
+~~~~~~~~~~~~~~~~~
+
+Setup a virtual environment and activate.
+
+.. code:: bash
+
+    python3 -m virtualenv .venv
+    source .venv/bin/activate
+
+
 Weather Forecast Retrieval
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -188,7 +189,7 @@ format that SMRF can utilize.
 
 .. note::
     
-    Weather forecast retrieval is a dependency of SMRF and should not to be installed from source 
+    Weather forecast retrieval is a dependency of SMRF and does not to be installed from source 
     unless modifying the weather forecast retrieval code.
 
 .. code:: bash

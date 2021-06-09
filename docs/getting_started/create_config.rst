@@ -13,11 +13,14 @@ At a minimum to get started, the following configuration file will apply all the
 The required changes are specifying the path to the ``topo.nc`` file, dates to run the model
 and the location of the csv input data.
 
+See the :doc:`../user_guide/index` for more in depth usage for different configuration scenarios.
+
+
 Stable vs. Experimental
 -----------------------
 
 The configuration file is not compatible between the stable and experimental model versions. SMRF ``v0.10``
-made a large overhaul to the configuration file to become more verbose and clean up options. If using
+made a large overhaul to the configuration file to become more verbose and cleaned up options. If using
 the stable version, the configuration file will be based on the previous `core config`_.
 
 .. _core config: https://github.com/USDA-ARS-NWRC/smrf/blob/release-0.9/smrf/framework/CoreConfig.ini

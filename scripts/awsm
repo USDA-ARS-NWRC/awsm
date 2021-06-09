@@ -6,6 +6,7 @@ from datetime import datetime
 import sys
 import os
 
+
 def run():
     '''
     awsm is a command line program meant to take a single
@@ -22,6 +23,7 @@ def run():
         configFile = sys.argv[1]
 
     run_awsm(configFile)
+
 
 if __name__ == '__main__':
     run()

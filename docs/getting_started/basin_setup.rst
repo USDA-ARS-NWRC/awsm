@@ -25,7 +25,8 @@ The basin setup procdure creates a `topo.nc` that contains the following static 
 6. Basin mask (optional)
 
 All these layers are stored in a netCDF file, typically referred to the ``topo.nc`` file. More
-information about the ``topo.nc`` file are in the SMRF documentation_.
+information about the ``topo.nc`` file are in the SMRF documentation_ with advanced setup in 
+:doc:`../user_guide/topo_veg`.
 
 .. note::
 

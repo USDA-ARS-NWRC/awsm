@@ -3,7 +3,7 @@ Create a config file
 
 After the topo file has been created, build the AWSM configuration file. For in depth documentation
 see how to :doc:`use a configuration file <../user_guide/configuration>` and the
-:doc:`core configuration <../user_guide/core_config>` for all AWSM options.
+:doc:`core configuration <../user_guide/config/index>` for all AWSM options.
 
 .. note::
 

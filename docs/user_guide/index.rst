@@ -10,12 +10,8 @@ and/or models.
   - permission problems
 - Using WindNinja and Katana
   - making sure the data is in the right directory
-- Input data and removing config sections
-  - What does ``time_step`` mean
-  - checking for grid cells in the model domain
 - Custom vegetation in the ``topo.nc``
 - References
-- Debugging errors with ``debug`` log level
 - Lidar assimilation
 - restarting
 
@@ -25,4 +21,5 @@ and/or models.
     configuration
     config/index
     debugging
+    input_data
     tk_lt_zero

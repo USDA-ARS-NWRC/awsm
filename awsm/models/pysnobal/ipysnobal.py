@@ -429,7 +429,10 @@ class PySnobal():
         iSnobal.
         """
 
-        with SMRF(self.awsm.smrf_connector.smrf_config, self._logger) as self.smrf:
+        with SMRF(
+                self.awsm.smrf_connector.smrf_config,
+                self._logger
+        ) as self.smrf:
 
             self.smrf.loadTopo()
             self.smrf.create_distribution()

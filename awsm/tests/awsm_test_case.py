@@ -204,6 +204,3 @@ class AWSMTestCase(unittest.TestCase):
 
         gold.close()
         test.close()
-
-
-

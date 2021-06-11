@@ -4,7 +4,6 @@ import logging
 from datetime import datetime
 
 import netCDF4 as nc
-import numpy as np
 import pandas as pd
 from spatialnc.proj import add_proj
 
@@ -46,17 +45,17 @@ class PysnobalIO():
         },
         'evaporation': {
             'units': 'kg m-2 (equivalent to mm of water)',
-            'description': 'Total evaporation and sublimation per unit area from surface of snowpack',
+            'description': 'Total evaporation and sublimation per unit area from surface of snowpack',  # noqa
             'ipysnobal_var': 'E_s_sum'
         },
         'snowmelt': {
             'units': 'kg m-2 (equivalent to mm of water )',
-            'description': 'Total snowmelt per unit area occurring within the snowpack',
+            'description': 'Total snowmelt per unit area occurring within the snowpack',  # noqa
             'ipysnobal_var': 'melt_sum'
         },
         'surface_water_input': {
             'units': 'kg m-2 (equivalent to mm of water)',
-            'description': 'Surface water input is liquid water output from bottom of snowpack or rain on bare ground per unit area',
+            'description': 'Surface water input is liquid water output from bottom of snowpack or rain on bare ground per unit area',  # noqa
             'ipysnobal_var': 'ro_pred_sum'
         },
         'cold_content': {
@@ -76,12 +75,12 @@ class PysnobalIO():
         },
         'specific_mass': {
             'units': 'kg m-2 (equivalent to mm of water)',
-            'description': 'Specific mass per unit area of the snowcover or snow water equivalent',
+            'description': 'Specific mass per unit area of the snowcover or snow water equivalent',  # noqa
             'ipysnobal_var': 'm_s'
         },
         'liquid_water': {
             'units': 'kg m-2 (equivalent to mm of water)',
-            'description': 'Mass per unit area of liquid water in the snowcover',
+            'description': 'Mass per unit area of liquid water in the snowcover',  # noqa
             'ipysnobal_var': 'h2o'
         },
         'temperature_surface': {
@@ -106,7 +105,7 @@ class PysnobalIO():
         },
         'water_saturation': {
             'units': 'percent',
-            'description': 'Percentage of liquid water saturation of the snowcover',
+            'description': 'Percentage of liquid water saturation of the snowcover',  # noqa
             'ipysnobal_var': 'h2o_sat'
         }
     }
@@ -124,7 +123,7 @@ class PysnobalIO():
         self.awsm = myawsm
 
         self.output_variables = self.awsm.pysnobal_output_vars
-        self.precision = self.awsm.config['awsm system']['netcdf_output_precision'][0]
+        self.precision = self.awsm.config['awsm system']['netcdf_output_precision'][0]  # noqa
 
         self._logger.info('PysnobalIO initialized')
 

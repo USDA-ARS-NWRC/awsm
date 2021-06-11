@@ -34,8 +34,9 @@ class StateUpdater():
         self.update_info = update_info
 
         self.tzinfo = myawsm.tzinfo
-        # check to see if we're outputting the changes resulting from each update
-        self.update_change_file = myawsm.config['update depth']['update_change_file']
+        # check to see if we're outputting the changes resulting from
+        # each update
+        self.update_change_file = myawsm.config['update depth']['update_change_file']  # noqa
         if self.update_change_file is not None:
             start_date = myawsm.config['time']['start_date']
             time_zone = myawsm.config['time']['time_zone']
@@ -46,13 +47,15 @@ class StateUpdater():
                 myawsm.smrf_version)
 
         # calculate offset for each section of the run and filter updates
-        # update_info, runsteps, offsets, firststeps = self.calc_offsets_nsteps(myawsm, update_info)
+        # update_info, runsteps, offsets, firststeps =
+        #   self.calc_offsets_nsteps(myawsm, update_info)
         #
         # self.runsteps = runsteps
         # self.offsets = offsets
         # self.firststeps = firststeps
 
-        # save the dates of each update if there are any updates in the time frame
+        # save the dates of each update if there are any updates in the
+        # time frame
         self.update_dates = []
         if len(self.update_info) > 0:
             self.update_dates = [self.update_info[k]['date_time']
@@ -96,19 +99,30 @@ class StateUpdater():
         density = output_rec['rho']
 
         # do the updating
-        updated_fields = self.hedrick_updating_procedure(m_s, T_s_0, T_s_l, T_s,
-                                                         h2o_sat, density, z_s,
-                                                         self.x, self.y,
-                                                         self.update_info[un])
+        updated_fields = self.hedrick_updating_procedure(
+            m_s,
+            T_s_0,
+            T_s_l,
+            T_s,
+            h2o_sat,
+            density,
+            z_s,
+            self.x,
+            self.y,
+            self.update_info[un]
+        )
 
         # calculate the change from the update
         no_update = np.isnan(self.update_info[un]['depth'])
+
         # difference in depth
         diff_z = updated_fields['D'] - output_rec['z_s']
         diff_z[no_update] = np.nan
+
         # difference in density
         diff_rho = updated_fields['rho'] - output_rec['rho']
         diff_rho[no_update] = np.nan
+
         # difference in SWE
         diff_swe = updated_fields['D'] * \
             updated_fields['rho'] - output_rec['m_s']
@@ -198,11 +212,13 @@ class StateUpdater():
 
     def calc_offsets_nsteps(self, myawsm, update_info):
         """
-        Function to calculate the offset for each update run and the number of steps
-        the iSnobal run needs to run
+        Function to calculate the offset for each update run and the number of
+        steps the iSnobal run needs to run
+
         Args:
             myawsm: awsm class
             update_info: pandas dataframe of the update netCDF info
+
         Returns:
             update_info: update info dataframe filtered to desired updates
             runsteps:    numpy array of runsteps for each section
@@ -210,7 +226,6 @@ class StateUpdater():
             firststeps:  number of steps to run before first update, if any
         """
 
-        #t_wyhr = update_info['wyhr'].values
         update_number = update_info.keys()
         # filter to desired flights if user input
         if myawsm.flight_numbers is not None:
@@ -230,7 +245,8 @@ class StateUpdater():
                 # delete update if not in desired update inputs
                 update_info.pop(un)
 
-        # check if a first run with no update is needed to get us up to the first update
+        # check if a first run with no update is needed to get us up to the
+        # first update
         if myawsm.restart_crash:
             test_start_wyhr = myawsm.restart_hr+1
         else:
@@ -276,7 +292,8 @@ class StateUpdater():
 
     def find_update_snow(self, myawsm, offset):
         """
-        Function to find the nearest, lower ouptut file to perform the update_info
+        Function to find the nearest, lower ouptut file to perform the
+        update_info
         """
         # get output files so far
         d = sorted(glob.glob("%s/snow*" % myawsm.pathro),
@@ -288,13 +305,12 @@ class StateUpdater():
         for idf, f in enumerate(d):
             # get the hr
             nm = os.path.basename(f)
-            head = os.path.dirname(f)
             hr.append(int(nm.split('.')[1]))
 
         hr = np.array(hr)
         # filter to outputs less than offset
         hr = hr[hr < offset]
-        #hr = [h for h in hr if h < offset]
+
         # find closest
         idx = (np.abs(hr - offset)).argmin()
         offset_hr = int(hr[idx])
@@ -308,12 +324,13 @@ class StateUpdater():
         update_snow = os.path.join(myawsm.pathro, 'snow.%04d' % (offset_hr))
         if not os.path.exists(update_snow):
             raise ValueError(
-                'Update snow file {} does not exist'.format(update_snow))
+                'Update snow file {} does not exist'.format(
+                    update_snow))
 
         return update_snow
 
-    def hedrick_updating_procedure(self, m_s, T_s_0, T_s_l, T_s, h2o_sat, density, z_s,
-                                   x, y, update_info):
+    def hedrick_updating_procedure(self, m_s, T_s_0, T_s_l, T_s, h2o_sat,
+                                   density, z_s, x, y, update_info):
         """
         This function performs the direct insertion procedure and returns the
         updated fields.
@@ -366,14 +383,15 @@ class StateUpdater():
         ncols = len(x)
 
         # Special case - 20160607
-        # I am trying an update with only Tuolumne Basin data where I will mask in
-        # Cherry and Eleanor to create a hybrid iSnobal/ASO depth image.
+        # I am trying an update with only Tuolumne Basin data where I will
+        # mask in Cherry and Eleanor to create a hybrid iSnobal/ASO depth
+        # image.
         tempASO = D.copy()
         tempASO[np.isnan(D)] = 0.0
         tempiSnobal = z_s.copy()
         tuolx_mask = mask
         tempASO[tuolx_mask == 1.0] = 0.0
-        #tempiSnobal[tuolx_mask == 1] = 0.0
+
         I_ASO = (tempASO == 0.0)
         tempASO[I_ASO] = tempiSnobal[I_ASO]
         tempASO[tuolx_mask == 1.0] = D[tuolx_mask == 1.0]
@@ -408,10 +426,12 @@ class StateUpdater():
         # of pixels with density (model).
         modelDensity = tot_pix - len(I_rho[0])
 
-        self._logger.debug('\nJust After Importing.\n \
-                              Number of modeled cells with snow depth: {}\n \
-                              Number of modeled cells with density: {}\n \
-                              Number of lidar cells measuring snow: {}'.format(modelDepth, modelDensity, lidarDepth))
+        self._logger.debug(
+            '\nJust After Importing.\n \
+            Number of modeled cells with snow depth: {}\n \
+            Number of modeled cells with density: {}\n \
+            Number of lidar cells measuring snow: {}'.format(
+                modelDepth, modelDensity, lidarDepth))
         id0 = D == 0.0
 
         # Find cells without lidar snow and set the modeled density to zero.
@@ -437,18 +457,22 @@ class StateUpdater():
 
         # Snow-free pixels before interpolation
         I_rho = np.where(np.isnan(rho))
-        #modelDensity = tot_pix - size(I_rho, 1)
         modelDensity = tot_pix - len(I_rho[0])
 
-        self._logger.debug('\nBefore Interpolation.\n \
-                              Number of modeled cells with snow depth: {0}\n \
-                              Number of modeled cells with density: {1}\n \
-                              Number of lidar cells measuring snow: {2}'.format(modelDepth, modelDensity, lidarDepth))
+        self._logger.debug(
+            '\nBefore Interpolation.\n \
+            Number of modeled cells with snow depth: {0}\n \
+            Number of modeled cells with density: {1}\n \
+            Number of lidar cells measuring snow: {2}'.format(
+                modelDepth, modelDensity, lidarDepth))
 
-        # Now find cells where lidar measured snow, but Isnobal simulated no snow:
-        I = np.where((np.isnan(rho)) & (D > 0.0))
+        # Now find cells where lidar measured snow, but Isnobal simulated
+        # no snow:
+        I_snow = np.where((np.isnan(rho)) & (D > 0.0))
         I_25 = np.where((z_s <= (activeLayer * 1.20)) &
-                        (D >= activeLayer))  # find cells with lidar
+                        (D >= activeLayer))
+
+        # find cells with lidar
         # depth greater than, and iSnobal depths less than, the active layer
         # depth. Lower layer temperatures of these cells will need to be
         # interpolated from surrounding cells with lower layer temperatures.
@@ -481,7 +505,7 @@ class StateUpdater():
         # hopefully fixed for loop logic below
 
         # Loop through cells with D > 0 and no iSnobal density,
-        for idx, (ix, iy) in enumerate(zip(I[0], I[1])):
+        for idx, (ix, iy) in enumerate(zip(I_snow[0], I_snow[1])):
             # active layer temp, snow temp, and h2o saturation.
             xt = X[ix, iy]+Buf  # Add the buffer to the x coords.
             yt = Y[ix, iy]+Buf  # Add the buffer to the y coords.
@@ -521,10 +545,10 @@ class StateUpdater():
 
         # ##################### hopefully fixed for loop logic below
         self._logger.debug('Done with loop 1')
-        # Now loop over cells with D > activelayer > z_s.  These cells were being
-        # assigned no temperature in their lower layer (-75) when they needed to
-        # have a real temperature.  Solution is to interpolate from nearby cells
-        # using an expanding moving window search.
+        # Now loop over cells with D > activelayer > z_s.  These cells were
+        # being assigned no temperature in their lower layer (-75) when they
+        # needed to have a real temperature.  Solution is to interpolate
+        # from nearby cells using an expanding moving window search.
         for ix, iy in zip(I_25[0], I_25[1]):
             xt = X[ix, iy] + Buf  # Add the buffer to the x coords.
             yt = Y[ix, iy] + Buf  # Add the buffer to the y coords.
@@ -562,31 +586,41 @@ class StateUpdater():
         # of pixels with density (model).
         modelDensity = tot_pix - len(I_rho[0])
 
-        I_lidaridx = (D == 0.0) | (np.isnan(D))  # Snow-free pixels from lidar.
-        I_rhoidx = np.isnan(rho)  # Snow-free pixels upon importing.
-
-        self._logger.debug('\nAfter Interpolation.\n \
-                              Number of modeled cells with snow depth: {}\n \
-                              Number of modeled cells with density: {}\n \
-                              Number of lidar cells measuring snow: {}'.format(modelDepth, modelDensity, lidarDepth))
+        self._logger.debug(
+            '\nAfter Interpolation.\n \
+            Number of modeled cells with snow depth: {}\n \
+            Number of modeled cells with density: {}\n \
+            Number of lidar cells measuring snow: {}'.format(
+                modelDepth, modelDensity, lidarDepth)
+        )
 
         # Reset NaN's to the proper values for Isnobal:
         # if size(I_lidar, 1) ~= size(I_rho, 1)
         if len(I_lidar[0]) != len(I_rho[0]):
             raise ValueError(
-                'Lidar depths do not match interpolated model densities.  Try changing buffer parameters.')
+                'Lidar depths do not match interpolated model densities.  Try changing buffer parameters.')  # noqa
 
-        rho[I_rhoidx] = 0.0  # rho is the updated density map.
+        # rho is the updated density map.
+        I_rhoidx = np.isnan(rho)  # Snow-free pixels upon importing.
+        rho[I_rhoidx] = 0.0
+
         # D is lidar snow depths, I_rho is where no snow exists.
         D[rho == 0.0] = 0.0
-        I_25_new = D <= activeLayer  # find cells with lidar depth less than 25 cm
-        # These cells will have the corresponding lower layer temp changed to
-        # -75 (no value) and the upper layer temp will be set to equal the
+
+        # find cells with lidar depth less than 25 cm
+        I_25_new = D <= activeLayer
+
+        # These cells will have the corresponding lower layer temp changed
+        # to -75 (no value) and the upper layer temp will be set to equal the
         # average snowpack temp in that cell.
-        # T_s is the average snow temperature in a cell. Is NaN (-75) for all rho = 0.
+        # T_s is the average snow temperature in a cell. Is NaN (-75) for
+        # all rho = 0.
         T_s[rho == 0.0] = -75.0
-        # T_s_0 is the updated active (upper) layer.  Is >0 for everywhere rho is >0.
+
+        # T_s_0 is the updated active (upper) layer.  Is >0 for everywhere
+        # rho is >0.
         T_s_0[rho == 0.0] = -75.0
+
         # If lidar depth <= 25cm, set active layer temp to average temp of cell
         T_s_0[I_25_new] = T_s[I_25_new]
         T_s_l[I_25_new] = -75.0
@@ -595,14 +629,19 @@ class StateUpdater():
 
         # grab unmasked cells again
         nmask = mask == 0
+
         # Make sure non-updated cells stay the same as original
         m_s[nmask] = original_fields['m_s'][nmask]  # Get SWE image.
+
         # Get active snow layer temperature image
         T_s_0[nmask] = original_fields['T_s_0'][nmask]
+
         # Get lower snow layer temperature image
         T_s_l[nmask] = original_fields['T_s_l'][nmask]
+
         # Get average snowpack temperature image
         T_s[nmask] = original_fields['T_s'][nmask]
+
         # Get liquid water saturation image
         h2o_sat[nmask] = original_fields['h2o_sat'][nmask]
         D[nmask] = original_fields['z_s'][nmask]
@@ -633,7 +672,7 @@ class StateUpdater():
             dt: PySnobal time step
             islast: boolean describing if it is the last update to process
         """
-        variable_list = ['depth_change', 'rho_change', 'swe_change']
+
         # now find the correct index
         # the current time integer
         times = self.delta_ds.variables['time']
@@ -702,7 +741,9 @@ class StateUpdater():
 
         if os.path.isfile(self.update_change_file):
             self._logger.warning(
-                'Opening {}, data may be overwritten!'.format(self.update_change_file))
+                'Opening {}, data may be overwritten!'.format(
+                    self.update_change_file)
+            )
             ds = nc.Dataset(self.update_change_file, 'a')
             h = '[{}] Data added or updated'.format(
                 datetime.now().strftime(fmt))
@@ -723,7 +764,6 @@ class StateUpdater():
             ds.createVariable('y', 'f', dimensions[1])
             ds.createVariable('x', 'f', dimensions[2])
 
-            # setattr(em.variables['time'], 'units', 'hours since %s' % options['time']['start_date'])
             setattr(ds.variables['time'], 'units',
                     'hours since %s' % start_date)
             setattr(ds.variables['time'], 'calendar', 'standard')
@@ -738,14 +778,27 @@ class StateUpdater():
                 setattr(ds.variables[v], 'description', f['description'])
 
             # define some global attributes
-            ds.setncattr_string('Conventions', 'CF-1.6')
-            ds.setncattr_string('dateCreated', datetime.now().strftime(fmt))
-            ds.setncattr_string('created_with', 'Created with awsm {} and smrf {}'.format(
-                awsm_version, smrf_version))
-            ds.setncattr_string('history', '[{}] Create netCDF4 file'.format(
-                datetime.now().strftime(fmt)))
-            ds.setncattr_string('institution',
-                                'USDA Agricultural Research Service, Northwest Watershed Research Center')
+            ds.setncattr_string(
+                'Conventions',
+                'CF-1.6'
+            )
+            ds.setncattr_string(
+                'dateCreated',
+                datetime.now().strftime(fmt)
+            )
+            ds.setncattr_string(
+                'created_with',
+                'Created with awsm {} and smrf {}'.format(
+                    awsm_version, smrf_version)
+            )
+            ds.setncattr_string(
+                'history',
+                '[{}] Create netCDF4 file'.format(datetime.now().strftime(fmt))
+            )
+            ds.setncattr_string(
+                'institution',
+                'USDA Agricultural Research Service, Northwest Watershed Research Center'  # noqa
+            )
 
         # save the open dataset so we can write to it
         ds.sync()

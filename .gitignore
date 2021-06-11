@@ -17,6 +17,8 @@ test_data/wrfout_d02_2016-03-10.nc
 test_data/stoporad*
 examples/*.nc
 
+awsm/tests/basins/Lakes/output/
+awsm/tests/basins/RME/output/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -56,7 +58,6 @@ pip-delete-this-directory.txt
 
 # Unit test / coverage reports
 htmlcov/
-.tox/
 .coverage
 .coverage.*
 .cache

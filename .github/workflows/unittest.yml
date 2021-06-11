@@ -29,27 +29,27 @@ jobs:
   #       run: |
   #         flake8 awsm || true
 
-  coverage:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
+  # coverage:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v2
 
-      - name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.7'
+  #     - name: Set up Python
+  #       uses: actions/setup-python@v2
+  #       with:
+  #         python-version: '3.7'
           
-      - name: Install dependencies
-        run: |
-          sudo apt-get install -y libeccodes-tools
-          python3 -m pip install --upgrade pip
-          python3 -m pip install coverage coveralls PyYAML wheel
-          python3 -m pip install -r requirements.txt
-          python3 -m pip install pysnobal @ git+https://github.com/USDA-ARS-NWRC/pysnobal@master#egg=pysnobal
+  #     - name: Install dependencies
+  #       run: |
+  #         sudo apt-get install -y libeccodes-tools
+  #         python3 -m pip install --upgrade pip
+  #         python3 -m pip install coverage coveralls PyYAML wheel
+  #         python3 -m pip install -r requirements.txt
+  #         python3 -m pip install git+https://github.com/USDA-ARS-NWRC/pysnobal@master#egg=pysnobal
 
-      - name: Run coverage
-        run: |
-          make coveralls
+  #     - name: Run coverage
+  #       run: |
+  #         make coveralls
 
   unittest:
     # needs: [flake8, coverage]
@@ -92,7 +92,7 @@ jobs:
         run: |
           python3 -m pip install --upgrade pip setuptools wheel
           python3 -m pip install -r requirements.txt
-          python3 -m pip install pysnobal @ git+https://github.com/USDA-ARS-NWRC/pysnobal@master#egg=pysnobal
+          python3 -m pip install git+https://github.com/USDA-ARS-NWRC/pysnobal@master#egg=pysnobal
           
       - name: Run unittests
         run: |

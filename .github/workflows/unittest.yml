@@ -10,24 +10,24 @@ on: push
 
 jobs:
 
-  flake8:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
+  # flake8:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v2
 
-      - name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.7'
+  #     - name: Set up Python
+  #       uses: actions/setup-python@v2
+  #       with:
+  #         python-version: '3.7'
           
-      - name: Install dependencies
-        run: |
-          python3 -m pip install --upgrade pip
-          python3 -m pip install flake8
+  #     - name: Install dependencies
+  #       run: |
+  #         python3 -m pip install --upgrade pip
+  #         python3 -m pip install flake8
 
-      - name: Lint with flake8
-        run: |
-          flake8 awsm || true
+  #     - name: Lint with flake8
+  #       run: |
+  #         flake8 awsm || true
 
   coverage:
     runs-on: ubuntu-latest
@@ -43,19 +43,22 @@ jobs:
         run: |
           sudo apt-get install -y libeccodes-tools
           python3 -m pip install --upgrade pip
-          python3 -m pip install coverage coveralls PyYAML
+          python3 -m pip install coverage coveralls PyYAML wheel
           python3 -m pip install -r requirements.txt
+          python3 -m pip install pysnobal @ git+https://github.com/USDA-ARS-NWRC/pysnobal@master#egg=pysnobal
 
       - name: Run coverage
         run: |
           make coveralls
 
   unittest:
-    needs: [flake8, coverage]
+    # needs: [flake8, coverage]
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
-        python-version: [3.6, 3.7, 3.8, 3.9]
+        # os: [ubuntu-latest, macos-latest]
+        # python-version: [3.6, 3.7, 3.8, 3.9]
+        os: [ubuntu-latest]
+        python-version: [3.6]
     runs-on: ${{ matrix.os }}
     env:
       CC: gcc-9
@@ -87,8 +90,9 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python3 -m pip install --upgrade pip setuptools
+          python3 -m pip install --upgrade pip setuptools wheel
           python3 -m pip install -r requirements.txt
+          python3 -m pip install pysnobal @ git+https://github.com/USDA-ARS-NWRC/pysnobal@master#egg=pysnobal
           
       - name: Run unittests
         run: |

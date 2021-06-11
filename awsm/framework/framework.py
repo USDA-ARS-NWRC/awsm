@@ -116,7 +116,6 @@ class AWSM():
         return MasterConfig(modules='smrf').cfg.keys()
 
     def read_config(self, config):
-
         if isinstance(config, str):
             if not os.path.isfile(config):
                 raise Exception('Configuration file does not exist --> {}'
@@ -137,22 +136,22 @@ class AWSM():
 
         elif isinstance(config, UserConfig):
             self.ucfg = config
-            configFile = ''
 
         else:
             raise Exception("""Config passed to AWSM is neither file """
                             """name nor UserConfig instance""")
 
-        # Check the user config file for errors and report issues if any
         warnings, errors = check_config(self.ucfg)
-        print_config_report(warnings, errors)
-
-        self.config = self.ucfg.cfg
 
         if len(errors) > 0:
+            print_config_report(warnings, errors)
             print("Errors in the config file. "
                   "See configuration status report above.")
             sys.exit()
+        elif len(warnings) > 0:
+            print_config_report(warnings, errors)
+
+        self.config = self.ucfg.cfg
 
     def load_topo(self):
 
@@ -234,13 +233,15 @@ class AWSM():
             logfile = \
                 os.path.join(self.path_log,
                              'log_{}.out'.format(self.folder_date_stamp))
-            # let user know
-            print('Logging to file: {}'.format(logfile))
 
         self.config['awsm system']['log_file'] = logfile
         logger.SMRFLogger(self.config['awsm system'])
 
         self._logger = logging.getLogger(__name__)
+
+        if self._logger.level == logging.DEBUG and \
+                not os.getenv('SUPPRESS_AWSM_STDOUT'):
+            print('Logging to file: {}'.format(logfile))
 
         self._logger.info(ascii_art.MOUNTAIN)
         self._logger.info(ascii_art.TITLE)

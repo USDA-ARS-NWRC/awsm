@@ -51,7 +51,7 @@ isort: ## using isort to sort imports
 	isort -rc -v .
 
 lint: ## check style with flake8
-	flake8 awsm tests
+	flake8 awsm
 
 test: ## run tests quickly with the default python3
 	python3 -m unittest -v
@@ -60,7 +60,7 @@ test-all: ## run tests on every Python version with tox
 	tox
 
 coverage: ## run coverage and submit
-	coverage run --source awsm setup.py test
+	coverage run -m unittest discover
 	coverage report --fail-under=75
 
 coveralls: coverage ## run coveralls

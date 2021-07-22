@@ -152,13 +152,16 @@ The ``delineate`` command will create a file in ``./topo/delineation/basin_outli
 will contain the delineated basin. Open the shape file and ensure that the basin
 delineation performed as expected. Next, create the topo with ``basin_setup``. The LANDFIRE
 dataset is quite large (~1.5GB) and can be downloaded prior and/or reused. Ensure that the
-LANDFIRE dataset is in the ``./veg_data`` folder and the download will be skipped.
+LANDFIRE dataset is in the ``./veg_data`` folder and the download will be skipped. The domain 
+default grid cell size is 50 m, but if another size is desired it can be set with the -c option. 
+Finally, the extents of the domain can be defined using the -ex option.
 
 .. code:: bash
 
     docker-compose run basin_setup \
         -f delineation/basin_outline.shp \
         -bn BasinName \
+        -c 50 \
         -dm out_dem_50_meters.tif \
         -d /Downloads # will download LANDFIRE here if not present
 

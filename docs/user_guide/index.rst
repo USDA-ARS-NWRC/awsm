@@ -13,4 +13,3 @@ The User Guide covers different topic areas in AWSM.
     debugging
     input_data
     tk_lt_zero
-    references

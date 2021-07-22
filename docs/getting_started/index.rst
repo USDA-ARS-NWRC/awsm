@@ -9,7 +9,7 @@ Stable
 ~~~~~~
 
 The stable version of AWSM is currently :code:`v0.10`. The code can be downloaded from the `releases`_,
-can be found on the :code:`release-0.10` `branch`_ or the stable :doc:`docker image <./stable_install>`.
+can be found on the :code:`release-0.10` `branch`_ or the stable :doc:`docker image <./install/stable_install>`.
 
 .. _releases: https://github.com/USDA-ARS-NWRC/awsm/releases
 .. _branch: https://github.com/USDA-ARS-NWRC/awsm/tree/release-0.10

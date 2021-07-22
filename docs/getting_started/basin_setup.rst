@@ -5,8 +5,8 @@ All components will be described using docker containers such that the generatio
 of the necessary files is reproducible. Note that exact docker versions will be
 specified throughout the document but can be updated to different versions.
 
-The initial set up is performed using the package `basin_setup`_. `basin_setup`_ requires a DEM and it
-the `LANDFIRE`_ dataset to fill in the vegetation layers and parameters required to run iSnobal.
+The initial set up is performed using the package `basin_setup`_. `generate_topo`_ requires a DEM and it
+the `LANDFIRE`_ dataset (version 1.4.0) to fill in the vegetation layers and parameters required to run iSnobal.
 
 .. _basin_setup: https://github.com/USDA-ARS-NWRC/basin_setup
 .. _LANDFIRE: https://www.landfire.gov

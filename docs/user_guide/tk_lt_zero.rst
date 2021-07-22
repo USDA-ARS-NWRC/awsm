@@ -39,7 +39,7 @@ and stabilize the turbulent transfer calculations. This can be achieved by using
 
     [ipysnobal]
     thresh_normal:  60
-    thresh_medium:  20
+    thresh_medium:  20   <---
     thresh_small:    1
 
 Step 2
@@ -62,5 +62,5 @@ After the model is through the period, change the thresholds back and continue r
 
     [ipysnobal]
     thresh_normal:  60
-    thresh_medium:  10
+    thresh_medium:  10   <---
     thresh_small:    1

@@ -5,7 +5,7 @@ All components will be described using docker containers such that the generatio
 of the necessary files is reproducible. Note that exact docker versions will be
 specified throughout the document but can be updated to different versions.
 
-The initial set up is performed using the package `basin_setup`_. `generate_topo`_ requires a DEM and it
+The initial set up is performed using the package `basin_setup`_. `basin_setup`_ requires a DEM and it
 the `LANDFIRE`_ dataset (version 1.4.0) to fill in the vegetation layers and parameters required to run iSnobal.
 
 .. _basin_setup: https://github.com/USDA-ARS-NWRC/basin_setup
@@ -31,7 +31,8 @@ information about the ``topo.nc`` file are in the SMRF documentation_ with advan
 .. note::
 
     The ``topo.nc`` **must** have projection information. It's just good practice. Using
-    ``basin_setup`` will ensure the projection is in the ``topo.nc``.
+    ``basin_setup`` will ensure the projection is in the ``topo.nc`` which will come from
+    the basin outline shapefile.
 
 
 .. _documentation: https://smrf.readthedocs.io/en/latest/getting_started/create_topo.html
@@ -42,17 +43,17 @@ Creating the DEM
 
 The DEM was obtained from the USGS National Elevation `dataset`_ at ~10-m (9.26-m) resolution.
 The original tiles are provided in EPSG:4269 - NAD83 – Geographic projection. Download the necessary
-tiles to cover the modeling domain.
+tiles to cover the modeling domain. Join the tiles were in the native projection and resolution (EPSG 4269). 
 
 .. _dataset: https://catalog.data.gov/dataset/usgs-national-elevation-dataset-ned
 
-Join the tiles were in the native projection and resolution (EPSG 4269). Subsequently, crop the joined DEM
+Optionally, crop the joined DEM
 and resample to 50-m resolution and reproject to UTM coordinates (for example EPSG 32613, UTM 13N - WGS 84),
 all of which is accomplished using a single ``gdalwarp`` instruction (also available in QGIS or similar ArcGIS
-command).
+command). This will also be performed within the ``generate_topo`` command.
 
 .. note::
-    Beware of using Nearest Neightbour interpolation as it can create artifacts in the resulting DEM. Use average,
+    Beware of using Nearest Neighbor interpolation as it can create artifacts in the resulting DEM. Use average,
     bilinear or cubic interpolation.
 
 A sample ``gdalwarp`` command for the Gunnison in Colorado. This will resample to 50-m grid resolution and
@@ -109,7 +110,7 @@ Delineate Basin, Generate Topo
 The basin delineation and creation of the ``topo.nc`` file is done with the docker version
 of ``basin_setup``. A ``docker-compose.yml`` file aids the composition of the docker commands
 and simplifies mounting data volumes to the docker image. The following ``docker-compose.yml``
-file contains two services, `delineate` runs the delineation routine and ``basin_setup`` creates
+file contains two services, ``delineate`` runs the delineation routine and ``generate_topo`` creates
 the ``topo.nc``.
 
 .. code:: yml
@@ -118,18 +119,17 @@ the ``topo.nc``.
 
     services:
         delineate:
-            image: usdaarsnwrc/basin_setup:0.14
+            image: usdaarsnwrc/basin_setup:0.15
             volumes:
                 - ./topo:/data
-                - ./veg_data:/Downloads
             entrypoint: delineate
 
-        basin_setup:
-            image: usdaarsnwrc/basin_setup:0.14
+        generate_topo:
+            image: usdaarsnwrc/basin_setup:0.15
             volumes:
-                - ./topo:/data
-                - ./veg_data:/Downloads
-            entrypoint: basin_setup
+               - ./topo:/data/topo
+               - ./veg_data:/data/veg_data
+            entrypoint: generate_topo
 
 
 With the DEM tiff file ``out_dem_50_meters.tif`` and the ``.bna`` file, run ``delineate``
@@ -150,20 +150,20 @@ create sub-basins for each pour point.
 
 The ``delineate`` command will create a file in ``./topo/delineation/basin_outline.shp`` which
 will contain the delineated basin. Open the shape file and ensure that the basin
-delineation performed as expected. Next, create the topo with ``basin_setup``. The LANDFIRE
-dataset is quite large (~1.5GB) and can be downloaded prior and/or reused. Ensure that the
-LANDFIRE dataset is in the ``./veg_data`` folder and the download will be skipped. The domain 
-default grid cell size is 50 m, but if another size is desired it can be set with the -c option. 
-Finally, the extents of the domain can be defined using the -ex option.
+delineation performed as expected.
+
+Next, create the topo with ``generate_topo``. The LANDFIRE version 1.4.0
+dataset is quite large (~3GB) and must be downloaded prior. Ensure that the
+LANDFIRE dataset is in the ``./veg_data`` folder and unzipped. ``generate_topo`` uses a
+configuration file to specify all the required parameters to run. See the
+`CoreConfig`_ for options and the `sample configuration files`_.
+
+.. _CoreConfig: https://github.com/USDA-ARS-NWRC/basin_setup/blob/main/basin_setup/CoreConfig.ini
+.. _sample configuration files: https://github.com/USDA-ARS-NWRC/basin_setup/blob/main/tests/Lakes/config.ini
 
 .. code:: bash
 
-    docker-compose run basin_setup \
-        -f delineation/basin_outline.shp \
-        -bn BasinName \
-        -c 50 \
-        -dm out_dem_50_meters.tif \
-        -d /Downloads # will download LANDFIRE here if not present
+    docker-compose run generate_topo /data/topo/config.ini
 
     
 View ``topo.nc``

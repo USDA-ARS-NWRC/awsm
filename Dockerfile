@@ -42,4 +42,6 @@ RUN apt-get update -y \
 VOLUME /data
 WORKDIR /data
 
+run ldconfig
+
 CMD ["/bin/bash"]

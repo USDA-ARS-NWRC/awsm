@@ -75,7 +75,6 @@ coverage.xml
 
 # Sphinx documentation
 docs/_build/
-docs/auto_config.rst
 
 # PyBuilder
 target/

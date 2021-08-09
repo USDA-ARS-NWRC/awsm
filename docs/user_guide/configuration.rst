@@ -1,6 +1,3 @@
-.. _using-configs:
-
-=========================
 Using Configuration Files
 =========================
 
@@ -26,16 +23,18 @@ Understanding Configuration Files
 ----------------------------------
 
 The easiest way to get started is to look at one of the config files
-in the repo already. A simple case to use is our reynolds mountain east test
-which can be view easily here_.
-
-.. _here: https://github.com/USDA-ARS-NWRC/awsm/blob/devel/tests/RME/config.ini
+in the repo already (:doc:`../getting_started/create_config`).
 
 Take a look at the "topo" section from the config file show below
 
-.. literalinclude:: ../tests/RME/config.ini
-   :lines: 20-29
-   :language: none
+.. code::
+
+  ################################################################################
+  # Files for DEM and vegetation
+  ################################################################################
+
+  [topo]
+  filename:                      ./topo/topo.nc
 
 This section describes all the topographic information required for AWSM to run.
 At the top of the section there is comment that describes the section.
@@ -45,13 +44,10 @@ underneath are assigned values by using the colon.
 Editing/Checking Configuration Files
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Use any text editor to make changes to a config file. We like to use atom_ with
-the .ini syntax package installed.
-
-.. _atom: https://atom.io/
+Use any text editor to make changes to a config file.
 
 If you are unsure of what to use various entries in your config file refer to
-the :ref:`config-file-reference` or use the inicheck command for command line help.
+the :doc:`config/index` or use the inicheck command for command line help.
 Below is an example of how to use the inicheck details option to figure out what
 options are available for the topo section type item.
 
@@ -87,14 +83,12 @@ populated list of options.
 This will create a config file using the same name but call "config_full.ini"
 at the end.
 
-.. _core-config:
-
 Core Configuration File
 -----------------------
 
 Each configuration file is checked against the core configuration file stored
-./awsm/framework/core_config.ini and various scenarios are guided by the a recipes
-file that is stored in ./awsm/framework/recipes.ini. These files work together
+``./awsm/framework/core_config.ini`` and various scenarios are guided by the a recipes
+file that is stored in ``./awsm/framework/recipes.ini``. These files work together
 to guide the outcomes of the configuration file.
 
 To learn more about syntax and how to contribute to a Core or Master configuration

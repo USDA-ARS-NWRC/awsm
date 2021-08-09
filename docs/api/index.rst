@@ -8,4 +8,8 @@ The API here describes all the classes and functions
 used in AWSM.
 
 
-.. include:: modules.rst
+.. toctree::
+
+    awsm.framework
+    awsm.interface
+    awsm.models

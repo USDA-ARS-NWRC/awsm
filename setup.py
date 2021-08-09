@@ -57,4 +57,14 @@ setup(
     setup_requires=[
         'setuptools_scm',
     ],
+    extras_require={
+        'docs': [
+            'Cython',
+            'numpy',
+            'Sphinx>=4.0,<5.0',
+            'pydata-sphinx-theme',
+            'sphinxcontrib-bibtex>=1.0',
+            'sphinxcontrib-websupport>=1.0.1',
+        ]
+    },
 )

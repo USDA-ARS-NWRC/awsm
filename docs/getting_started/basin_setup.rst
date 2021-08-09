@@ -43,7 +43,7 @@ Creating the DEM
 
 The DEM was obtained from the USGS National Elevation `dataset`_ at ~10-m (9.26-m) resolution.
 The original tiles are provided in EPSG:4269 - NAD83 – Geographic projection. Download the necessary
-tiles to cover the modeling domain. Join the tiles were in the native projection and resolution (EPSG 4269). 
+tiles to cover the modeling domain. Merge the tiles in the native projection and resolution (EPSG 4269, 10m). 
 
 .. _dataset: https://catalog.data.gov/dataset/usgs-national-elevation-dataset-ned
 
